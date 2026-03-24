@@ -1,0 +1,221 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ADMIN
+  USER
+}
+
+enum Locale {
+  ZH_CN
+  EN
+}
+
+enum ThemePreference {
+  SYSTEM
+  LIGHT
+  DARK
+}
+
+enum AccentColor {
+  BLUE
+  CYAN
+  TEAL
+  GREEN
+  LIME
+  YELLOW
+  ORANGE
+  RED
+  PINK
+  PURPLE
+}
+
+enum WorkspaceRole {
+  ADMIN
+  MEMBER
+}
+
+model User {
+  id                  String                @id @default(cuid())
+  email               String                @unique
+  passwordHash        String
+  displayName         String
+  role                UserRole              @default(USER)
+  locale              Locale                @default(ZH_CN)
+  themePreference     ThemePreference       @default(SYSTEM)
+  accentColor         AccentColor           @default(BLUE)
+  isActive            Boolean               @default(true)
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime              @updatedAt
+  memberships         WorkspaceMembership[]
+  requestedTickets    Ticket[]              @relation("RequesterTickets")
+  assignedTickets     Ticket[]              @relation("AssigneeTickets")
+  comments            TicketComment[]
+  activities          TicketActivity[]      @relation("ActorActivities")
+  notifications       Notification[]
+  sessions            Session[]
+  authAccounts        AuthAccount[]
+}
+
+model Workspace {
+  id            String                @id @default(cuid())
+  slug          String                @unique
+  name          String
+  description   String?
+  isArchived    Boolean               @default(false)
+  createdAt     DateTime              @default(now())
+  updatedAt     DateTime              @updatedAt
+  memberships   WorkspaceMembership[]
+  tickets       Ticket[]
+}
+
+model WorkspaceMembership {
+  id          String        @id @default(cuid())
+  userId      String
+  workspaceId String
+  role        WorkspaceRole @default(MEMBER)
+  createdAt   DateTime      @default(now())
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workspace   Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, workspaceId])
+}
+
+model StatusDefinition {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  labelZh   String
+  labelEn   String
+  sortOrder Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  tickets    Ticket[]
+}
+
+model PriorityDefinition {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  labelZh   String
+  labelEn   String
+  sortOrder Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  tickets    Ticket[]
+}
+
+model CategoryDefinition {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  labelZh   String
+  labelEn   String
+  sortOrder Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  tickets    Ticket[]
+}
+
+model Ticket {
+  id          String               @id @default(cuid())
+  serialNumber Int                @unique
+  ticketNumber String             @unique
+  title       String
+  description String
+  dueDate     DateTime?
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+  workspaceId String
+  requesterId String
+  assigneeId  String?
+  statusId    String
+  priorityId  String
+  categoryId  String
+  workspace   Workspace           @relation(fields: [workspaceId], references: [id], onDelete: Restrict)
+  requester   User                @relation("RequesterTickets", fields: [requesterId], references: [id], onDelete: Restrict)
+  assignee    User?               @relation("AssigneeTickets", fields: [assigneeId], references: [id], onDelete: SetNull)
+  status      StatusDefinition    @relation(fields: [statusId], references: [id], onDelete: Restrict)
+  priority    PriorityDefinition  @relation(fields: [priorityId], references: [id], onDelete: Restrict)
+  category    CategoryDefinition  @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  comments    TicketComment[]
+  activities  TicketActivity[]
+  notifications Notification[]
+
+  @@index([workspaceId, createdAt])
+  @@index([requesterId, createdAt])
+  @@index([assigneeId, createdAt])
+}
+
+model TicketComment {
+  id        String   @id @default(cuid())
+  ticketId   String
+  authorId   String
+  body      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ticket     Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  author     User     @relation(fields: [authorId], references: [id], onDelete: Restrict)
+}
+
+model TicketActivity {
+  id          String   @id @default(cuid())
+  ticketId     String
+  actorUserId  String?
+  eventType   String
+  messageZh   String
+  messageEn   String
+  metadata    Json?
+  createdAt   DateTime @default(now())
+  ticket      Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  actor       User?    @relation("ActorActivities", fields: [actorUserId], references: [id], onDelete: SetNull)
+
+  @@index([ticketId, createdAt])
+}
+
+model Notification {
+  id          String   @id @default(cuid())
+  userId      String
+  ticketId     String?
+  eventType   String
+  titleZh     String
+  titleEn     String
+  bodyZh      String?
+  bodyEn      String?
+  isRead      Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  ticket      Ticket?  @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  userId       String
+  tokenHash    String   @unique
+  expiresAt    DateTime
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, expiresAt])
+}
+
+model AuthAccount {
+  id                String   @id @default(cuid())
+  userId            String
+  provider          String
+  providerAccountId String
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}

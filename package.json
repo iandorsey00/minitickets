@@ -1,0 +1,46 @@
+{
+  "name": "minitickets",
+  "version": "1.0.0",
+  "description": "MiniTickets - lightweight bilingual workspace ticketing",
+  "scripts": {
+    "dev": "next dev",
+    "build": "prisma generate && next build",
+    "start": "next start",
+    "lint": "eslint .",
+    "db:push": "prisma db push --skip-generate",
+    "db:seed": "node prisma/seed.mjs",
+    "db:studio": "prisma studio"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/iandorsey00/minitickets.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/iandorsey00/minitickets/issues"
+  },
+  "homepage": "https://github.com/iandorsey00/minitickets#readme",
+  "dependencies": {
+    "@fontsource-variable/noto-sans-sc": "^5.2.10",
+    "@fontsource/inter": "^5.2.8",
+    "@prisma/client": "^6.16.3",
+    "bcryptjs": "^3.0.3",
+    "dotenv": "^17.3.1",
+    "next": "^16.2.1",
+    "prisma": "^6.16.3",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@types/node": "^25.5.0",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "eslint": "^9.39.4",
+    "eslint-config-next": "^16.2.1",
+    "typescript": "^5.9.3"
+  }
+}
