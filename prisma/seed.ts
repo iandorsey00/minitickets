@@ -1,7 +1,12 @@
 import bcrypt from "bcryptjs";
+import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
 import { PrismaClient } from "@prisma/client";
 
-const prisma = new PrismaClient();
+const adapter = new PrismaBetterSqlite3({
+  url: process.env.DATABASE_URL || "file:./dev.db",
+});
+
+const prisma = new PrismaClient({ adapter });
 
 const statuses = [
   ["NEW", "新建", "New"],
@@ -11,14 +16,14 @@ const statuses = [
   ["RESOLVED", "已解决", "Resolved"],
   ["CLOSED", "已关闭", "Closed"],
   ["CANCELLED", "已取消", "Cancelled"],
-];
+] as const;
 
 const priorities = [
   ["LOW", "低", "Low"],
   ["MEDIUM", "中", "Medium"],
   ["HIGH", "高", "High"],
   ["URGENT", "紧急", "Urgent"],
-];
+] as const;
 
 const categories = [
   ["GENERAL_REQUEST", "一般请求", "General Request"],
@@ -27,7 +32,7 @@ const categories = [
   ["ACCESS", "权限", "Access"],
   ["PURCHASE", "采购", "Purchase"],
   ["ADMIN", "行政", "Admin"],
-];
+] as const;
 
 async function upsertDefinitions() {
   for (const [index, [key, labelZh, labelEn]] of statuses.entries()) {
@@ -164,7 +169,7 @@ async function main() {
     [admin.id, studio.id, "ADMIN"],
     [meilin.id, personal.id, "MEMBER"],
     [alex.id, studio.id, "MEMBER"],
-  ];
+  ] as const;
 
   for (const [userId, workspaceId, role] of workspaceMemberships) {
     await prisma.workspaceMembership.upsert({
@@ -227,7 +232,7 @@ async function main() {
       priorityId: priorityUrgent.id,
       categoryId: categoryAccess.id,
     },
-  ];
+  ] as const;
 
   for (const ticket of tickets) {
     await prisma.ticket.upsert({

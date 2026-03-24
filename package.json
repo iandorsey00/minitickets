@@ -3,12 +3,12 @@
   "version": "1.0.0",
   "description": "MiniTickets - lightweight bilingual workspace ticketing",
   "scripts": {
-    "dev": "next dev",
+    "dev": "prisma generate && next dev",
     "build": "prisma generate && next build",
     "start": "next start",
-    "lint": "eslint .",
-    "db:push": "prisma db push --skip-generate",
-    "db:seed": "node prisma/seed.mjs",
+    "lint": "prisma generate && eslint .",
+    "db:push": "prisma db push && prisma generate",
+    "db:seed": "prisma generate && node --experimental-strip-types prisma/seed.ts",
     "db:studio": "prisma studio"
   },
   "repository": {
@@ -23,14 +23,19 @@
     "url": "https://github.com/iandorsey00/minitickets/issues"
   },
   "homepage": "https://github.com/iandorsey00/minitickets#readme",
+  "engines": {
+    "node": "^20.19 || ^22.12 || ^24.0"
+  },
   "dependencies": {
     "@fontsource-variable/noto-sans-sc": "^5.2.10",
     "@fontsource/inter": "^5.2.8",
-    "@prisma/client": "^6.16.3",
+    "@prisma/adapter-better-sqlite3": "^7.5.0",
+    "@prisma/client": "^7.5.0",
     "bcryptjs": "^3.0.3",
+    "better-sqlite3": "^12.8.0",
     "dotenv": "^17.3.1",
     "next": "^16.2.1",
-    "prisma": "^6.16.3",
+    "prisma": "^7.5.0",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "zod": "^4.3.6"

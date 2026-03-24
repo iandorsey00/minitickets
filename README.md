@@ -6,7 +6,7 @@ MiniTickets is a lightweight bilingual ticketing application for personal and sm
 
 - Next.js App Router
 - React + TypeScript
-- Prisma + SQLite
+- Prisma 7 + SQLite driver adapter
 - Custom server-side session auth
 - Dictionary-based i18n
 
@@ -16,6 +16,10 @@ MiniTickets is a lightweight bilingual ticketing application for personal and sm
   - [docs/product-foundation.md](/Users/iandorsey/dev/minitickets/docs/product-foundation.md)
 
 ## Setup
+
+Recommended runtime:
+
+- Node `24.x` LTS for Prisma 7 compatibility
 
 1. Install dependencies:
    ```bash
@@ -33,6 +37,12 @@ MiniTickets is a lightweight bilingual ticketing application for personal and sm
    ```bash
    npm run dev
    ```
+
+Prisma 7 notes:
+
+- Prisma CLI config is in `prisma.config.ts`
+- SQLite uses the `@prisma/adapter-better-sqlite3` adapter
+- Prisma Client is still imported from `@prisma/client` for a smoother app upgrade path
 
 ## Demo accounts
 
