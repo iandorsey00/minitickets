@@ -29,17 +29,12 @@ export default async function LoginPage({
     <div className="auth-page">
       <div className="auth-card">
         <section className="hero-card">
-          <h1>{dictionary.appName}</h1>
-          <span className="subtitle">{dictionary.appSubtitle}</span>
-          <p>{dictionary.auth.welcome}</p>
+          <span className="subtitle-only">{dictionary.appName}</span>
         </section>
 
         <section className="login-card">
           <div className="stack">
-            <div>
-              <h2>{dictionary.auth.loginTitle}</h2>
-              <p className="muted">{dictionary.auth.helper}</p>
-            </div>
+            <h2>{dictionary.auth.loginTitle}</h2>
             {errorMessage ? <div className="badge badge-danger">{errorMessage}</div> : null}
             <form action={loginAction}>
               <div className="field">

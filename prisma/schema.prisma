@@ -65,6 +65,7 @@ model User {
 model Workspace {
   id            String                @id @default(cuid())
   slug          String                @unique
+  ticketPrefix  String?               @unique
   name          String
   description   String?
   isArchived    Boolean               @default(false)
@@ -124,7 +125,7 @@ model CategoryDefinition {
 
 model Ticket {
   id          String               @id @default(cuid())
-  serialNumber Int                @unique
+  serialNumber Int
   ticketNumber String             @unique
   title       String
   description String
@@ -150,6 +151,7 @@ model Ticket {
   @@index([workspaceId, createdAt])
   @@index([requesterId, createdAt])
   @@index([assigneeId, createdAt])
+  @@unique([workspaceId, serialNumber])
 }
 
 model TicketComment {

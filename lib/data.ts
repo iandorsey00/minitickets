@@ -66,10 +66,6 @@ export async function getViewerContext(requestedWorkspaceId?: string) {
     memberships[0]?.workspace ??
     null;
 
-  if (currentWorkspace) {
-    cookieStore.set(WORKSPACE_COOKIE, currentWorkspace.id, { path: "/" });
-  }
-
   return {
     user,
     memberships,

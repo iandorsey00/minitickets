@@ -45,6 +45,25 @@ const settingsSchema = z.object({
   password: z.string().optional(),
 });
 
+function normalizeTicketPrefix(value: string) {
+  return value.trim().toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 4);
+}
+
+function formatTicketNumber(prefix: string, serialNumber: number) {
+  return `${prefix}${String(serialNumber).padStart(5, "0")}`;
+}
+
+function fallbackTicketPrefixFromSlug(slug: string) {
+  const cleaned = slug
+    .toUpperCase()
+    .split(/[^A-Z0-9]+/)
+    .filter(Boolean)
+    .map((part) => part[0] ?? "")
+    .join("");
+
+  return (cleaned || "MT").slice(0, 4);
+}
+
 export async function loginAction(formData: FormData) {
   const parsed = loginSchema.safeParse({
     email: formData.get("email"),
@@ -132,12 +151,18 @@ export async function createTicketAction(formData: FormData) {
   }
 
   const defaults = await getDefaultDefinitionIds();
+  const workspace = await prisma.workspace.findUniqueOrThrow({
+    where: { id: parsed.data.workspaceId },
+    select: { id: true, slug: true, ticketPrefix: true },
+  });
   const latest = await prisma.ticket.findFirst({
+    where: { workspaceId: workspace.id },
     orderBy: { serialNumber: "desc" },
     select: { serialNumber: true },
   });
-  const serialNumber = (latest?.serialNumber ?? 1000) + 1;
-  const ticketNumber = `MT-${serialNumber}`;
+  const serialNumber = (latest?.serialNumber ?? 0) + 1;
+  const ticketPrefix = workspace.ticketPrefix || fallbackTicketPrefixFromSlug(workspace.slug);
+  const ticketNumber = formatTicketNumber(ticketPrefix, serialNumber);
 
   const ticket = await prisma.ticket.create({
     data: {
@@ -420,11 +445,13 @@ export async function createWorkspaceAction(formData: FormData) {
     .trim()
     .toLowerCase()
     .replace(/[^a-z0-9-]+/g, "-");
+  const ticketPrefix = normalizeTicketPrefix(String(formData.get("ticketPrefix") ?? ""));
 
   await prisma.workspace.create({
     data: {
       name,
       slug,
+      ticketPrefix,
       description: String(formData.get("description") ?? "").trim() || null,
     },
   });

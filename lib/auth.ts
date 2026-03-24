@@ -84,10 +84,6 @@ export const getCurrentUser = cache(async () => {
   });
 
   if (!session || session.expiresAt < new Date() || !session.user.isActive) {
-    cookieStore.delete(SESSION_COOKIE);
-    if (session) {
-      await prisma.session.delete({ where: { id: session.id } });
-    }
     return null;
   }
 

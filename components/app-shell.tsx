@@ -70,7 +70,7 @@ export function AppShell({
         <div className="brand-block">
           <Link href="/dashboard" className="brand-link">
             <span className="brand-title">{appName}</span>
-            <span className="brand-subtitle">{appSubtitle}</span>
+            {appSubtitle ? <span className="brand-subtitle">{appSubtitle}</span> : null}
           </Link>
         </div>
         <nav className="nav-list" aria-label={appName}>

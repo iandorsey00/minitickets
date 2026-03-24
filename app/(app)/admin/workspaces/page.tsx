@@ -24,6 +24,10 @@ export default async function AdminWorkspacesPage() {
               <input id="slug" name="slug" required />
             </div>
             <div className="field">
+              <label htmlFor="ticketPrefix">Prefix</label>
+              <input id="ticketPrefix" name="ticketPrefix" required maxLength={4} placeholder="SR" />
+            </div>
+            <div className="field">
               <label htmlFor="description">{t.common.description}</label>
               <textarea id="description" name="description" />
             </div>
@@ -36,6 +40,7 @@ export default async function AdminWorkspacesPage() {
             <thead>
               <tr>
                 <th>{t.common.title}</th>
+                <th>Prefix</th>
                 <th>{t.common.members}</th>
                 <th>{t.tickets.title}</th>
                 <th>{t.common.actions}</th>
@@ -45,6 +50,7 @@ export default async function AdminWorkspacesPage() {
               {data.workspaces.map((workspace) => (
                 <tr key={workspace.id}>
                   <td>{workspace.name}</td>
+                  <td>{workspace.ticketPrefix}</td>
                   <td>{workspace.memberships.length}</td>
                   <td>{workspace.tickets.length}</td>
                   <td>

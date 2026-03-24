@@ -4,8 +4,8 @@ export type AppLocale = "ZH_CN" | "EN";
 
 const dictionaries = {
   ZH_CN: {
-    appName: "MiniTickets",
-    appSubtitle: "轻量工单",
+    appName: "轻量工单",
+    appSubtitle: "",
     nav: {
       dashboard: "仪表盘",
       tickets: "工单",
@@ -16,12 +16,10 @@ const dictionaries = {
       logout: "退出登录",
     },
     auth: {
-      welcome: "轻量、清晰、可靠的请求跟踪。",
-      loginTitle: "登录 MiniTickets",
+      loginTitle: "登录",
       email: "邮箱",
       password: "密码",
       submit: "登录",
-      helper: "支持邮箱和密码登录，后续可扩展到统一登录。",
       invalid: "邮箱或密码不正确。",
       inactive: "当前账户已停用。",
     },
@@ -144,12 +142,10 @@ const dictionaries = {
       logout: "Log out",
     },
     auth: {
-      welcome: "Lightweight, clear, and dependable request tracking.",
-      loginTitle: "Sign in to MiniTickets",
+      loginTitle: "Sign in",
       email: "Email",
       password: "Password",
       submit: "Sign in",
-      helper: "Email/password today, ready for shared SSO later.",
       invalid: "Invalid email or password.",
       inactive: "This account is inactive.",
     },
