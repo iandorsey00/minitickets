@@ -66,3 +66,44 @@ Prisma 7 notes:
 - OIDC/SAML SSO via the existing `AuthAccount` model
 - Email/push delivery using the current notification event structure
 - PostgreSQL deployment by changing Prisma datasource settings
+
+## Deployment
+
+Recommended first deployment:
+
+- You can share the GeoCompare droplet if it has enough RAM/CPU and you keep MiniTickets isolated as its own app directory, env file, systemd service, and nginx host.
+- A separate droplet is cleaner long term, but not required for an initial personal deployment.
+
+Suggested layout on the droplet:
+
+- app directory: `/var/www/minitickets/app`
+- env file: `/var/www/minitickets/.env.production`
+- sqlite db: `/var/www/minitickets/data/dev.db`
+- service name: `minitickets`
+- app port: `3010`
+
+Included deployment helpers:
+
+- deploy script: [scripts/deploy.sh](/Users/iandorsey/dev/minitickets/scripts/deploy.sh)
+- auto-deploy wrapper: [scripts/autodeploy.sh](/Users/iandorsey/dev/minitickets/scripts/autodeploy.sh)
+- deploy file renderer: [scripts/render-deploy-files.sh](/Users/iandorsey/dev/minitickets/scripts/render-deploy-files.sh)
+- systemd template: [deploy/minitickets.service.example](/Users/iandorsey/dev/minitickets/deploy/minitickets.service.example)
+- nginx template: [deploy/nginx/site.conf.example](/Users/iandorsey/dev/minitickets/deploy/nginx/site.conf.example)
+- deploy env example: [.env.deploy.example](/Users/iandorsey/dev/minitickets/.env.deploy.example)
+- production env example: [.env.production.example](/Users/iandorsey/dev/minitickets/.env.production.example)
+
+Basic deployment flow:
+
+1. Clone the repo to `/var/www/minitickets/app`
+2. Copy `.env.production.example` to `/var/www/minitickets/.env.production` and fill in real values
+3. Install Node 24 and nginx
+4. Copy `.env.deploy.example` to `.env.deploy` and fill in host-specific values
+5. Run `bash scripts/render-deploy-files.sh`
+6. Copy the rendered systemd unit and nginx config into place
+7. Run `bash scripts/deploy.sh`
+8. Enable TLS with Certbot or your existing reverse-proxy flow
+
+Notes:
+
+- Current uploads are local-disk storage under `public/uploads`, which is acceptable for a single-server deployment.
+- For stronger durability later, move attachments to object storage such as S3 or R2.
