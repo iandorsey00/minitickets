@@ -56,8 +56,8 @@ export function AppShell({
 }: ShellProps) {
   const pathname = usePathname();
   const navItems = [
-    { href: "/dashboard", label: dictionary.nav.dashboard },
     { href: "/tickets", label: dictionary.nav.tickets },
+    { href: "/dashboard", label: dictionary.nav.dashboard },
     { href: "/tickets/new", label: dictionary.nav.createTicket },
     { href: "/workspaces", label: dictionary.nav.workspaces },
     ...(user.role === "ADMIN" ? [{ href: "/admin", label: dictionary.nav.admin }] : []),
@@ -126,6 +126,12 @@ export function AppShell({
         </header>
 
         <main className="content">{children}</main>
+
+        {pathname !== "/tickets/new" ? (
+          <Link href="/tickets/new" className="floating-action">
+            {dictionary.nav.createTicket}
+          </Link>
+        ) : null}
       </div>
     </div>
   );

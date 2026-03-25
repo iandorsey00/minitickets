@@ -57,6 +57,7 @@ model User {
   assignedTickets     Ticket[]              @relation("AssigneeTickets")
   comments            TicketComment[]
   activities          TicketActivity[]      @relation("ActorActivities")
+  uploadedAttachments TicketAttachment[]    @relation("UploadedAttachments")
   notifications       Notification[]
   sessions            Session[]
   authAccounts        AuthAccount[]
@@ -130,6 +131,8 @@ model Ticket {
   title       String
   description String
   dueDate     DateTime?
+  paymentLabel String?
+  paymentLast4 String?
   createdAt   DateTime            @default(now())
   updatedAt   DateTime            @updatedAt
   workspaceId String
@@ -146,6 +149,7 @@ model Ticket {
   category    CategoryDefinition  @relation(fields: [categoryId], references: [id], onDelete: Restrict)
   comments    TicketComment[]
   activities  TicketActivity[]
+  attachments TicketAttachment[]
   notifications Notification[]
 
   @@index([workspaceId, createdAt])
@@ -176,6 +180,22 @@ model TicketActivity {
   createdAt   DateTime @default(now())
   ticket      Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
   actor       User?    @relation("ActorActivities", fields: [actorUserId], references: [id], onDelete: SetNull)
+
+  @@index([ticketId, createdAt])
+}
+
+model TicketAttachment {
+  id              String   @id @default(cuid())
+  ticketId        String
+  uploadedByUserId String
+  originalName    String
+  storedName      String
+  mimeType        String?
+  fileSizeBytes   Int
+  filePath        String
+  createdAt       DateTime @default(now())
+  ticket          Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  uploadedBy      User     @relation("UploadedAttachments", fields: [uploadedByUserId], references: [id], onDelete: Restrict)
 
   @@index([ticketId, createdAt])
 }

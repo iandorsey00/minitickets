@@ -1,6 +1,6 @@
-import { addCommentAction, updateTicketAction } from "@/lib/actions";
+import { addAttachmentAction, addCommentAction, updateTicketAction } from "@/lib/actions";
 import { getTicketDetail } from "@/lib/data";
-import { formatDate, formatDateTime, localizeDefinition } from "@/lib/format";
+import { formatDate, formatDateTime, formatFileSize, localizeDefinition } from "@/lib/format";
 import { Badge, EmptyState, PageHeader, Panel } from "@/components/ui";
 
 export default async function TicketDetailPage({
@@ -69,6 +69,39 @@ export default async function TicketDetailPage({
               </div>
             </form>
           </Panel>
+
+          <Panel title={t.common.attachments}>
+            <div className="timeline">
+              {data.ticket.attachments.length ? (
+                data.ticket.attachments.map((attachment) => (
+                  <div key={attachment.id} className="timeline-item">
+                    <strong>
+                      <a href={attachment.filePath} target="_blank" rel="noreferrer">
+                        {attachment.originalName}
+                      </a>
+                    </strong>
+                    <div className="muted">
+                      {attachment.uploadedBy.displayName} · {formatDateTime(attachment.createdAt, data.localeCode)} ·{" "}
+                      {formatFileSize(attachment.fileSizeBytes)}
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <EmptyState title={t.common.attachments} body={t.states.emptySearch} />
+              )}
+            </div>
+
+            <form action={addAttachmentAction} className="stack">
+              <input type="hidden" name="ticketId" value={data.ticket.id} />
+              <div className="field">
+                <label htmlFor="file">{t.common.uploadFile}</label>
+                <input id="file" name="file" type="file" required />
+              </div>
+              <div>
+                <button type="submit">{t.common.uploadFile}</button>
+              </div>
+            </form>
+          </Panel>
         </div>
 
         <div className="stack">
@@ -97,6 +130,14 @@ export default async function TicketDetailPage({
               <div className="meta-item">
                 <span>{t.common.dueDate}</span>
                 <span>{formatDate(data.ticket.dueDate, data.localeCode)}</span>
+              </div>
+              <div className="meta-item">
+                <span>{t.common.paymentLabel}</span>
+                <span>{data.ticket.paymentLabel ?? t.common.none}</span>
+              </div>
+              <div className="meta-item">
+                <span>{t.common.paymentLast4}</span>
+                <span>{data.ticket.paymentLast4 ?? t.common.none}</span>
               </div>
             </div>
           </Panel>
@@ -160,6 +201,21 @@ export default async function TicketDetailPage({
                   name="dueDate"
                   type="date"
                   defaultValue={data.ticket.dueDate ? new Date(data.ticket.dueDate).toISOString().slice(0, 10) : ""}
+                />
+              </div>
+              <div className="field">
+                <label htmlFor="paymentLabel">{t.common.paymentLabel}</label>
+                <input id="paymentLabel" name="paymentLabel" defaultValue={data.ticket.paymentLabel ?? ""} maxLength={60} />
+              </div>
+              <div className="field">
+                <label htmlFor="paymentLast4">{t.common.paymentLast4}</label>
+                <input
+                  id="paymentLast4"
+                  name="paymentLast4"
+                  defaultValue={data.ticket.paymentLast4 ?? ""}
+                  inputMode="numeric"
+                  pattern="\d{4}"
+                  maxLength={4}
                 />
               </div>
               <div>

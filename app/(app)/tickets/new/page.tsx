@@ -92,6 +92,20 @@ export default async function NewTicketPage() {
             <label htmlFor="description">{t.common.description}</label>
             <textarea id="description" name="description" required minLength={10} maxLength={5000} />
           </div>
+          <div className="form-grid">
+            <div className="field">
+              <label htmlFor="paymentLabel">
+                {t.common.paymentLabel} <span className="muted">({t.common.optional})</span>
+              </label>
+              <input id="paymentLabel" name="paymentLabel" maxLength={60} placeholder="Visa / Checking" />
+            </div>
+            <div className="field">
+              <label htmlFor="paymentLast4">
+                {t.common.paymentLast4} <span className="muted">({t.common.optional})</span>
+              </label>
+              <input id="paymentLast4" name="paymentLast4" inputMode="numeric" pattern="\d{4}" maxLength={4} />
+            </div>
+          </div>
           <div>
             <button type="submit">{t.common.submitRequest}</button>
           </div>

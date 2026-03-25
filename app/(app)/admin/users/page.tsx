@@ -1,5 +1,5 @@
 import { assignMembershipAction, createUserAction, toggleUserActiveAction } from "@/lib/actions";
-import { accentValues, localeValues } from "@/lib/constants";
+import { accentLabelMap, accentValues, localeValues } from "@/lib/constants";
 import { getAdminData } from "@/lib/data";
 import { PageHeader, Panel } from "@/components/ui";
 
@@ -43,7 +43,7 @@ export default async function AdminUsersPage() {
               <select id="accentColor" name="accentColor" defaultValue="BLUE">
                 {accentValues.map((accent) => (
                   <option key={accent} value={accent}>
-                    {accent}
+                    {data.locale === "ZH_CN" ? accentLabelMap[accent].zh : accentLabelMap[accent].en}
                   </option>
                 ))}
               </select>

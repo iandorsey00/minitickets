@@ -47,3 +47,19 @@ export const localeTokenMap: Record<(typeof localeValues)[number], string> = {
   ZH_CN: "zh-CN",
   EN: "en",
 };
+
+export const accentLabelMap: Record<
+  (typeof accentValues)[number],
+  { zh: string; en: string }
+> = {
+  BLUE: { zh: "蓝色", en: "Blue" },
+  CYAN: { zh: "青色", en: "Cyan" },
+  TEAL: { zh: "蓝绿", en: "Teal" },
+  GREEN: { zh: "绿色", en: "Green" },
+  LIME: { zh: "黄绿", en: "Lime" },
+  YELLOW: { zh: "黄色", en: "Yellow" },
+  ORANGE: { zh: "橙色", en: "Orange" },
+  RED: { zh: "红色", en: "Red" },
+  PINK: { zh: "粉色", en: "Pink" },
+  PURPLE: { zh: "紫色", en: "Purple" },
+};

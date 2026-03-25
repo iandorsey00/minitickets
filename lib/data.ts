@@ -229,6 +229,12 @@ export async function getTicketDetail(ticketId: string) {
         },
         orderBy: { createdAt: "asc" },
       },
+      attachments: {
+        include: {
+          uploadedBy: true,
+        },
+        orderBy: { createdAt: "asc" },
+      },
     },
   });
 

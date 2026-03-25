@@ -1,5 +1,5 @@
 import { updateSettingsAction } from "@/lib/actions";
-import { accentValues, localeValues, themeValues } from "@/lib/constants";
+import { accentLabelMap, accentValues, localeValues, themeValues } from "@/lib/constants";
 import { getViewerContext } from "@/lib/data";
 import { PageHeader, Panel } from "@/components/ui";
 
@@ -42,13 +42,13 @@ export default async function SettingsPage() {
           </div>
           <div className="field">
             <label htmlFor="accentColor">{t.common.accentColor}</label>
-            <select id="accentColor" name="accentColor" defaultValue={data.user.accentColor}>
-              {accentValues.map((accent) => (
-                <option key={accent} value={accent}>
-                  {accent}
-                </option>
-              ))}
-            </select>
+              <select id="accentColor" name="accentColor" defaultValue={data.user.accentColor}>
+                {accentValues.map((accent) => (
+                  <option key={accent} value={accent}>
+                    {data.locale === "ZH_CN" ? accentLabelMap[accent].zh : accentLabelMap[accent].en}
+                  </option>
+                ))}
+              </select>
           </div>
           <div className="field">
             <label htmlFor="password">{t.common.password}</label>

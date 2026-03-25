@@ -1,5 +1,9 @@
 "use server";
 
+import crypto from "node:crypto";
+import { mkdir, writeFile } from "node:fs/promises";
+import path from "node:path";
+
 import { AccentColor, Locale, ThemePreference, UserRole, WorkspaceRole } from "@prisma/client";
 import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
@@ -30,11 +34,20 @@ const ticketSchema = z.object({
   priorityId: z.string().optional(),
   categoryId: z.string().optional(),
   dueDate: z.string().optional(),
+  paymentLabel: z.string().max(60).optional(),
+  paymentLast4: z
+    .string()
+    .regex(/^\d{4}$/)
+    .optional(),
 });
 
 const commentSchema = z.object({
   ticketId: z.string().min(1),
   body: z.string().min(2).max(2000),
+});
+
+const attachmentSchema = z.object({
+  ticketId: z.string().min(1),
 });
 
 const settingsSchema = z.object({
@@ -93,7 +106,7 @@ export async function loginAction(formData: FormData) {
   cookieStore.set(THEME_COOKIE, user.themePreference, { path: "/" });
   cookieStore.set(ACCENT_COOKIE, user.accentColor, { path: "/" });
 
-  redirect("/dashboard");
+  redirect("/tickets");
 }
 
 export async function logoutAction() {
@@ -104,7 +117,7 @@ export async function logoutAction() {
 export async function switchWorkspaceAction(formData: FormData) {
   const user = await requireUser();
   const workspaceId = String(formData.get("workspaceId") ?? "");
-  const nextPath = String(formData.get("nextPath") ?? "/dashboard");
+  const nextPath = String(formData.get("nextPath") ?? "/tickets");
 
   const allowed = await prisma.workspaceMembership.findFirst({
     where: {
@@ -133,6 +146,8 @@ export async function createTicketAction(formData: FormData) {
     priorityId: formData.get("priorityId") || undefined,
     categoryId: formData.get("categoryId") || undefined,
     dueDate: formData.get("dueDate") || undefined,
+    paymentLabel: formData.get("paymentLabel") || undefined,
+    paymentLast4: formData.get("paymentLast4") || undefined,
   });
 
   if (!parsed.success) {
@@ -177,6 +192,8 @@ export async function createTicketAction(formData: FormData) {
       priorityId: parsed.data.priorityId || defaults.priorityId,
       categoryId: parsed.data.categoryId || defaults.categoryId,
       dueDate: parsed.data.dueDate ? new Date(parsed.data.dueDate) : null,
+      paymentLabel: parsed.data.paymentLabel || null,
+      paymentLast4: parsed.data.paymentLast4 || null,
       activities: {
         create: {
           actorUserId: user.id,
@@ -229,6 +246,8 @@ export async function updateTicketAction(formData: FormData) {
     categoryId: String(formData.get("categoryId") ?? ticket.categoryId),
     assigneeId: String(formData.get("assigneeId") ?? "") || null,
     dueDate: String(formData.get("dueDate") ?? "") || null,
+    paymentLabel: String(formData.get("paymentLabel") ?? "") || null,
+    paymentLast4: String(formData.get("paymentLast4") ?? "") || null,
     title: String(formData.get("title") ?? ticket.title),
     description: String(formData.get("description") ?? ticket.description),
   };
@@ -256,6 +275,14 @@ export async function updateTicketAction(formData: FormData) {
       eventType: "ticket.assigned",
       messageZh: "已更新处理人。",
       messageEn: "Assignee updated.",
+    });
+  }
+  if (nextValues.paymentLast4 !== ticket.paymentLast4 || nextValues.paymentLabel !== ticket.paymentLabel) {
+    activities.push({
+      actorUserId: user.id,
+      eventType: "ticket.payment_updated",
+      messageZh: "已更新支付信息。",
+      messageEn: "Payment information updated.",
     });
   }
 
@@ -345,6 +372,70 @@ export async function addCommentAction(formData: FormData) {
       })),
     });
   }
+
+  revalidatePath(`/tickets/${ticket.id}`);
+  revalidatePath("/dashboard");
+}
+
+export async function addAttachmentAction(formData: FormData) {
+  const user = await requireUser();
+  const parsed = attachmentSchema.safeParse({
+    ticketId: formData.get("ticketId"),
+  });
+
+  if (!parsed.success) {
+    redirect("/tickets");
+  }
+
+  const file = formData.get("file");
+  if (!(file instanceof File) || file.size === 0) {
+    redirect(`/tickets/${parsed.data.ticketId}`);
+  }
+
+  const ticket = await prisma.ticket.findUnique({
+    where: { id: parsed.data.ticketId },
+  });
+
+  if (!ticket) {
+    redirect("/tickets");
+  }
+
+  const membership = await prisma.workspaceMembership.findFirst({
+    where: { userId: user.id, workspaceId: ticket.workspaceId },
+  });
+
+  if (!membership && user.role !== UserRole.ADMIN) {
+    redirect("/tickets");
+  }
+
+  const extension = path.extname(file.name).slice(0, 16);
+  const storedName = `${crypto.randomUUID()}${extension}`;
+  const directory = path.join(process.cwd(), "public", "uploads", "tickets", ticket.id);
+  await mkdir(directory, { recursive: true });
+  const buffer = Buffer.from(await file.arrayBuffer());
+  await writeFile(path.join(directory, storedName), buffer);
+
+  await prisma.ticketAttachment.create({
+    data: {
+      ticketId: ticket.id,
+      uploadedByUserId: user.id,
+      originalName: file.name,
+      storedName,
+      mimeType: file.type || null,
+      fileSizeBytes: file.size,
+      filePath: `/uploads/tickets/${ticket.id}/${storedName}`,
+    },
+  });
+
+  await prisma.ticketActivity.create({
+    data: {
+      ticketId: ticket.id,
+      actorUserId: user.id,
+      eventType: "ticket.attachment_added",
+      messageZh: "上传了附件。",
+      messageEn: "Uploaded an attachment.",
+    },
+  });
 
   revalidatePath(`/tickets/${ticket.id}`);
   revalidatePath("/dashboard");

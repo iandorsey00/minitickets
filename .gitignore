@@ -8,5 +8,6 @@ dist
 .env.local
 generated
 dev.db
+public/uploads
 prisma/dev.db
 prisma/dev.db-journal
