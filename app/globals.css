@@ -354,12 +354,16 @@ textarea {
 .workspace-switcher {
   display: flex;
   gap: 0.75rem;
-  align-items: end;
+  align-items: center;
   min-width: 0;
 }
 
 .workspace-switcher select {
   min-width: 0;
+  min-height: 3.2rem;
+  padding-top: 0.7rem;
+  padding-bottom: 0.7rem;
+  line-height: 1.2;
 }
 
 .workspace-switcher .ghost-button {
@@ -368,6 +372,7 @@ textarea {
   justify-content: center;
   flex: 0 0 auto;
   min-inline-size: 7rem;
+  min-height: 3.2rem;
   white-space: nowrap;
 }
 

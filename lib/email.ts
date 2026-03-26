@@ -1,11 +1,32 @@
 import nodemailer from "nodemailer";
 import type { Locale } from "@prisma/client";
 
+type MailRecipient = {
+  email: string;
+  displayName: string;
+  locale: Locale;
+};
+
 type WelcomeEmailInput = {
   userEmail: string;
   displayName: string;
   locale: Locale;
   password: string;
+};
+
+type TicketEmailInput = {
+  kind: "created" | "assigned" | "comment_added" | "resolved";
+  recipient: MailRecipient;
+  ticket: {
+    id: string;
+    ticketNumber: string;
+    title: string;
+    workspaceName: string;
+    statusLabelZh?: string;
+    statusLabelEn?: string;
+  };
+  actorName?: string;
+  commentBody?: string;
 };
 
 function getMailConfig() {
@@ -31,6 +52,26 @@ function getMailConfig() {
 
 function getBaseUrl() {
   return (process.env.APP_URL ?? "http://localhost:3000").replace(/\/+$/, "");
+}
+
+async function getTransporter() {
+  const config = getMailConfig();
+  if (!config) {
+    return null;
+  }
+
+  return {
+    transporter: nodemailer.createTransport({
+      host: config.host,
+      port: config.port,
+      secure: config.secure,
+      auth: {
+        user: config.user,
+        pass: config.pass,
+      },
+    }),
+    from: config.from,
+  };
 }
 
 function buildWelcomeEmail({ displayName, locale, password, userEmail }: WelcomeEmailInput) {
@@ -81,30 +122,143 @@ function buildWelcomeEmail({ displayName, locale, password, userEmail }: Welcome
   };
 }
 
-export async function sendWelcomeEmail(input: WelcomeEmailInput) {
-  const config = getMailConfig();
-  if (!config) {
+function buildTicketEmail({ actorName, commentBody, kind, recipient, ticket }: TicketEmailInput) {
+  const ticketUrl = `${getBaseUrl()}/tickets/${ticket.id}`;
+  const statusText =
+    recipient.locale === "EN" ? ticket.statusLabelEn ?? "Updated" : ticket.statusLabelZh ?? "已更新";
+
+  if (recipient.locale === "EN") {
+    if (kind === "created") {
+      return {
+        subject: `${ticket.ticketNumber} created`,
+        text: [
+          `Hi ${recipient.displayName},`,
+          "",
+          `Your ticket ${ticket.ticketNumber} has been created in ${ticket.workspaceName}.`,
+          `Title: ${ticket.title}`,
+          `Open: ${ticketUrl}`,
+        ].join("\n"),
+      };
+    }
+
+    if (kind === "assigned") {
+      return {
+        subject: `${ticket.ticketNumber} assigned to you`,
+        text: [
+          `Hi ${recipient.displayName},`,
+          "",
+          `${actorName ?? "A teammate"} assigned ${ticket.ticketNumber} to you.`,
+          `Title: ${ticket.title}`,
+          `Open: ${ticketUrl}`,
+        ].join("\n"),
+      };
+    }
+
+    if (kind === "comment_added") {
+      return {
+        subject: `New comment on ${ticket.ticketNumber}`,
+        text: [
+          `Hi ${recipient.displayName},`,
+          "",
+          `${actorName ?? "A teammate"} added a comment on ${ticket.ticketNumber}.`,
+          `Title: ${ticket.title}`,
+          commentBody ? `Comment: ${commentBody}` : "",
+          `Open: ${ticketUrl}`,
+        ]
+          .filter(Boolean)
+          .join("\n"),
+      };
+    }
+
+    return {
+      subject: `${ticket.ticketNumber} marked ${statusText}`,
+      text: [
+        `Hi ${recipient.displayName},`,
+        "",
+        `${actorName ?? "A teammate"} changed ${ticket.ticketNumber} to ${statusText}.`,
+        `Title: ${ticket.title}`,
+        `Open: ${ticketUrl}`,
+      ].join("\n"),
+    };
+  }
+
+  if (kind === "created") {
+    return {
+      subject: `${ticket.ticketNumber} 已创建`,
+      text: [
+        `${recipient.displayName}，你好：`,
+        "",
+        `你的工单 ${ticket.ticketNumber} 已在「${ticket.workspaceName}」中创建。`,
+        `标题：${ticket.title}`,
+        `查看工单：${ticketUrl}`,
+      ].join("\n"),
+    };
+  }
+
+  if (kind === "assigned") {
+    return {
+      subject: `${ticket.ticketNumber} 已分配给你`,
+      text: [
+        `${recipient.displayName}，你好：`,
+        "",
+        `${actorName ?? "有同事"} 已将工单 ${ticket.ticketNumber} 分配给你。`,
+        `标题：${ticket.title}`,
+        `查看工单：${ticketUrl}`,
+      ].join("\n"),
+    };
+  }
+
+  if (kind === "comment_added") {
+    return {
+      subject: `${ticket.ticketNumber} 有新评论`,
+      text: [
+        `${recipient.displayName}，你好：`,
+        "",
+        `${actorName ?? "有同事"} 在工单 ${ticket.ticketNumber} 中添加了评论。`,
+        `标题：${ticket.title}`,
+        commentBody ? `评论：${commentBody}` : "",
+        `查看工单：${ticketUrl}`,
+      ]
+        .filter(Boolean)
+        .join("\n"),
+    };
+  }
+
+  return {
+    subject: `${ticket.ticketNumber} 已更新为${statusText}`,
+    text: [
+      `${recipient.displayName}，你好：`,
+      "",
+      `${actorName ?? "有同事"} 已将工单 ${ticket.ticketNumber} 更新为「${statusText}」。`,
+      `标题：${ticket.title}`,
+      `查看工单：${ticketUrl}`,
+    ].join("\n"),
+  };
+}
+
+async function sendEmail(to: string, subject: string, text: string, html?: string) {
+  const mailer = await getTransporter();
+  if (!mailer) {
     return false;
   }
 
-  const transporter = nodemailer.createTransport({
-    host: config.host,
-    port: config.port,
-    secure: config.secure,
-    auth: {
-      user: config.user,
-      pass: config.pass,
-    },
-  });
-
-  const message = buildWelcomeEmail(input);
-  await transporter.sendMail({
-    from: config.from,
-    to: input.userEmail,
-    subject: message.subject,
-    text: message.text,
-    html: message.html,
+  await mailer.transporter.sendMail({
+    from: mailer.from,
+    to,
+    subject,
+    text,
+    html,
   });
 
   return true;
+}
+
+export async function sendWelcomeEmail(input: WelcomeEmailInput) {
+  const message = buildWelcomeEmail(input);
+  return sendEmail(input.userEmail, message.subject, message.text, message.html);
+}
+
+export async function sendTicketEmail(input: TicketEmailInput) {
+  const message = buildTicketEmail(input);
+  return sendEmail(input.recipient.email, message.subject, message.text);
 }

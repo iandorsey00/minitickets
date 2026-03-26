@@ -18,7 +18,7 @@ import {
   WORKSPACE_COOKIE,
 } from "@/lib/constants";
 import { getDefaultDefinitionIds } from "@/lib/data";
-import { sendWelcomeEmail } from "@/lib/email";
+import { sendTicketEmail, sendWelcomeEmail } from "@/lib/email";
 import { hashPassword, verifyPassword } from "@/lib/password";
 import { prisma } from "@/lib/prisma";
 import { fallbackTicketPrefixFromSlug, formatTicketNumber, normalizeTicketPrefix } from "@/lib/tickets";
@@ -60,6 +60,10 @@ const settingsSchema = z.object({
   accentColor: z.nativeEnum(AccentColor),
   password: z.string().optional(),
 });
+
+function uniqueRecipients<T extends { id: string }>(items: T[]) {
+  return Array.from(new Map(items.map((item) => [item.id, item])).values());
+}
 
 export async function loginAction(formData: FormData) {
   const parsed = loginSchema.safeParse({
@@ -187,6 +191,12 @@ export async function createTicketAction(formData: FormData) {
         },
       },
     },
+    include: {
+      workspace: true,
+      requester: true,
+      assignee: true,
+      status: true,
+    },
   });
 
   if (ticket.assigneeId && ticket.assigneeId !== user.id) {
@@ -199,6 +209,47 @@ export async function createTicketAction(formData: FormData) {
         titleEn: `You were assigned ${ticket.ticketNumber}`,
       },
     });
+  }
+
+  try {
+    await sendTicketEmail({
+      kind: "created",
+      recipient: {
+        email: ticket.requester.email,
+        displayName: ticket.requester.displayName,
+        locale: ticket.requester.locale,
+      },
+      ticket: {
+        id: ticket.id,
+        ticketNumber: ticket.ticketNumber,
+        title: ticket.title,
+        workspaceName: ticket.workspace.name,
+      },
+    });
+  } catch (error) {
+    console.error("Failed to send created-ticket email", error);
+  }
+
+  if (ticket.assignee && ticket.assignee.id !== user.id) {
+    try {
+      await sendTicketEmail({
+        kind: "assigned",
+        recipient: {
+          email: ticket.assignee.email,
+          displayName: ticket.assignee.displayName,
+          locale: ticket.assignee.locale,
+        },
+        actorName: user.displayName,
+        ticket: {
+          id: ticket.id,
+          ticketNumber: ticket.ticketNumber,
+          title: ticket.title,
+          workspaceName: ticket.workspace.name,
+        },
+      });
+    } catch (error) {
+      console.error("Failed to send assignment email", error);
+    }
   }
 
   revalidatePath("/dashboard");
@@ -270,12 +321,18 @@ export async function updateTicketAction(formData: FormData) {
     });
   }
 
-  await prisma.ticket.update({
+  const updatedTicket = await prisma.ticket.update({
     where: { id: ticketId },
     data: {
       ...nextValues,
       dueDate: nextValues.dueDate ? new Date(nextValues.dueDate) : null,
       activities: activities.length ? { create: activities } : undefined,
+    },
+    include: {
+      workspace: true,
+      requester: true,
+      assignee: true,
+      status: true,
     },
   });
 
@@ -289,6 +346,60 @@ export async function updateTicketAction(formData: FormData) {
         titleEn: `${ticket.ticketNumber} was assigned to you`,
       },
     });
+  }
+
+  if (updatedTicket.assignee && updatedTicket.assignee.id !== user.id && nextValues.assigneeId !== ticket.assigneeId) {
+    try {
+      await sendTicketEmail({
+        kind: "assigned",
+        recipient: {
+          email: updatedTicket.assignee.email,
+          displayName: updatedTicket.assignee.displayName,
+          locale: updatedTicket.assignee.locale,
+        },
+        actorName: user.displayName,
+        ticket: {
+          id: updatedTicket.id,
+          ticketNumber: updatedTicket.ticketNumber,
+          title: updatedTicket.title,
+          workspaceName: updatedTicket.workspace.name,
+        },
+      });
+    } catch (error) {
+      console.error("Failed to send assignment email", error);
+    }
+  }
+
+  if (nextValues.statusId !== ticket.statusId && ["RESOLVED", "CLOSED"].includes(updatedTicket.status.key)) {
+    const recipients = uniqueRecipients(
+      [updatedTicket.requester, updatedTicket.assignee].filter(
+        (recipient): recipient is typeof updatedTicket.requester => Boolean(recipient),
+      ),
+    ).filter((recipient) => recipient.id !== user.id);
+
+    for (const recipient of recipients) {
+      try {
+        await sendTicketEmail({
+          kind: "resolved",
+          recipient: {
+            email: recipient.email,
+            displayName: recipient.displayName,
+            locale: recipient.locale,
+          },
+          actorName: user.displayName,
+          ticket: {
+            id: updatedTicket.id,
+            ticketNumber: updatedTicket.ticketNumber,
+            title: updatedTicket.title,
+            workspaceName: updatedTicket.workspace.name,
+            statusLabelZh: updatedTicket.status.labelZh,
+            statusLabelEn: updatedTicket.status.labelEn,
+          },
+        });
+      } catch (error) {
+        console.error("Failed to send resolved-ticket email", error);
+      }
+    }
   }
 
   revalidatePath(`/tickets/${ticketId}`);
@@ -309,6 +420,11 @@ export async function addCommentAction(formData: FormData) {
 
   const ticket = await prisma.ticket.findUnique({
     where: { id: parsed.data.ticketId },
+    include: {
+      workspace: true,
+      requester: true,
+      assignee: true,
+    },
   });
 
   if (!ticket) {
@@ -355,6 +471,33 @@ export async function addCommentAction(formData: FormData) {
         titleEn: `New comment on ${ticket.ticketNumber}`,
       })),
     });
+  }
+
+  const emailRecipients = uniqueRecipients(
+    [ticket.requester, ticket.assignee].filter((recipient): recipient is typeof ticket.requester => Boolean(recipient)),
+  ).filter((recipient) => recipient.id !== user.id);
+
+  for (const recipient of emailRecipients) {
+    try {
+      await sendTicketEmail({
+        kind: "comment_added",
+        recipient: {
+          email: recipient.email,
+          displayName: recipient.displayName,
+          locale: recipient.locale,
+        },
+        actorName: user.displayName,
+        commentBody: parsed.data.body,
+        ticket: {
+          id: ticket.id,
+          ticketNumber: ticket.ticketNumber,
+          title: ticket.title,
+          workspaceName: ticket.workspace.name,
+        },
+      });
+    } catch (error) {
+      console.error("Failed to send comment email", error);
+    }
   }
 
   revalidatePath(`/tickets/${ticket.id}`);
