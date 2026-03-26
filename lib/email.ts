@@ -1,4 +1,3 @@
-import nodemailer from "nodemailer";
 import type { Locale } from "@prisma/client";
 
 type MailRecipient = {
@@ -29,49 +28,16 @@ type TicketEmailInput = {
   commentBody?: string;
 };
 
-function getMailConfig() {
-  const host = process.env.SMTP_HOST;
-  const port = Number(process.env.SMTP_PORT ?? "587");
-  const user = process.env.SMTP_USER;
-  const pass = process.env.SMTP_PASS;
-  const from = process.env.MAIL_FROM ?? "MiniTickets <noreply@minitickets.iandorsey.com>";
-
-  if (!host || !user || !pass) {
-    return null;
-  }
-
-  return {
-    host,
-    port,
-    user,
-    pass,
-    from,
-    secure: process.env.SMTP_SECURE === "true" || port === 465,
-  };
-}
-
 function getBaseUrl() {
   return (process.env.APP_URL ?? "http://localhost:3000").replace(/\/+$/, "");
 }
 
-async function getTransporter() {
-  const config = getMailConfig();
-  if (!config) {
-    return null;
-  }
+function getMailFrom() {
+  return process.env.MAIL_FROM ?? "MiniTickets <noreply@minitickets.iandorsey.com>";
+}
 
-  return {
-    transporter: nodemailer.createTransport({
-      host: config.host,
-      port: config.port,
-      secure: config.secure,
-      auth: {
-        user: config.user,
-        pass: config.pass,
-      },
-    }),
-    from: config.from,
-  };
+function getResendApiKey() {
+  return process.env.RESEND_API_KEY ?? process.env.SMTP_PASS ?? "";
 }
 
 function buildWelcomeEmail({ displayName, locale, password, userEmail }: WelcomeEmailInput) {
@@ -236,29 +202,41 @@ function buildTicketEmail({ actorName, commentBody, kind, recipient, ticket }: T
   };
 }
 
-async function sendEmail(to: string, subject: string, text: string, html?: string) {
-  const mailer = await getTransporter();
-  if (!mailer) {
+async function sendViaResend(to: string, subject: string, text: string, html?: string) {
+  const apiKey = getResendApiKey();
+  if (!apiKey) {
     return false;
   }
 
-  await mailer.transporter.sendMail({
-    from: mailer.from,
-    to,
-    subject,
-    text,
-    html,
+  const response = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      from: getMailFrom(),
+      to: [to],
+      subject,
+      text,
+      html,
+    }),
   });
+
+  if (!response.ok) {
+    const errorBody = await response.text();
+    throw new Error(`Resend API error (${response.status}): ${errorBody}`);
+  }
 
   return true;
 }
 
 export async function sendWelcomeEmail(input: WelcomeEmailInput) {
   const message = buildWelcomeEmail(input);
-  return sendEmail(input.userEmail, message.subject, message.text, message.html);
+  return sendViaResend(input.userEmail, message.subject, message.text, message.html);
 }
 
 export async function sendTicketEmail(input: TicketEmailInput) {
   const message = buildTicketEmail(input);
-  return sendEmail(input.recipient.email, message.subject, message.text);
+  return sendViaResend(input.recipient.email, message.subject, message.text);
 }

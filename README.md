@@ -109,7 +109,7 @@ Notes:
 
 - Current uploads are local-disk storage under `public/uploads`, which is acceptable for a single-server deployment.
 - For stronger durability later, move attachments to object storage such as S3 or R2.
-- Welcome emails use SMTP env vars from `.env` or `.env.production`.
+- Welcome and ticket emails use the Resend API key from `.env` or `.env.production`.
 
 ## First production admin
 
