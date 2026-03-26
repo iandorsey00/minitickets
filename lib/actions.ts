@@ -162,6 +162,13 @@ export async function createTicketAction(formData: FormData) {
   }
 
   const defaults = await getDefaultDefinitionIds();
+  if (
+    (!parsed.data.statusId && !defaults.statusId) ||
+    (!parsed.data.priorityId && !defaults.priorityId) ||
+    (!parsed.data.categoryId && !defaults.categoryId)
+  ) {
+    redirect("/tickets/new?error=definitions");
+  }
   const workspace = await prisma.workspace.findUniqueOrThrow({
     where: { id: parsed.data.workspaceId },
     select: { id: true, slug: true, ticketPrefix: true },
@@ -184,9 +191,9 @@ export async function createTicketAction(formData: FormData) {
       workspaceId: parsed.data.workspaceId,
       requesterId: user.id,
       assigneeId: parsed.data.assigneeId || null,
-      statusId: parsed.data.statusId || defaults.statusId,
-      priorityId: parsed.data.priorityId || defaults.priorityId,
-      categoryId: parsed.data.categoryId || defaults.categoryId,
+      statusId: parsed.data.statusId || defaults.statusId!,
+      priorityId: parsed.data.priorityId || defaults.priorityId!,
+      categoryId: parsed.data.categoryId || defaults.categoryId!,
       dueDate: parsed.data.dueDate ? new Date(parsed.data.dueDate) : null,
       paymentLabel: parsed.data.paymentLabel || null,
       paymentLast4: parsed.data.paymentLast4 || null,

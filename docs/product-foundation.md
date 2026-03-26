@@ -1,33 +1,22 @@
-# MiniTickets Architecture
+# MiniTickets Product Foundation
 
 ## Product shape
 
 MiniTickets is a multi-workspace ticketing application for personal and small-team request tracking. The UX is intentionally calm, bilingual, and low-friction while keeping the core discipline of ownership, prioritization, and audit history.
-
-## Technical choices
-
-- Framework: Next.js App Router with React and TypeScript
-- Styling: Global CSS with design tokens, responsive layout primitives, system light/dark theme support
-- Typography: Inter + Noto Sans SC via `next/font`
-- Database: Prisma ORM with SQLite for local/demo use, structured so PostgreSQL can be adopted later
-- Auth: Email/password with server-side session table and hashed session tokens
-- Authorization: Workspace membership checks on all ticket and workspace reads/writes
-- i18n: Dictionary-driven UI strings with Simplified Chinese default and English secondary locale
-- Notifications: Database event model for in-app activity now, email/push later
 
 ## Architecture
 
 ### Application layers
 
 1. Presentation
-   - App Router pages, layouts, server actions, and reusable UI components
+   - A responsive web application shell, focused entry points, and reusable interface patterns
    - Locale-aware labels and theme-aware design tokens
 2. Domain
    - Ticket lifecycle helpers
    - Workspace access control
    - Admin catalog management for statuses, priorities, and categories
 3. Data
-   - Prisma models for users, workspaces, memberships, tickets, comments, activity, notifications, and sessions
+   - Structured records for users, workspaces, memberships, tickets, comments, activity, notifications, and sessions
 4. Platform
    - Session cookies
    - Password hashing
@@ -36,10 +25,10 @@ MiniTickets is a multi-workspace ticketing application for personal and small-te
 
 ### Deployment posture
 
-- Optimized for deployment on a single Next.js service
-- SQLite works for local/dev and seed/demo mode
+- Optimized for deployment as a single web service
+- A lightweight relational store works well for local, personal, or early production use
 - Environment variables isolate secrets and app URL
-- The auth model includes `AuthAccount` so SSO for other `iandorsey.com` apps can be added without redesigning user identity
+- The auth model includes external-account mapping so SSO for other `iandorsey.com` apps can be added without redesigning user identity
 
 ## Database schema
 
@@ -48,17 +37,17 @@ MiniTickets is a multi-workspace ticketing application for personal and small-te
 - `User`
   - identity, profile, language preference, accent color, theme preference, active flag
 - `Workspace`
-  - name, slug, description, archived flag
+  - name, slug, ticket prefix, description, archived flag
 - `WorkspaceMembership`
   - links users to workspaces with `ADMIN` or `MEMBER` scope inside the workspace
 - `Ticket`
-  - title, description, number, due date, requester, assignee, workspace, status, priority, category
+  - title, description, number, due date, requester, assignee, workspace, status, priority, category, optional payment reference
 - `TicketComment`
   - threaded chronologically under a ticket
 - `TicketActivity`
-  - immutable audit trail for creation, assignment, status change, priority change, and comments
+  - immutable audit trail for creation, assignment, status change, priority change, comments, and attachments
 - `Notification`
-  - user-targeted event inbox entries for future email/push expansion
+  - user-targeted event inbox entries for in-app alerts and future delivery expansion
 
 ### Support entities
 
@@ -66,6 +55,8 @@ MiniTickets is a multi-workspace ticketing application for personal and small-te
   - secure persistent login sessions
 - `AuthAccount`
   - optional external identity provider mapping for future SSO
+- `PasswordSetupToken`
+  - single-use invitation and password-setup tokens with expiry
 - `StatusDefinition`
   - admin-managed status labels with seed defaults
 - `PriorityDefinition`
@@ -79,7 +70,7 @@ MiniTickets is a multi-workspace ticketing application for personal and small-te
 - A workspace has many tickets
 - A ticket belongs to exactly one workspace
 - A ticket has one requester and optional assignee
-- A ticket has many comments and activity entries
+- A ticket has many comments, attachments, and activity entries
 - Definitions are global, active/inactive, and referenced by tickets
 
 ## Route map
@@ -87,15 +78,16 @@ MiniTickets is a multi-workspace ticketing application for personal and small-te
 ### Public
 
 - `/login`
+- `/setup-password`
 
 ### Authenticated
 
 - `/`
-  - redirects to dashboard
-- `/dashboard`
+  - redirects to tickets
 - `/tickets`
 - `/tickets/new`
 - `/tickets/[ticketId]`
+- `/dashboard`
 - `/workspaces`
 - `/workspaces/[workspaceId]`
 - `/settings`
@@ -112,16 +104,14 @@ MiniTickets is a multi-workspace ticketing application for personal and small-te
 ### Global shell
 
 - Top bar
-  - product name: `MiniTickets`
-  - secondary label: `轻量工单`
+  - product name in Chinese-first contexts: `轻量工单`
   - workspace switcher
   - global search entry point
-  - theme toggle
-  - user menu
+  - account actions
 - Left navigation
-  - Dashboard
   - Tickets
   - Create Ticket
+  - Dashboard
   - Workspaces
   - Admin
   - Settings
@@ -135,12 +125,13 @@ MiniTickets is a multi-workspace ticketing application for personal and small-te
   - status counts
 - Ticket list
   - keyword search
-  - filter bar
-  - compact, legible results table/cards
+  - collapsible filter bar
+  - compact, legible result list
 - Ticket detail
   - header summary
   - key metadata panel
   - description
+  - attachments
   - activity timeline
   - comments composer
 - Workspace page
@@ -157,6 +148,7 @@ MiniTickets is a multi-workspace ticketing application for personal and small-te
   - language
   - accent color
   - display name
+  - theme
   - password
 
 ## i18n strategy
@@ -174,6 +166,7 @@ MiniTickets is a multi-workspace ticketing application for personal and small-te
   - Create Ticket: 新建工单
   - Requester: 提交人
   - Assignee: 处理人
+  - Submit Ticket: 提交工单
   - Settings: 设置
 
 ## Theme and accent system
@@ -200,15 +193,39 @@ MiniTickets is a multi-workspace ticketing application for personal and small-te
 - Sessions are stored in the database
 - Cookie contains only a session token, not user profile data
 - Every authenticated request resolves the current user and allowed workspaces server-side
+- Users created by an admin must be associated with a workspace immediately
+- Admin-created users complete onboarding through an expiring password-setup link instead of receiving a fixed password
 - Future SSO path:
   - keep local credentials as one auth method
-  - add `AuthAccount` rows for OIDC/SAML later
+  - add external account mappings for OIDC/SAML later
   - centralize provider resolution in auth services
 
-## Implementation plan
+## Current product defaults
 
-1. Scaffold Next.js, TypeScript, Prisma, and global design tokens
-2. Implement schema, migrations, and seed data
-3. Build auth, session handling, and access checks
-4. Build the bilingual shell, dashboard, tickets, workspaces, admin, and settings
-5. Verify flows with lint/build and local seed bootstrapping
+- New tickets default to:
+  - status: `New`
+  - priority: `Medium`
+  - category: `General Request`
+- Ticket description is optional during creation
+- Ticket numbers use a global `MT` prefix plus a workspace prefix, for example `MTSR00001`
+- Users only see tickets and workspaces they are associated with, except platform admins
+- Invite emails identify the user’s assigned workspace and link directly to password setup
+
+## Delivery model
+
+- Email is recommended for:
+  - account invitation and password setup
+  - first-admin welcome message
+  - ticket created
+  - ticket assigned
+  - new comment
+  - resolved or closed
+- In-app notifications should remain available even if external delivery is temporarily unavailable
+
+## Product evolution phases
+
+1. Establish the bilingual shell, navigation, and workspace-scoped access model
+2. Define the ticketing record model, default catalogs, and seed-ready sample data
+3. Add authentication, session handling, and server-side permission checks
+4. Deliver the core operational surfaces: tickets, workspaces, admin, and settings
+5. Expand onboarding, notifications, and deployment readiness for real-world use

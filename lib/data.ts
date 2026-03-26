@@ -88,16 +88,29 @@ export async function getDefinitions() {
 }
 
 export async function getDefaultDefinitionIds() {
-  const [status, priority, category] = await Promise.all([
-    prisma.statusDefinition.findUniqueOrThrow({ where: { key: defaultStatusKey } }),
-    prisma.priorityDefinition.findUniqueOrThrow({ where: { key: defaultPriorityKey } }),
-    prisma.categoryDefinition.findUniqueOrThrow({ where: { key: defaultCategoryKey } }),
+  const [statuses, priorities, categories] = await Promise.all([
+    prisma.statusDefinition.findMany({
+      where: { isActive: true },
+      orderBy: [{ sortOrder: "asc" }, { labelZh: "asc" }],
+    }),
+    prisma.priorityDefinition.findMany({
+      where: { isActive: true },
+      orderBy: [{ sortOrder: "asc" }, { labelZh: "asc" }],
+    }),
+    prisma.categoryDefinition.findMany({
+      where: { isActive: true },
+      orderBy: [{ sortOrder: "asc" }, { labelZh: "asc" }],
+    }),
   ]);
 
+  const status = statuses.find((item) => item.key === defaultStatusKey) ?? statuses[0] ?? null;
+  const priority = priorities.find((item) => item.key === defaultPriorityKey) ?? priorities[0] ?? null;
+  const category = categories.find((item) => item.key === defaultCategoryKey) ?? categories[0] ?? null;
+
   return {
-    statusId: status.id,
-    priorityId: priority.id,
-    categoryId: category.id,
+    statusId: status?.id,
+    priorityId: priority?.id,
+    categoryId: category?.id,
   };
 }
 
