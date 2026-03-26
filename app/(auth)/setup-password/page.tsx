@@ -1,5 +1,3 @@
-import { redirect } from "next/navigation";
-
 import { completePasswordSetupAction } from "@/lib/actions";
 import { getCurrentUser } from "@/lib/auth";
 import { getPreferencesForLayout } from "@/lib/data";
@@ -13,12 +11,8 @@ export default async function SetupPasswordPage({
   searchParams: Promise<{ token?: string; error?: string }>;
 }) {
   const currentUser = await getCurrentUser();
-  if (currentUser) {
-    redirect("/tickets");
-  }
 
-  const preferences = await getPreferencesForLayout();
-  const dictionary = getDictionary(preferences.locale);
+  const dictionary = getDictionary(currentUser?.locale ?? (await getPreferencesForLayout()).locale);
   const params = await searchParams;
   const rawToken = params.token ?? "";
 
@@ -48,6 +42,7 @@ export default async function SetupPasswordPage({
           <div className="stack">
             <h2>{dictionary.auth.setupTitle}</h2>
             <p className="muted">{dictionary.auth.setupIntro}</p>
+            {currentUser ? <p className="muted">{dictionary.auth.setupLoggedInHint}</p> : null}
             {errorMessage ? <div className="badge badge-danger">{errorMessage}</div> : null}
             {!expired ? (
               <form action={completePasswordSetupAction}>

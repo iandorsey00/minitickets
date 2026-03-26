@@ -1,4 +1,4 @@
-import { toggleWorkspaceArchiveAction } from "@/lib/actions";
+import { toggleWorkspaceArchiveAction, updateWorkspaceAction } from "@/lib/actions";
 import { WorkspaceCreateForm } from "@/components/workspace-create-form";
 import { getAdminData } from "@/lib/data";
 import { PageHeader, Panel } from "@/components/ui";
@@ -57,6 +57,66 @@ export default async function AdminWorkspacesPage() {
           </table>
         </Panel>
       </div>
+
+      <Panel title={t.common.edit}>
+        <div className="grid-2">
+          {data.workspaces.map((workspace) => (
+            <div key={workspace.id} className="panel">
+              <form action={updateWorkspaceAction} className="stack">
+                <input type="hidden" name="workspaceId" value={workspace.id} />
+                <strong>{workspace.name}</strong>
+                <div className="field">
+                  <label htmlFor={`workspace-name-${workspace.id}`}>{t.common.title}</label>
+                  <input
+                    id={`workspace-name-${workspace.id}`}
+                    name="name"
+                    defaultValue={workspace.name}
+                    required
+                  />
+                </div>
+                <div className="field">
+                  <label htmlFor={`workspace-slug-${workspace.id}`}>{t.common.slug}</label>
+                  <input
+                    id={`workspace-slug-${workspace.id}`}
+                    name="slug"
+                    defaultValue={workspace.slug}
+                    required
+                  />
+                </div>
+                <div className="field">
+                  <label htmlFor={`workspace-prefix-${workspace.id}`}>{t.common.ticketPrefix}</label>
+                  <input
+                    id={`workspace-prefix-${workspace.id}`}
+                    name="ticketPrefix"
+                    defaultValue={workspace.ticketPrefix ?? ""}
+                    maxLength={4}
+                    required
+                  />
+                </div>
+                <div className="field">
+                  <label htmlFor={`workspace-description-${workspace.id}`}>{t.common.description}</label>
+                  <textarea
+                    id={`workspace-description-${workspace.id}`}
+                    name="description"
+                    defaultValue={workspace.description ?? ""}
+                  />
+                </div>
+                <div>
+                  <button type="submit">{t.common.save}</button>
+                </div>
+              </form>
+              <div className="helper-links">
+                <form action={toggleWorkspaceArchiveAction}>
+                  <input type="hidden" name="workspaceId" value={workspace.id} />
+                  <button type="submit" className="ghost-button">
+                    {workspace.isArchived ? t.common.active : t.common.archived}
+                  </button>
+                </form>
+              </div>
+            </div>
+          ))}
+        </div>
+      </Panel>
     </>
   );
 }

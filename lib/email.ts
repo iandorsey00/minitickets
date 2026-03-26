@@ -16,6 +16,7 @@ type WelcomeEmailInput = {
 type PasswordSetupEmailInput = {
   recipient: MailRecipient;
   setupToken: string;
+  workspaceName?: string;
 };
 
 type TicketEmailInput = {
@@ -93,8 +94,10 @@ function buildWelcomeEmail({ displayName, locale, password, userEmail }: Welcome
   };
 }
 
-function buildPasswordSetupEmail({ recipient, setupToken }: PasswordSetupEmailInput) {
+function buildPasswordSetupEmail({ recipient, setupToken, workspaceName }: PasswordSetupEmailInput) {
   const setupUrl = `${getBaseUrl()}/setup-password?token=${encodeURIComponent(setupToken)}`;
+  const workspaceLineEn = workspaceName ? `Workspace: ${workspaceName}` : "";
+  const workspaceLineZh = workspaceName ? `工作区：${workspaceName}` : "";
 
   if (recipient.locale === "EN") {
     return {
@@ -103,6 +106,7 @@ function buildPasswordSetupEmail({ recipient, setupToken }: PasswordSetupEmailIn
         `Hi ${recipient.displayName},`,
         "",
         "Your MiniTickets account has been created.",
+        workspaceLineEn,
         "This link opens the password setup screen directly.",
         `Set your password now: ${setupUrl}`,
         "",
@@ -111,6 +115,7 @@ function buildPasswordSetupEmail({ recipient, setupToken }: PasswordSetupEmailIn
       html: `
         <p>Hi ${recipient.displayName},</p>
         <p>Your MiniTickets account has been created.</p>
+        ${workspaceName ? `<p><strong>Workspace:</strong> ${workspaceName}</p>` : ""}
         <p><a href="${setupUrl}">Open the password setup screen</a></p>
         <p>This link expires in 24 hours.</p>
       `,
@@ -123,6 +128,7 @@ function buildPasswordSetupEmail({ recipient, setupToken }: PasswordSetupEmailIn
         `${recipient.displayName}，你好：`,
         "",
         "你的轻量工单账户已经创建。",
+        workspaceLineZh,
         "这个链接会直接打开设置密码页面。",
         `请立即设置密码：${setupUrl}`,
         "",
@@ -131,6 +137,7 @@ function buildPasswordSetupEmail({ recipient, setupToken }: PasswordSetupEmailIn
       html: `
         <p>${recipient.displayName}，你好：</p>
         <p>你的轻量工单账户已经创建。</p>
+        ${workspaceName ? `<p><strong>工作区：</strong>${workspaceName}</p>` : ""}
         <p><a href="${setupUrl}">打开设置密码页面</a></p>
         <p>此链接将在 24 小时后失效。</p>
       `,

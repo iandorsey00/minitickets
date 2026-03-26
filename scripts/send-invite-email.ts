@@ -31,7 +31,19 @@ async function main() {
   const prisma = new PrismaClient({ adapter });
 
   try {
-    const user = await prisma.user.findUnique({ where: { email } });
+    const user = await prisma.user.findUnique({
+      where: { email },
+      include: {
+        memberships: {
+          include: {
+            workspace: true,
+          },
+          orderBy: {
+            createdAt: "asc",
+          },
+        },
+      },
+    });
     if (!user) {
       console.error(`No user found for ${email}`);
       process.exit(1);
@@ -45,6 +57,7 @@ async function main() {
         locale: user.locale,
       },
       setupToken,
+      workspaceName: user.memberships[0]?.workspace.name,
     });
 
     console.log(`Invite email sent to ${user.email}`);

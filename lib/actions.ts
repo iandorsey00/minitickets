@@ -10,7 +10,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 
-import { createSession, destroySession, requireUser } from "@/lib/auth";
+import { createSession, destroySession, getCurrentUser, requireUser } from "@/lib/auth";
 import {
   ACCENT_COOKIE,
   LOCALE_COOKIE,
@@ -640,6 +640,11 @@ export async function createUserAction(formData: FormData) {
     redirect("/admin/users");
   }
 
+  const workspace = await prisma.workspace.findUniqueOrThrow({
+    where: { id: workspaceId },
+    select: { id: true, name: true },
+  });
+
   const createdUser = await prisma.user.create({
     data: {
       email: String(formData.get("email") ?? "").toLowerCase(),
@@ -651,7 +656,7 @@ export async function createUserAction(formData: FormData) {
       themePreference: ThemePreference.SYSTEM,
       memberships: {
         create: {
-          workspaceId,
+          workspaceId: workspace.id,
           role: workspaceRole,
         },
       },
@@ -667,6 +672,7 @@ export async function createUserAction(formData: FormData) {
         locale: createdUser.locale,
       },
       setupToken,
+      workspaceName: workspace.name,
     });
   } catch (error) {
     console.error("Failed to send password setup email", error);
@@ -685,6 +691,16 @@ export async function resendUserInviteAction(formData: FormData) {
   const userId = String(formData.get("userId") ?? "");
   const targetUser = await prisma.user.findUniqueOrThrow({
     where: { id: userId },
+    include: {
+      memberships: {
+        include: {
+          workspace: true,
+        },
+        orderBy: {
+          createdAt: "asc",
+        },
+      },
+    },
   });
 
   try {
@@ -696,6 +712,7 @@ export async function resendUserInviteAction(formData: FormData) {
         locale: targetUser.locale,
       },
       setupToken,
+      workspaceName: targetUser.memberships[0]?.workspace.name,
     });
   } catch (error) {
     console.error("Failed to resend invite email", error);
@@ -706,6 +723,7 @@ export async function resendUserInviteAction(formData: FormData) {
 }
 
 export async function completePasswordSetupAction(formData: FormData) {
+  const currentUser = await getCurrentUser();
   const parsed = setupPasswordSchema.safeParse({
     token: formData.get("token"),
     password: formData.get("password"),
@@ -739,12 +757,14 @@ export async function completePasswordSetupAction(formData: FormData) {
     }),
   ]);
 
-  await createSession(setupToken.userId);
+  if (!currentUser) {
+    await createSession(setupToken.userId);
 
-  const cookieStore = await cookies();
-  cookieStore.set(LOCALE_COOKIE, setupToken.user.locale, { path: "/" });
-  cookieStore.set(THEME_COOKIE, setupToken.user.themePreference, { path: "/" });
-  cookieStore.set(ACCENT_COOKIE, setupToken.user.accentColor, { path: "/" });
+    const cookieStore = await cookies();
+    cookieStore.set(LOCALE_COOKIE, setupToken.user.locale, { path: "/" });
+    cookieStore.set(THEME_COOKIE, setupToken.user.themePreference, { path: "/" });
+    cookieStore.set(ACCENT_COOKIE, setupToken.user.accentColor, { path: "/" });
+  }
 
   redirect("/tickets");
 }
@@ -784,6 +804,39 @@ export async function createWorkspaceAction(formData: FormData) {
       slug,
       ticketPrefix,
       description: String(formData.get("description") ?? "").trim() || null,
+    },
+  });
+
+  revalidatePath("/admin");
+  revalidatePath("/admin/workspaces");
+}
+
+export async function updateWorkspaceAction(formData: FormData) {
+  const user = await requireUser();
+  if (user.role !== UserRole.ADMIN) {
+    redirect("/dashboard");
+  }
+
+  const workspaceId = String(formData.get("workspaceId") ?? "");
+  const name = String(formData.get("name") ?? "").trim();
+  const slug = String(formData.get("slug") ?? "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9-]+/g, "-");
+  const ticketPrefix = normalizeTicketPrefix(String(formData.get("ticketPrefix") ?? ""));
+  const description = String(formData.get("description") ?? "").trim() || null;
+
+  if (!workspaceId || !name || !slug || !ticketPrefix) {
+    redirect("/admin/workspaces");
+  }
+
+  await prisma.workspace.update({
+    where: { id: workspaceId },
+    data: {
+      name,
+      slug,
+      ticketPrefix,
+      description,
     },
   });
 
