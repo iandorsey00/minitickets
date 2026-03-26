@@ -18,8 +18,9 @@ import {
   WORKSPACE_COOKIE,
 } from "@/lib/constants";
 import { getDefaultDefinitionIds } from "@/lib/data";
-import { sendTicketEmail, sendWelcomeEmail } from "@/lib/email";
+import { sendPasswordSetupEmail, sendTicketEmail, sendWelcomeEmail } from "@/lib/email";
 import { hashPassword, verifyPassword } from "@/lib/password";
+import { createPasswordSetupToken, hashPasswordSetupToken } from "@/lib/password-setup";
 import { prisma } from "@/lib/prisma";
 import { fallbackTicketPrefixFromSlug, formatTicketNumber, normalizeTicketPrefix } from "@/lib/tickets";
 
@@ -59,6 +60,13 @@ const settingsSchema = z.object({
   themePreference: z.nativeEnum(ThemePreference),
   accentColor: z.nativeEnum(AccentColor),
   password: z.string().optional(),
+  passwordConfirm: z.string().optional(),
+});
+
+const setupPasswordSchema = z.object({
+  token: z.string().min(20),
+  password: z.string().min(8),
+  passwordConfirm: z.string().min(8),
 });
 
 function uniqueRecipients<T extends { id: string }>(items: T[]) {
@@ -576,10 +584,15 @@ export async function updateSettingsAction(formData: FormData) {
     themePreference: formData.get("themePreference"),
     accentColor: formData.get("accentColor"),
     password: formData.get("password") || undefined,
+    passwordConfirm: formData.get("passwordConfirm") || undefined,
   });
 
   if (!parsed.success) {
     redirect("/settings?error=invalid");
+  }
+
+  if ((parsed.data.password || parsed.data.passwordConfirm) && parsed.data.password !== parsed.data.passwordConfirm) {
+    redirect("/settings?error=password_mismatch");
   }
 
   const updateData: {
@@ -619,12 +632,11 @@ export async function createUserAction(formData: FormData) {
     redirect("/dashboard");
   }
 
-  const password = String(formData.get("password") ?? "MiniTickets123!");
   const createdUser = await prisma.user.create({
     data: {
       email: String(formData.get("email") ?? "").toLowerCase(),
       displayName: String(formData.get("displayName") ?? ""),
-      passwordHash: await hashPassword(password),
+      passwordHash: await hashPassword(crypto.randomUUID()),
       locale: (String(formData.get("locale") ?? "ZH_CN") as Locale) ?? "ZH_CN",
       accentColor: (String(formData.get("accentColor") ?? "BLUE") as AccentColor) ?? "BLUE",
       role: String(formData.get("role") ?? "USER") === "ADMIN" ? UserRole.ADMIN : UserRole.USER,
@@ -633,18 +645,94 @@ export async function createUserAction(formData: FormData) {
   });
 
   try {
-    await sendWelcomeEmail({
-      userEmail: createdUser.email,
-      displayName: createdUser.displayName,
-      locale: createdUser.locale,
-      password,
+    const setupToken = await createPasswordSetupToken(createdUser.id);
+    await sendPasswordSetupEmail({
+      recipient: {
+        email: createdUser.email,
+        displayName: createdUser.displayName,
+        locale: createdUser.locale,
+      },
+      setupToken,
     });
   } catch (error) {
-    console.error("Failed to send welcome email", error);
+    console.error("Failed to send password setup email", error);
   }
 
   revalidatePath("/admin");
   revalidatePath("/admin/users");
+}
+
+export async function resendUserInviteAction(formData: FormData) {
+  const user = await requireUser();
+  if (user.role !== UserRole.ADMIN) {
+    redirect("/dashboard");
+  }
+
+  const userId = String(formData.get("userId") ?? "");
+  const targetUser = await prisma.user.findUniqueOrThrow({
+    where: { id: userId },
+  });
+
+  try {
+    const setupToken = await createPasswordSetupToken(targetUser.id);
+    await sendPasswordSetupEmail({
+      recipient: {
+        email: targetUser.email,
+        displayName: targetUser.displayName,
+        locale: targetUser.locale,
+      },
+      setupToken,
+    });
+  } catch (error) {
+    console.error("Failed to resend invite email", error);
+  }
+
+  revalidatePath("/admin");
+  revalidatePath("/admin/users");
+}
+
+export async function completePasswordSetupAction(formData: FormData) {
+  const parsed = setupPasswordSchema.safeParse({
+    token: formData.get("token"),
+    password: formData.get("password"),
+    passwordConfirm: formData.get("passwordConfirm"),
+  });
+
+  if (!parsed.success || parsed.data.password !== parsed.data.passwordConfirm) {
+    redirect(`/setup-password?token=${encodeURIComponent(String(formData.get("token") ?? ""))}&error=invalid`);
+  }
+
+  const tokenHash = hashPasswordSetupToken(parsed.data.token);
+  const setupToken = await prisma.passwordSetupToken.findUnique({
+    where: { tokenHash },
+    include: { user: true },
+  });
+
+  if (!setupToken || setupToken.usedAt || setupToken.expiresAt < new Date() || !setupToken.user.isActive) {
+    redirect("/setup-password?error=expired");
+  }
+
+  const passwordHash = await hashPassword(parsed.data.password);
+
+  await prisma.$transaction([
+    prisma.user.update({
+      where: { id: setupToken.userId },
+      data: { passwordHash },
+    }),
+    prisma.passwordSetupToken.update({
+      where: { tokenHash },
+      data: { usedAt: new Date() },
+    }),
+  ]);
+
+  await createSession(setupToken.userId);
+
+  const cookieStore = await cookies();
+  cookieStore.set(LOCALE_COOKIE, setupToken.user.locale, { path: "/" });
+  cookieStore.set(THEME_COOKIE, setupToken.user.themePreference, { path: "/" });
+  cookieStore.set(ACCENT_COOKIE, setupToken.user.accentColor, { path: "/" });
+
+  redirect("/tickets");
 }
 
 export async function toggleUserActiveAction(formData: FormData) {

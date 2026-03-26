@@ -60,7 +60,8 @@ Prisma 7 notes:
 - Curated accent color selection
 - Admin management for users, workspaces, and catalog definitions
 - Ticket numbers with a global MiniTickets prefix, such as `MTSR00001`
-- Welcome email delivery for newly created accounts when SMTP is configured
+- Invite-link onboarding for newly created accounts
+- Welcome email delivery for bootstrap admin accounts
 - Seed data for realistic local testing
 
 ## Future extension path
@@ -123,3 +124,11 @@ npm run bootstrap:admin -- --email you@example.com --name "Your Name" --password
 ```
 
 This creates or updates an admin account without demo users or demo tickets. If SMTP is configured, the command also sends the welcome email from `noreply@minitickets.iandorsey.com`.
+
+## User invitations
+
+Admin-created users now receive an email link to set their own password. You can also resend that link from the admin users page or with:
+
+```bash
+npm run email:invite -- --email user@example.com
+```

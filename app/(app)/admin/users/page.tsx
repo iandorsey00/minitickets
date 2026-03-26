@@ -1,4 +1,4 @@
-import { assignMembershipAction, createUserAction, toggleUserActiveAction } from "@/lib/actions";
+import { assignMembershipAction, createUserAction, resendUserInviteAction, toggleUserActiveAction } from "@/lib/actions";
 import { accentLabelMap, accentValues, localeValues } from "@/lib/constants";
 import { getAdminData } from "@/lib/data";
 import { PageHeader, Panel } from "@/components/ui";
@@ -23,10 +23,6 @@ export default async function AdminUsersPage() {
             <div className="field">
               <label htmlFor="email">{t.auth.email}</label>
               <input id="email" name="email" type="email" required />
-            </div>
-            <div className="field">
-              <label htmlFor="password">{t.common.password}</label>
-              <input id="password" name="password" type="password" defaultValue="MiniTickets123!" required />
             </div>
             <div className="field">
               <label htmlFor="locale">{t.common.language}</label>
@@ -55,6 +51,7 @@ export default async function AdminUsersPage() {
                 <option value="ADMIN">{t.common.adminRole}</option>
               </select>
             </div>
+            <p className="muted">{t.admin.inviteHelp}</p>
             <button type="submit">{t.common.create}</button>
           </form>
         </Panel>
@@ -76,12 +73,20 @@ export default async function AdminUsersPage() {
                   <td>{user.email}</td>
                   <td>{user.locale === "ZH_CN" ? "简体中文" : "English"}</td>
                   <td>
-                    <form action={toggleUserActiveAction}>
-                      <input type="hidden" name="userId" value={user.id} />
-                      <button type="submit" className="ghost-button">
-                        {user.isActive ? t.common.inactive : t.common.active}
-                      </button>
-                    </form>
+                    <div className="helper-links">
+                      <form action={resendUserInviteAction}>
+                        <input type="hidden" name="userId" value={user.id} />
+                        <button type="submit" className="ghost-button">
+                          {t.admin.inviteUser}
+                        </button>
+                      </form>
+                      <form action={toggleUserActiveAction}>
+                        <input type="hidden" name="userId" value={user.id} />
+                        <button type="submit" className="ghost-button">
+                          {user.isActive ? t.common.inactive : t.common.active}
+                        </button>
+                      </form>
+                    </div>
                   </td>
                 </tr>
               ))}

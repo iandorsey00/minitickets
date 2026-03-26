@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { cache } from "react";
 
 import { SESSION_COOKIE } from "@/lib/constants";
-import { hashPassword, verifyPassword } from "@/lib/password";
+import { verifyPassword } from "@/lib/password";
 import { prisma } from "@/lib/prisma";
 
 const SESSION_DAYS = 14;

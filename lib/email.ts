@@ -13,6 +13,11 @@ type WelcomeEmailInput = {
   password: string;
 };
 
+type PasswordSetupEmailInput = {
+  recipient: MailRecipient;
+  setupToken: string;
+};
+
 type TicketEmailInput = {
   kind: "created" | "assigned" | "comment_added" | "resolved";
   recipient: MailRecipient;
@@ -49,7 +54,7 @@ function buildWelcomeEmail({ displayName, locale, password, userEmail }: Welcome
       text: [
         `Hi ${displayName},`,
         "",
-        "Your MiniTickets account is ready.",
+        "Your MiniTickets admin account is ready.",
         `Email: ${userEmail}`,
         `Temporary password: ${password}`,
         `Sign in: ${loginUrl}`,
@@ -58,7 +63,7 @@ function buildWelcomeEmail({ displayName, locale, password, userEmail }: Welcome
       ].join("\n"),
       html: `
         <p>Hi ${displayName},</p>
-        <p>Your MiniTickets account is ready.</p>
+        <p>Your MiniTickets admin account is ready.</p>
         <p><strong>Email:</strong> ${userEmail}<br /><strong>Temporary password:</strong> ${password}</p>
         <p><a href="${loginUrl}">Sign in to MiniTickets</a></p>
         <p>Please sign in and change your password in Settings.</p>
@@ -71,7 +76,7 @@ function buildWelcomeEmail({ displayName, locale, password, userEmail }: Welcome
     text: [
       `${displayName}，你好：`,
       "",
-      "你的轻量工单账户已经创建完成。",
+      "你的轻量工单管理员账户已经创建完成。",
       `邮箱：${userEmail}`,
       `临时密码：${password}`,
       `登录地址：${loginUrl}`,
@@ -80,10 +85,52 @@ function buildWelcomeEmail({ displayName, locale, password, userEmail }: Welcome
     ].join("\n"),
     html: `
       <p>${displayName}，你好：</p>
-      <p>你的轻量工单账户已经创建完成。</p>
+      <p>你的轻量工单管理员账户已经创建完成。</p>
       <p><strong>邮箱：</strong>${userEmail}<br /><strong>临时密码：</strong>${password}</p>
       <p><a href="${loginUrl}">登录轻量工单</a></p>
       <p>请先登录，并在“设置”中修改密码。</p>
+    `,
+  };
+}
+
+function buildPasswordSetupEmail({ recipient, setupToken }: PasswordSetupEmailInput) {
+  const setupUrl = `${getBaseUrl()}/setup-password?token=${encodeURIComponent(setupToken)}`;
+
+  if (recipient.locale === "EN") {
+    return {
+      subject: "Set up your MiniTickets password",
+      text: [
+        `Hi ${recipient.displayName},`,
+        "",
+        "Your MiniTickets account has been created.",
+        `Set your password: ${setupUrl}`,
+        "",
+        "This link expires in 24 hours.",
+      ].join("\n"),
+      html: `
+        <p>Hi ${recipient.displayName},</p>
+        <p>Your MiniTickets account has been created.</p>
+        <p><a href="${setupUrl}">Set your password</a></p>
+        <p>This link expires in 24 hours.</p>
+      `,
+    };
+  }
+
+  return {
+    subject: "设置你的轻量工单密码",
+    text: [
+      `${recipient.displayName}，你好：`,
+      "",
+      "你的轻量工单账户已经创建。",
+      `请通过以下链接设置密码：${setupUrl}`,
+      "",
+      "此链接将在 24 小时后失效。",
+    ].join("\n"),
+    html: `
+      <p>${recipient.displayName}，你好：</p>
+      <p>你的轻量工单账户已经创建。</p>
+      <p><a href="${setupUrl}">设置密码</a></p>
+      <p>此链接将在 24 小时后失效。</p>
     `,
   };
 }
@@ -234,6 +281,11 @@ async function sendViaResend(to: string, subject: string, text: string, html?: s
 export async function sendWelcomeEmail(input: WelcomeEmailInput) {
   const message = buildWelcomeEmail(input);
   return sendViaResend(input.userEmail, message.subject, message.text, message.html);
+}
+
+export async function sendPasswordSetupEmail(input: PasswordSetupEmailInput) {
+  const message = buildPasswordSetupEmail(input);
+  return sendViaResend(input.recipient.email, message.subject, message.text, message.html);
 }
 
 export async function sendTicketEmail(input: TicketEmailInput) {

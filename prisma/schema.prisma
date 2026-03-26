@@ -61,6 +61,7 @@ model User {
   notifications       Notification[]
   sessions            Session[]
   authAccounts        AuthAccount[]
+  passwordSetupTokens PasswordSetupToken[]
 }
 
 model Workspace {
@@ -239,4 +240,16 @@ model AuthAccount {
   user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
+}
+
+model PasswordSetupToken {
+  id        String   @id @default(cuid())
+  userId     String
+  tokenHash  String   @unique
+  expiresAt  DateTime
+  usedAt     DateTime?
+  createdAt  DateTime @default(now())
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, expiresAt])
 }
