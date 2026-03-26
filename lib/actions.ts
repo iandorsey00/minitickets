@@ -116,12 +116,22 @@ export async function switchWorkspaceAction(formData: FormData) {
   const workspaceId = String(formData.get("workspaceId") ?? "");
   const nextPath = String(formData.get("nextPath") ?? "/tickets");
 
-  const allowed = await prisma.workspaceMembership.findFirst({
-    where: {
-      userId: user.id,
-      workspaceId,
-    },
-  });
+  const allowed =
+    user.role === UserRole.ADMIN
+      ? await prisma.workspace.findFirst({
+          where: {
+            id: workspaceId,
+            isArchived: false,
+          },
+          select: { id: true },
+        })
+      : await prisma.workspaceMembership.findFirst({
+          where: {
+            userId: user.id,
+            workspaceId,
+          },
+          select: { id: true },
+        });
 
   if (allowed) {
     const cookieStore = await cookies();
