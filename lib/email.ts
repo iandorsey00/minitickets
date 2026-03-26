@@ -98,42 +98,44 @@ function buildPasswordSetupEmail({ recipient, setupToken }: PasswordSetupEmailIn
 
   if (recipient.locale === "EN") {
     return {
-      subject: "Set up your MiniTickets password",
+      subject: "Set your MiniTickets password",
       text: [
         `Hi ${recipient.displayName},`,
         "",
         "Your MiniTickets account has been created.",
-        `Set your password: ${setupUrl}`,
+        "This link opens the password setup screen directly.",
+        `Set your password now: ${setupUrl}`,
         "",
         "This link expires in 24 hours.",
       ].join("\n"),
       html: `
         <p>Hi ${recipient.displayName},</p>
         <p>Your MiniTickets account has been created.</p>
-        <p><a href="${setupUrl}">Set your password</a></p>
+        <p><a href="${setupUrl}">Open the password setup screen</a></p>
         <p>This link expires in 24 hours.</p>
       `,
     };
   }
 
-  return {
-    subject: "设置你的轻量工单密码",
-    text: [
-      `${recipient.displayName}，你好：`,
-      "",
-      "你的轻量工单账户已经创建。",
-      `请通过以下链接设置密码：${setupUrl}`,
-      "",
-      "此链接将在 24 小时后失效。",
-    ].join("\n"),
-    html: `
-      <p>${recipient.displayName}，你好：</p>
-      <p>你的轻量工单账户已经创建。</p>
-      <p><a href="${setupUrl}">设置密码</a></p>
-      <p>此链接将在 24 小时后失效。</p>
-    `,
-  };
-}
+    return {
+      subject: "设置你的轻量工单密码",
+      text: [
+        `${recipient.displayName}，你好：`,
+        "",
+        "你的轻量工单账户已经创建。",
+        "这个链接会直接打开设置密码页面。",
+        `请立即设置密码：${setupUrl}`,
+        "",
+        "此链接将在 24 小时后失效。",
+      ].join("\n"),
+      html: `
+        <p>${recipient.displayName}，你好：</p>
+        <p>你的轻量工单账户已经创建。</p>
+        <p><a href="${setupUrl}">打开设置密码页面</a></p>
+        <p>此链接将在 24 小时后失效。</p>
+      `,
+    };
+  }
 
 function buildTicketEmail({ actorName, commentBody, kind, recipient, ticket }: TicketEmailInput) {
   const ticketUrl = `${getBaseUrl()}/tickets/${ticket.id}`;

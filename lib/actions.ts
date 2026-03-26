@@ -632,6 +632,14 @@ export async function createUserAction(formData: FormData) {
     redirect("/dashboard");
   }
 
+  const workspaceId = String(formData.get("workspaceId") ?? "");
+  const workspaceRole =
+    String(formData.get("workspaceRole") ?? "MEMBER") === "ADMIN" ? WorkspaceRole.ADMIN : WorkspaceRole.MEMBER;
+
+  if (!workspaceId) {
+    redirect("/admin/users");
+  }
+
   const createdUser = await prisma.user.create({
     data: {
       email: String(formData.get("email") ?? "").toLowerCase(),
@@ -641,6 +649,12 @@ export async function createUserAction(formData: FormData) {
       accentColor: (String(formData.get("accentColor") ?? "BLUE") as AccentColor) ?? "BLUE",
       role: String(formData.get("role") ?? "USER") === "ADMIN" ? UserRole.ADMIN : UserRole.USER,
       themePreference: ThemePreference.SYSTEM,
+      memberships: {
+        create: {
+          workspaceId,
+          role: workspaceRole,
+        },
+      },
     },
   });
 

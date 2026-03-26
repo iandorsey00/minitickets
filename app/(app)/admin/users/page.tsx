@@ -51,6 +51,26 @@ export default async function AdminUsersPage() {
                 <option value="ADMIN">{t.common.adminRole}</option>
               </select>
             </div>
+            <div className="field">
+              <label htmlFor="workspaceId">{t.common.workspace}</label>
+              <select id="workspaceId" name="workspaceId" required>
+                <option value="" disabled defaultValue="">
+                  {t.common.workspace}
+                </option>
+                {data.workspaces.map((workspace) => (
+                  <option key={workspace.id} value={workspace.id}>
+                    {workspace.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="field">
+              <label htmlFor="workspaceRole">{t.common.workspaceRole}</label>
+              <select id="workspaceRole" name="workspaceRole" defaultValue="MEMBER">
+                <option value="MEMBER">{t.common.member}</option>
+                <option value="ADMIN">{t.common.adminRole}</option>
+              </select>
+            </div>
             <p className="muted">{t.admin.inviteHelp}</p>
             <button type="submit">{t.common.create}</button>
           </form>
