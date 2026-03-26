@@ -59,6 +59,8 @@ Prisma 7 notes:
 - Light/dark/system theme preference
 - Curated accent color selection
 - Admin management for users, workspaces, and catalog definitions
+- Ticket numbers with a global MiniTickets prefix, such as `MTSR00001`
+- Welcome email delivery for newly created accounts when SMTP is configured
 - Seed data for realistic local testing
 
 ## Future extension path
@@ -107,3 +109,17 @@ Notes:
 
 - Current uploads are local-disk storage under `public/uploads`, which is acceptable for a single-server deployment.
 - For stronger durability later, move attachments to object storage such as S3 or R2.
+- Welcome emails use SMTP env vars from `.env` or `.env.production`.
+
+## First production admin
+
+For a clean production deployment, create your first admin with:
+
+```bash
+set -a
+source /var/www/minitickets/.env.production
+set +a
+npm run bootstrap:admin -- --email you@example.com --name "Your Name" --password "ChooseAStrongPassword" --locale ZH_CN
+```
+
+This creates or updates an admin account without demo users or demo tickets. If SMTP is configured, the command also sends the welcome email from `noreply@minitickets.iandorsey.com`.

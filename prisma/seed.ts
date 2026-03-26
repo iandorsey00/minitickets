@@ -2,6 +2,10 @@ import bcrypt from "bcryptjs";
 import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
 import { PrismaClient } from "@prisma/client";
 
+function formatTicketNumber(prefix: string, serialNumber: number) {
+  return `MT${prefix}${String(serialNumber).padStart(5, "0")}`;
+}
+
 const adapter = new PrismaBetterSqlite3({
   url: process.env.DATABASE_URL || "file:./dev.db",
 });
@@ -201,7 +205,7 @@ async function main() {
 
   const tickets = [
     {
-      ticketNumber: "PO00001",
+      ticketNumber: formatTicketNumber("PO", 1),
       serialNumber: 1,
       title: "整理家庭账单文件",
       description: "把最近三个月的账单整理到统一的云端文件夹，并补充标签。",
@@ -213,7 +217,7 @@ async function main() {
       categoryId: categoryTask.id,
     },
     {
-      ticketNumber: "SR00001",
+      ticketNumber: formatTicketNumber("SR", 1),
       serialNumber: 1,
       title: "Approve new domain purchase",
       description: "Review and approve the domain purchase for the next side project launch.",
@@ -225,7 +229,7 @@ async function main() {
       categoryId: categoryPurchase.id,
     },
     {
-      ticketNumber: "SR00002",
+      ticketNumber: formatTicketNumber("SR", 2),
       serialNumber: 2,
       title: "Grant access to shared design folder",
       description: "Please add Alex to the shared design folder with edit permission.",
@@ -240,7 +244,12 @@ async function main() {
 
   for (const ticket of tickets) {
     await prisma.ticket.upsert({
-      where: { ticketNumber: ticket.ticketNumber },
+      where: {
+        workspaceId_serialNumber: {
+          workspaceId: ticket.workspaceId,
+          serialNumber: ticket.serialNumber,
+        },
+      },
       update: ticket,
       create: ticket,
     });
@@ -248,7 +257,9 @@ async function main() {
 
   const seededTickets = await prisma.ticket.findMany({
     where: {
-      ticketNumber: { in: ["PO00001", "SR00001", "SR00002"] },
+      ticketNumber: {
+        in: [formatTicketNumber("PO", 1), formatTicketNumber("SR", 1), formatTicketNumber("SR", 2)],
+      },
     },
   });
 

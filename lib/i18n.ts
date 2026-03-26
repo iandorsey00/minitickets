@@ -16,10 +16,10 @@ const dictionaries = {
       logout: "退出登录",
     },
     auth: {
-      loginTitle: "登录",
+      loginTitle: "登入",
       email: "邮箱",
       password: "密码",
-      submit: "登录",
+      submit: "登入",
       invalid: "邮箱或密码不正确。",
       inactive: "当前账户已停用。",
     },

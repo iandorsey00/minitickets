@@ -1,24 +1,16 @@
 import crypto from "node:crypto";
-import bcrypt from "bcryptjs";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { cache } from "react";
 
 import { SESSION_COOKIE } from "@/lib/constants";
+import { hashPassword, verifyPassword } from "@/lib/password";
 import { prisma } from "@/lib/prisma";
 
 const SESSION_DAYS = 14;
 
 function sha256(input: string) {
   return crypto.createHash("sha256").update(input).digest("hex");
-}
-
-export async function hashPassword(password: string) {
-  return bcrypt.hash(password, 10);
-}
-
-export async function verifyPassword(password: string, passwordHash: string) {
-  return bcrypt.compare(password, passwordHash);
 }
 
 export async function createSession(userId: string) {

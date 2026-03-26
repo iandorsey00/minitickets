@@ -248,9 +248,11 @@ textarea {
 
 .login-card h2 {
   margin: 0;
-  font-size: 1rem;
-  font-weight: 600;
+  font-size: clamp(2.25rem, 4.2vw, 3.75rem);
+  font-weight: 800;
+  letter-spacing: -0.07em;
   color: var(--color-text);
+  text-align: center;
 }
 
 .login-card .field label {
@@ -632,6 +634,10 @@ textarea {
   .login-card {
     width: 100%;
     padding-bottom: max(0.5rem, 3vh);
+  }
+
+  .login-card h2 {
+    font-size: clamp(2rem, 10vw, 2.9rem);
   }
 
   .subtitle-only {

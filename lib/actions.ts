@@ -10,7 +10,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 
-import { createSession, destroySession, hashPassword, requireUser, verifyPassword } from "@/lib/auth";
+import { createSession, destroySession, requireUser } from "@/lib/auth";
 import {
   ACCENT_COOKIE,
   LOCALE_COOKIE,
@@ -18,7 +18,10 @@ import {
   WORKSPACE_COOKIE,
 } from "@/lib/constants";
 import { getDefaultDefinitionIds } from "@/lib/data";
+import { sendWelcomeEmail } from "@/lib/email";
+import { hashPassword, verifyPassword } from "@/lib/password";
 import { prisma } from "@/lib/prisma";
+import { fallbackTicketPrefixFromSlug, formatTicketNumber, normalizeTicketPrefix } from "@/lib/tickets";
 
 const loginSchema = z.object({
   email: z.email(),
@@ -57,25 +60,6 @@ const settingsSchema = z.object({
   accentColor: z.nativeEnum(AccentColor),
   password: z.string().optional(),
 });
-
-function normalizeTicketPrefix(value: string) {
-  return value.trim().toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 4);
-}
-
-function formatTicketNumber(prefix: string, serialNumber: number) {
-  return `${prefix}${String(serialNumber).padStart(5, "0")}`;
-}
-
-function fallbackTicketPrefixFromSlug(slug: string) {
-  const cleaned = slug
-    .toUpperCase()
-    .split(/[^A-Z0-9]+/)
-    .filter(Boolean)
-    .map((part) => part[0] ?? "")
-    .join("");
-
-  return (cleaned || "MT").slice(0, 4);
-}
 
 export async function loginAction(formData: FormData) {
   const parsed = loginSchema.safeParse({
@@ -493,7 +477,7 @@ export async function createUserAction(formData: FormData) {
   }
 
   const password = String(formData.get("password") ?? "MiniTickets123!");
-  await prisma.user.create({
+  const createdUser = await prisma.user.create({
     data: {
       email: String(formData.get("email") ?? "").toLowerCase(),
       displayName: String(formData.get("displayName") ?? ""),
@@ -504,6 +488,17 @@ export async function createUserAction(formData: FormData) {
       themePreference: ThemePreference.SYSTEM,
     },
   });
+
+  try {
+    await sendWelcomeEmail({
+      userEmail: createdUser.email,
+      displayName: createdUser.displayName,
+      locale: createdUser.locale,
+      password,
+    });
+  } catch (error) {
+    console.error("Failed to send welcome email", error);
+  }
 
   revalidatePath("/admin");
   revalidatePath("/admin/users");
