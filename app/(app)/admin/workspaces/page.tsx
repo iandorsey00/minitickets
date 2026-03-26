@@ -1,4 +1,5 @@
-import { createWorkspaceAction, toggleWorkspaceArchiveAction } from "@/lib/actions";
+import { toggleWorkspaceArchiveAction } from "@/lib/actions";
+import { WorkspaceCreateForm } from "@/components/workspace-create-form";
 import { getAdminData } from "@/lib/data";
 import { PageHeader, Panel } from "@/components/ui";
 
@@ -14,25 +15,14 @@ export default async function AdminWorkspacesPage() {
       <PageHeader title={t.admin.workspaces} subtitle={t.common.workspace} />
       <div className="grid-2">
         <Panel title={t.admin.createWorkspace}>
-          <form action={createWorkspaceAction} className="stack">
-            <div className="field">
-              <label htmlFor="name">{t.common.title}</label>
-              <input id="name" name="name" required />
-            </div>
-            <div className="field">
-              <label htmlFor="slug">{t.common.slug}</label>
-              <input id="slug" name="slug" required />
-            </div>
-            <div className="field">
-              <label htmlFor="ticketPrefix">Prefix</label>
-              <input id="ticketPrefix" name="ticketPrefix" required maxLength={4} placeholder="SR" />
-            </div>
-            <div className="field">
-              <label htmlFor="description">{t.common.description}</label>
-              <textarea id="description" name="description" />
-            </div>
-            <button type="submit">{t.common.create}</button>
-          </form>
+          <WorkspaceCreateForm
+            titleLabel={t.common.title}
+            slugLabel={t.common.slug}
+            prefixLabel={t.common.ticketPrefix}
+            descriptionLabel={t.common.description}
+            createLabel={t.common.create}
+            slugHelp={t.common.slugHelp}
+          />
         </Panel>
 
         <Panel title={t.admin.workspaces}>
@@ -40,7 +30,7 @@ export default async function AdminWorkspacesPage() {
             <thead>
               <tr>
                 <th>{t.common.title}</th>
-                <th>Prefix</th>
+                <th>{t.common.ticketPrefix}</th>
                 <th>{t.common.members}</th>
                 <th>{t.tickets.title}</th>
                 <th>{t.common.actions}</th>

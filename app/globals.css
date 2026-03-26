@@ -354,6 +354,21 @@ textarea {
 .workspace-switcher {
   display: flex;
   gap: 0.75rem;
+  align-items: end;
+  min-width: 0;
+}
+
+.workspace-switcher select {
+  min-width: 0;
+}
+
+.workspace-switcher .ghost-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  min-inline-size: 7rem;
+  white-space: nowrap;
 }
 
 .header-search {
@@ -422,6 +437,38 @@ textarea {
 .panel-title {
   margin-bottom: 0.9rem;
   font-size: 1rem;
+}
+
+.filter-panel {
+  padding-top: 0.9rem;
+}
+
+.filter-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+}
+
+.filter-summary::-webkit-details-marker {
+  display: none;
+}
+
+.filter-summary::after {
+  content: "+";
+  color: var(--color-muted);
+  font-size: 1.2rem;
+  line-height: 1;
+}
+
+.filter-panel[open] .filter-summary::after {
+  content: "−";
+}
+
+.filter-form {
+  padding-top: 0.5rem;
 }
 
 .panel-footer {

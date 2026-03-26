@@ -4,6 +4,25 @@ import { EmptyState, PageHeader, Panel, Badge } from "@/components/ui";
 import { formatDateTime, localizeDefinition } from "@/lib/format";
 import { getTicketsData } from "@/lib/data";
 
+function hasActiveFilters(params: {
+  workspaceId?: string;
+  statusId?: string;
+  priorityId?: string;
+  categoryId?: string;
+  assigneeId?: string;
+  requesterId?: string;
+  q?: string;
+}) {
+  return Boolean(
+    params.q ||
+      params.statusId ||
+      params.priorityId ||
+      params.categoryId ||
+      params.assigneeId ||
+      params.requesterId,
+  );
+}
+
 export default async function TicketsPage({
   searchParams,
 }: {
@@ -20,6 +39,7 @@ export default async function TicketsPage({
   const params = await searchParams;
   const data = await getTicketsData(params);
   const t = data.dictionary;
+  const showFilters = hasActiveFilters(params);
 
   return (
     <>
@@ -33,8 +53,9 @@ export default async function TicketsPage({
         }
       />
 
-      <Panel title={t.common.filters}>
-        <form className="stack" action="/tickets">
+      <details className="panel filter-panel" open={showFilters}>
+        <summary className="panel-title filter-summary">{t.common.filters}</summary>
+        <form className="stack filter-form" action="/tickets">
           <div className="filters">
             <div className="field">
               <label htmlFor="q">{t.common.keyword}</label>
@@ -113,7 +134,7 @@ export default async function TicketsPage({
             </Link>
           </div>
         </form>
-      </Panel>
+      </details>
 
       <Panel>
         {data.tickets.length ? (
