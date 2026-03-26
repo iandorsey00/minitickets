@@ -612,6 +612,25 @@ textarea {
   margin-top: 1rem;
 }
 
+.admin-user-row {
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.admin-user-row > .stack {
+  min-width: 0;
+  gap: 0.45rem;
+}
+
+.admin-user-actions {
+  margin-top: 0;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: center;
+  row-gap: 0.75rem;
+  flex: 0 0 auto;
+}
+
 .inline-form {
   display: flex;
   gap: 0.5rem;
@@ -715,5 +734,10 @@ textarea {
   .workspace-switcher {
     flex-direction: column;
     align-items: start;
+  }
+
+  .admin-user-actions {
+    width: 100%;
+    justify-content: flex-start;
   }
 }

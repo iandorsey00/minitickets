@@ -1,11 +1,15 @@
 import { createTicketAction } from "@/lib/actions";
-import { getDefinitions, getViewerContext } from "@/lib/data";
+import { getDefaultDefinitionIds, getDefinitions, getViewerContext } from "@/lib/data";
 import { PageHeader, Panel } from "@/components/ui";
 import { localizeDefinition } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
 
 export default async function NewTicketPage() {
-  const [context, definitions] = await Promise.all([getViewerContext(), getDefinitions()]);
+  const [context, definitions, defaults] = await Promise.all([
+    getViewerContext(),
+    getDefinitions(),
+    getDefaultDefinitionIds(),
+  ]);
   const t = context.dictionary;
   const people = await prisma.user.findMany({
     where: {
@@ -46,7 +50,7 @@ export default async function NewTicketPage() {
             </div>
             <div className="field">
               <label htmlFor="priorityId">{t.common.priority}</label>
-              <select id="priorityId" name="priorityId">
+              <select id="priorityId" name="priorityId" defaultValue={defaults.priorityId}>
                 {definitions.priorities.filter((item) => item.isActive).map((item) => (
                   <option key={item.id} value={item.id}>
                     {localizeDefinition(item, context.locale)}
@@ -56,7 +60,7 @@ export default async function NewTicketPage() {
             </div>
             <div className="field">
               <label htmlFor="statusId">{t.common.status}</label>
-              <select id="statusId" name="statusId">
+              <select id="statusId" name="statusId" defaultValue={defaults.statusId}>
                 {definitions.statuses.filter((item) => item.isActive).map((item) => (
                   <option key={item.id} value={item.id}>
                     {localizeDefinition(item, context.locale)}
@@ -90,7 +94,7 @@ export default async function NewTicketPage() {
           </div>
           <div className="field">
             <label htmlFor="description">{t.common.description}</label>
-            <textarea id="description" name="description" required minLength={10} maxLength={5000} />
+            <textarea id="description" name="description" maxLength={5000} />
           </div>
           <div className="form-grid">
             <div className="field">

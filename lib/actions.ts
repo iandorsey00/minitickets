@@ -32,7 +32,7 @@ const loginSchema = z.object({
 const ticketSchema = z.object({
   workspaceId: z.string().min(1),
   title: z.string().min(3).max(120),
-  description: z.string().min(10).max(5000),
+  description: z.string().max(5000).optional(),
   assigneeId: z.string().optional(),
   statusId: z.string().optional(),
   priorityId: z.string().optional(),
@@ -180,7 +180,7 @@ export async function createTicketAction(formData: FormData) {
       serialNumber,
       ticketNumber,
       title: parsed.data.title,
-      description: parsed.data.description,
+      description: parsed.data.description?.trim() || "",
       workspaceId: parsed.data.workspaceId,
       requesterId: user.id,
       assigneeId: parsed.data.assigneeId || null,

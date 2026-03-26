@@ -1,7 +1,7 @@
 import { assignMembershipAction, createUserAction, resendUserInviteAction, toggleUserActiveAction } from "@/lib/actions";
 import { accentLabelMap, accentValues, localeValues } from "@/lib/constants";
 import { getAdminData } from "@/lib/data";
-import { PageHeader, Panel } from "@/components/ui";
+import { Badge, PageHeader, Panel } from "@/components/ui";
 
 export default async function AdminUsersPage() {
   const data = await getAdminData();
@@ -77,41 +77,33 @@ export default async function AdminUsersPage() {
         </Panel>
 
         <Panel title={t.admin.users}>
-          <table className="table">
-            <thead>
-              <tr>
-                <th>{t.common.displayName}</th>
-                <th>{t.auth.email}</th>
-                <th>{t.common.language}</th>
-                <th>{t.common.actions}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {data.users.map((user) => (
-                <tr key={user.id}>
-                  <td>{user.displayName}</td>
-                  <td>{user.email}</td>
-                  <td>{user.locale === "ZH_CN" ? "简体中文" : "English"}</td>
-                  <td>
-                    <div className="helper-links">
-                      <form action={resendUserInviteAction}>
-                        <input type="hidden" name="userId" value={user.id} />
-                        <button type="submit" className="ghost-button">
-                          {t.admin.inviteUser}
-                        </button>
-                      </form>
-                      <form action={toggleUserActiveAction}>
-                        <input type="hidden" name="userId" value={user.id} />
-                        <button type="submit" className="ghost-button">
-                          {user.isActive ? t.common.inactive : t.common.active}
-                        </button>
-                      </form>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <div className="list">
+            {data.users.map((user) => (
+              <div key={user.id} className="list-row admin-user-row">
+                <div className="stack">
+                  <strong>{user.displayName}</strong>
+                  <div className="row-meta">{user.email}</div>
+                  <div>
+                    <Badge label={user.locale === "ZH_CN" ? "简体中文" : "English"} tone="neutral" />
+                  </div>
+                </div>
+                <div className="helper-links admin-user-actions">
+                  <form action={resendUserInviteAction}>
+                    <input type="hidden" name="userId" value={user.id} />
+                    <button type="submit" className="ghost-button">
+                      {t.admin.inviteUser}
+                    </button>
+                  </form>
+                  <form action={toggleUserActiveAction}>
+                    <input type="hidden" name="userId" value={user.id} />
+                    <button type="submit" className="ghost-button">
+                      {user.isActive ? t.common.inactive : t.common.active}
+                    </button>
+                  </form>
+                </div>
+              </div>
+            ))}
+          </div>
         </Panel>
       </div>
 

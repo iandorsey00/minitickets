@@ -38,7 +38,7 @@ const dictionaries = {
       create: "创建",
       update: "更新",
       edit: "编辑",
-      submitRequest: "提交请求",
+      submitRequest: "提交工单",
       none: "未分配",
       all: "全部",
       active: "启用",
