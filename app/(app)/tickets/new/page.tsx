@@ -1,5 +1,6 @@
 import { createTicketAction } from "@/lib/actions";
 import { getDefaultDefinitionIds, getDefinitions, getViewerContext } from "@/lib/data";
+import { TicketCreateForm } from "@/components/ticket-create-form";
 import { PageHeader, Panel } from "@/components/ui";
 import { localizeDefinition } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
@@ -19,101 +20,56 @@ export default async function NewTicketPage() {
         },
       },
     },
+    include: {
+      memberships: {
+        where: {
+          workspaceId: { in: context.accessibleWorkspaceIds },
+        },
+        select: {
+          workspaceId: true,
+        },
+      },
+    },
     orderBy: { displayName: "asc" },
   });
+  const inProgressStatus = definitions.statuses.find((item) => item.key === "IN_PROGRESS");
 
   return (
     <>
       <PageHeader title={t.tickets.newTitle} subtitle={t.tickets.createIntro} />
       <Panel>
-        <form action={createTicketAction} className="stack">
-          <div className="form-grid">
-            <div className="field">
-              <label htmlFor="workspaceId">{t.common.workspace}</label>
-              <select id="workspaceId" name="workspaceId" defaultValue={context.currentWorkspace?.id ?? ""}>
-                {context.memberships.map((membership) => (
-                <option key={membership.workspace.id} value={membership.workspace.id}>
-                  {membership.workspace.name}
-                </option>
-              ))}
-              </select>
-            </div>
-            <div className="field">
-              <label htmlFor="categoryId">{t.common.category}</label>
-              <select id="categoryId" name="categoryId">
-                {definitions.categories.filter((item) => item.isActive).map((item) => (
-                  <option key={item.id} value={item.id}>
-                    {localizeDefinition(item, context.locale)}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="field">
-              <label htmlFor="priorityId">{t.common.priority}</label>
-              <select id="priorityId" name="priorityId" defaultValue={defaults.priorityId}>
-                {definitions.priorities.filter((item) => item.isActive).map((item) => (
-                  <option key={item.id} value={item.id}>
-                    {localizeDefinition(item, context.locale)}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="field">
-              <label htmlFor="statusId">{t.common.status}</label>
-              <select id="statusId" name="statusId" defaultValue={defaults.statusId}>
-                {definitions.statuses.filter((item) => item.isActive).map((item) => (
-                  <option key={item.id} value={item.id}>
-                    {localizeDefinition(item, context.locale)}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="field">
-              <label htmlFor="assigneeId">
-                {t.common.assignee} <span className="muted">({t.common.optional})</span>
-              </label>
-              <select id="assigneeId" name="assigneeId">
-                <option value="">{t.common.none}</option>
-                {people.map((person) => (
-                  <option key={person.id} value={person.id}>
-                    {person.displayName}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="field">
-              <label htmlFor="dueDate">
-                {t.common.dueDate} <span className="muted">({t.common.optional})</span>
-              </label>
-              <input id="dueDate" name="dueDate" type="date" />
-            </div>
-          </div>
-          <div className="field">
-            <label htmlFor="title">{t.common.title}</label>
-            <input id="title" name="title" required minLength={3} maxLength={120} />
-          </div>
-          <div className="field">
-            <label htmlFor="description">{t.common.description}</label>
-            <textarea id="description" name="description" maxLength={5000} />
-          </div>
-          <div className="form-grid">
-            <div className="field">
-              <label htmlFor="paymentLabel">
-                {t.common.paymentLabel} <span className="muted">({t.common.optional})</span>
-              </label>
-              <input id="paymentLabel" name="paymentLabel" maxLength={60} placeholder="Visa / Checking" />
-            </div>
-            <div className="field">
-              <label htmlFor="paymentLast4">
-                {t.common.paymentLast4} <span className="muted">({t.common.optional})</span>
-              </label>
-              <input id="paymentLast4" name="paymentLast4" inputMode="numeric" pattern="\d{4}" maxLength={4} />
-            </div>
-          </div>
-          <div>
-            <button type="submit">{t.common.submitRequest}</button>
-          </div>
-        </form>
+        <TicketCreateForm
+          action={createTicketAction}
+          dictionary={t}
+          workspaces={context.memberships.map((membership) => ({
+            id: membership.workspace.id,
+            name: membership.workspace.name,
+          }))}
+          people={people.map((person) => ({
+            id: person.id,
+            displayName: person.displayName,
+            workspaceIds: person.memberships.map((membership) => membership.workspaceId),
+          }))}
+          categories={definitions.categories.filter((item) => item.isActive).map((item) => ({
+            id: item.id,
+            label: localizeDefinition(item, context.locale),
+          }))}
+          priorities={definitions.priorities.filter((item) => item.isActive).map((item) => ({
+            id: item.id,
+            label: localizeDefinition(item, context.locale),
+          }))}
+          statuses={definitions.statuses.filter((item) => item.isActive).map((item) => ({
+            id: item.id,
+            label: localizeDefinition(item, context.locale),
+          }))}
+          defaults={{
+            workspaceId: context.currentWorkspace?.id ?? context.memberships[0]?.workspace.id ?? "",
+            categoryId: defaults.categoryId,
+            priorityId: defaults.priorityId,
+            statusId: defaults.statusId,
+            inProgressStatusId: inProgressStatus?.id,
+          }}
+        />
       </Panel>
     </>
   );

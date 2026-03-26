@@ -172,6 +172,20 @@ export async function createTicketAction(formData: FormData) {
     redirect("/tickets/new?error=forbidden");
   }
 
+  if (parsed.data.assigneeId) {
+    const assigneeMembership = await prisma.workspaceMembership.findFirst({
+      where: {
+        userId: parsed.data.assigneeId,
+        workspaceId: parsed.data.workspaceId,
+      },
+      select: { id: true },
+    });
+
+    if (!assigneeMembership) {
+      redirect("/tickets/new?error=invalid");
+    }
+  }
+
   const defaults = await getDefaultDefinitionIds();
   await ensureCoreDefinitions();
   if (
@@ -321,6 +335,20 @@ export async function updateTicketAction(formData: FormData) {
     title: String(formData.get("title") ?? ticket.title),
     description: String(formData.get("description") ?? ticket.description),
   };
+
+  if (nextValues.assigneeId) {
+    const assigneeMembership = await prisma.workspaceMembership.findFirst({
+      where: {
+        userId: nextValues.assigneeId,
+        workspaceId: ticket.workspaceId,
+      },
+      select: { id: true },
+    });
+
+    if (!assigneeMembership) {
+      redirect(`/tickets/${ticketId}`);
+    }
+  }
 
   const activities = [];
   if (nextValues.statusId !== ticket.statusId) {
