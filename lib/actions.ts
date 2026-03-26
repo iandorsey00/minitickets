@@ -18,6 +18,7 @@ import {
   WORKSPACE_COOKIE,
 } from "@/lib/constants";
 import { getDefaultDefinitionIds } from "@/lib/data";
+import { ensureCoreDefinitions } from "@/lib/catalog";
 import { sendPasswordSetupEmail, sendTicketEmail, sendWelcomeEmail } from "@/lib/email";
 import { hashPassword, verifyPassword } from "@/lib/password";
 import { createPasswordSetupToken, hashPasswordSetupToken } from "@/lib/password-setup";
@@ -162,6 +163,7 @@ export async function createTicketAction(formData: FormData) {
   }
 
   const defaults = await getDefaultDefinitionIds();
+  await ensureCoreDefinitions();
   if (
     (!parsed.data.statusId && !defaults.statusId) ||
     (!parsed.data.priorityId && !defaults.priorityId) ||
@@ -181,6 +183,14 @@ export async function createTicketAction(formData: FormData) {
   const serialNumber = (latest?.serialNumber ?? 0) + 1;
   const ticketPrefix = workspace.ticketPrefix || fallbackTicketPrefixFromSlug(workspace.slug);
   const ticketNumber = formatTicketNumber(ticketPrefix, serialNumber);
+  const inProgressStatus = await prisma.statusDefinition.findUnique({
+    where: { key: "IN_PROGRESS" },
+    select: { id: true },
+  });
+  const finalStatusId =
+    parsed.data.assigneeId && inProgressStatus && (!parsed.data.statusId || parsed.data.statusId === defaults.statusId)
+      ? inProgressStatus.id
+      : parsed.data.statusId || defaults.statusId!;
 
   const ticket = await prisma.ticket.create({
     data: {
@@ -191,7 +201,7 @@ export async function createTicketAction(formData: FormData) {
       workspaceId: parsed.data.workspaceId,
       requesterId: user.id,
       assigneeId: parsed.data.assigneeId || null,
-      statusId: parsed.data.statusId || defaults.statusId!,
+      statusId: finalStatusId,
       priorityId: parsed.data.priorityId || defaults.priorityId!,
       categoryId: parsed.data.categoryId || defaults.categoryId!,
       dueDate: parsed.data.dueDate ? new Date(parsed.data.dueDate) : null,

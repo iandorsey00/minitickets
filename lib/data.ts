@@ -12,6 +12,7 @@ import {
   localeTokenMap,
 } from "@/lib/constants";
 import { getCurrentUser, requireUser } from "@/lib/auth";
+import { ensureCoreDefinitions } from "@/lib/catalog";
 import { getDictionary } from "@/lib/i18n";
 import { prisma } from "@/lib/prisma";
 
@@ -78,6 +79,7 @@ export async function getViewerContext(requestedWorkspaceId?: string) {
 }
 
 export async function getDefinitions() {
+  await ensureCoreDefinitions();
   const [statuses, priorities, categories] = await Promise.all([
     prisma.statusDefinition.findMany({ orderBy: [{ sortOrder: "asc" }, { labelZh: "asc" }] }),
     prisma.priorityDefinition.findMany({ orderBy: [{ sortOrder: "asc" }, { labelZh: "asc" }] }),
@@ -88,6 +90,7 @@ export async function getDefinitions() {
 }
 
 export async function getDefaultDefinitionIds() {
+  await ensureCoreDefinitions();
   const [statuses, priorities, categories] = await Promise.all([
     prisma.statusDefinition.findMany({
       where: { isActive: true },
