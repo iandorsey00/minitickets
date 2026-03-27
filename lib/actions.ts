@@ -16,6 +16,7 @@ import {
   LOCALE_COOKIE,
   THEME_COOKIE,
   WORKSPACE_COOKIE,
+  timeZoneValues,
 } from "@/lib/constants";
 import { getDefaultDefinitionIds } from "@/lib/data";
 import { ensureCoreDefinitions } from "@/lib/catalog";
@@ -24,6 +25,7 @@ import { hashPassword, verifyPassword } from "@/lib/password";
 import { createPasswordSetupToken, hashPasswordSetupToken } from "@/lib/password-setup";
 import { prisma } from "@/lib/prisma";
 import { fallbackTicketPrefixFromSlug, formatTicketNumber, normalizeTicketPrefix } from "@/lib/tickets";
+import { getTicketAttachmentDiskPath, getUploadsRoot } from "@/lib/uploads";
 
 const loginSchema = z.object({
   email: z.email(),
@@ -58,6 +60,7 @@ const attachmentSchema = z.object({
 const settingsSchema = z.object({
   displayName: z.string().min(2).max(60),
   locale: z.nativeEnum(Locale),
+  timeZone: z.enum(timeZoneValues),
   themePreference: z.nativeEnum(ThemePreference),
   accentColor: z.nativeEnum(AccentColor),
   password: z.string().optional(),
@@ -600,10 +603,10 @@ export async function addAttachmentAction(formData: FormData) {
 
   const extension = path.extname(file.name).slice(0, 16);
   const storedName = `${crypto.randomUUID()}${extension}`;
-  const directory = path.join(process.cwd(), "public", "uploads", "tickets", ticket.id);
+  const directory = path.join(getUploadsRoot(), "tickets", ticket.id);
   await mkdir(directory, { recursive: true });
   const buffer = Buffer.from(await file.arrayBuffer());
-  await writeFile(path.join(directory, storedName), buffer);
+  await writeFile(getTicketAttachmentDiskPath(ticket.id, storedName), buffer);
 
   await prisma.ticketAttachment.create({
     data: {
@@ -636,6 +639,7 @@ export async function updateSettingsAction(formData: FormData) {
   const parsed = settingsSchema.safeParse({
     displayName: formData.get("displayName"),
     locale: formData.get("locale"),
+    timeZone: formData.get("timeZone"),
     themePreference: formData.get("themePreference"),
     accentColor: formData.get("accentColor"),
     password: formData.get("password") || undefined,
@@ -653,12 +657,14 @@ export async function updateSettingsAction(formData: FormData) {
   const updateData: {
     displayName: string;
     locale: Locale;
+    timeZone: string;
     themePreference: ThemePreference;
     accentColor: AccentColor;
     passwordHash?: string;
   } = {
     displayName: parsed.data.displayName,
     locale: parsed.data.locale,
+    timeZone: parsed.data.timeZone,
     themePreference: parsed.data.themePreference,
     accentColor: parsed.data.accentColor,
   };

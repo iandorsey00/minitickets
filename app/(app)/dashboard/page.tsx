@@ -35,7 +35,7 @@ export default async function DashboardPage({
                   href={`/tickets/${ticket.id}`}
                   number={ticket.ticketNumber}
                   title={ticket.title}
-                  meta={`${localizeDefinition(ticket.status, data.locale)} · ${formatDateTime(ticket.updatedAt, data.localeCode)}`}
+                  meta={`${localizeDefinition(ticket.status, data.locale)} · ${formatDateTime(ticket.updatedAt, data.localeCode, data.timeZone)}`}
                 />
               ))
             ) : (
@@ -53,7 +53,7 @@ export default async function DashboardPage({
                   href={`/tickets/${ticket.id}`}
                   number={ticket.ticketNumber}
                   title={ticket.title}
-                  meta={`${localizeDefinition(ticket.priority, data.locale)} · ${formatDateTime(ticket.updatedAt, data.localeCode)}`}
+                  meta={`${localizeDefinition(ticket.priority, data.locale)} · ${formatDateTime(ticket.updatedAt, data.localeCode, data.timeZone)}`}
                 />
               ))
             ) : (
@@ -84,7 +84,7 @@ export default async function DashboardPage({
                 <strong>{activity.ticket.ticketNumber}</strong>
                 <div>{data.locale === "ZH_CN" ? activity.messageZh : activity.messageEn}</div>
                 <div className="muted">
-                  {activity.actor?.displayName ?? "System"} · {formatDateTime(activity.createdAt, data.localeCode)}
+                  {activity.actor?.displayName ?? "System"} · {formatDateTime(activity.createdAt, data.localeCode, data.timeZone)}
                 </div>
               </div>
             ))

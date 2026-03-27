@@ -47,6 +47,7 @@ model User {
   displayName         String
   role                UserRole              @default(USER)
   locale              Locale                @default(ZH_CN)
+  timeZone            String                @default("America/Los_Angeles")
   themePreference     ThemePreference       @default(SYSTEM)
   accentColor         AccentColor           @default(BLUE)
   isActive            Boolean               @default(true)

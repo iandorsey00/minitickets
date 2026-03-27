@@ -42,7 +42,7 @@ export default async function WorkspaceDetailPage({
                     <Link href={`/tickets/${activity.ticket.id}`}>{activity.ticket.ticketNumber}</Link>
                   </strong>
                   <div>{data.locale === "ZH_CN" ? activity.messageZh : activity.messageEn}</div>
-                  <div className="muted">{formatDateTime(activity.createdAt, data.localeCode)}</div>
+                  <div className="muted">{formatDateTime(activity.createdAt, data.localeCode, data.timeZone)}</div>
                 </div>
               ))
             ) : (
@@ -61,7 +61,7 @@ export default async function WorkspaceDetailPage({
                 href={`/tickets/${ticket.id}`}
                 number={ticket.ticketNumber}
                 title={ticket.title}
-                meta={`${ticket.assignee?.displayName ?? t.common.none} · ${formatDateTime(ticket.updatedAt, data.localeCode)}`}
+                meta={`${ticket.assignee?.displayName ?? t.common.none} · ${formatDateTime(ticket.updatedAt, data.localeCode, data.timeZone)}`}
               />
             ))
           ) : (

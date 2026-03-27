@@ -47,7 +47,7 @@ export default async function AdminPage() {
                 href={`/tickets/${ticket.id}`}
                 number={ticket.ticketNumber}
                 title={ticket.title}
-                meta={`${ticket.workspace.name} · ${formatDateTime(ticket.updatedAt, data.localeCode)}`}
+                meta={`${ticket.workspace.name} · ${formatDateTime(ticket.updatedAt, data.localeCode, data.timeZone)}`}
               />
             ))
           ) : (

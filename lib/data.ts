@@ -74,6 +74,7 @@ export async function getViewerContext(requestedWorkspaceId?: string) {
     dictionary: getDictionary(user.locale),
     locale: user.locale,
     localeCode: localeTokenMap[user.locale],
+    timeZone: user.timeZone,
     accessibleWorkspaceIds: memberships.map((membership) => membership.workspaceId),
   };
 }

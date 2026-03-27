@@ -1,20 +1,24 @@
 import { type AppLocale } from "@/lib/i18n";
 
-export function formatDateTime(date: Date | string, localeCode: string) {
+const defaultTimeZone = process.env.APP_TIMEZONE ?? "America/Los_Angeles";
+
+export function formatDateTime(date: Date | string, localeCode: string, timeZone = defaultTimeZone) {
   const value = typeof date === "string" ? new Date(date) : date;
   return new Intl.DateTimeFormat(localeCode, {
     dateStyle: "medium",
     timeStyle: "short",
+    timeZone,
   }).format(value);
 }
 
-export function formatDate(date: Date | string | null | undefined, localeCode: string) {
+export function formatDate(date: Date | string | null | undefined, localeCode: string, timeZone = defaultTimeZone) {
   if (!date) {
     return "—";
   }
   const value = typeof date === "string" ? new Date(date) : date;
   return new Intl.DateTimeFormat(localeCode, {
     dateStyle: "medium",
+    timeZone,
   }).format(value);
 }
 

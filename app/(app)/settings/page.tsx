@@ -1,5 +1,5 @@
 import { updateSettingsAction } from "@/lib/actions";
-import { accentLabelMap, accentValues, localeValues, themeValues } from "@/lib/constants";
+import { accentLabelMap, accentValues, localeValues, themeValues, timeZoneLabelMap, timeZoneValues } from "@/lib/constants";
 import { getViewerContext } from "@/lib/data";
 import { Badge, PageHeader, Panel } from "@/components/ui";
 
@@ -50,6 +50,16 @@ export default async function SettingsPage({
                     : theme === "DARK"
                       ? t.common.dark
                       : t.common.system}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="field">
+            <label htmlFor="timeZone">{t.common.timeZone}</label>
+            <select id="timeZone" name="timeZone" defaultValue={data.user.timeZone}>
+              {timeZoneValues.map((timeZone) => (
+                <option key={timeZone} value={timeZone}>
+                  {data.locale === "ZH_CN" ? timeZoneLabelMap[timeZone].zh : timeZoneLabelMap[timeZone].en}
                 </option>
               ))}
             </select>

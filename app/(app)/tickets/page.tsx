@@ -138,37 +138,38 @@ export default async function TicketsPage({
 
       <Panel>
         {data.tickets.length ? (
-          <table className="table">
-            <thead>
-              <tr>
-                <th>{t.common.title}</th>
-                <th>{t.common.workspace}</th>
-                <th>{t.common.status}</th>
-                <th>{t.common.priority}</th>
-                <th>{t.common.assignee}</th>
-                <th>{t.common.updatedAt}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {data.tickets.map((ticket) => (
-                <tr key={ticket.id}>
-                  <td>
-                    <Link href={`/tickets/${ticket.id}`}>
-                      <div className="ticket-number">{ticket.ticketNumber}</div>
-                      <strong>{ticket.title}</strong>
-                    </Link>
-                  </td>
-                  <td>{ticket.workspace.name}</td>
-                  <td>
+          <div className="list ticket-list">
+            {data.tickets.map((ticket) => (
+              <Link key={ticket.id} href={`/tickets/${ticket.id}`} className="list-row ticket-list-row">
+                <div className="stack ticket-list-main">
+                  <div className="ticket-number">{ticket.ticketNumber}</div>
+                  <strong>{ticket.title}</strong>
+                </div>
+                <div className="ticket-list-meta">
+                  <div className="meta-pair">
+                    <span>{t.common.workspace}</span>
+                    <strong>{ticket.workspace.name}</strong>
+                  </div>
+                  <div className="meta-pair">
+                    <span>{t.common.status}</span>
                     <Badge label={localizeDefinition(ticket.status, data.locale)} tone="accent" />
-                  </td>
-                  <td>{localizeDefinition(ticket.priority, data.locale)}</td>
-                  <td>{ticket.assignee?.displayName ?? t.common.none}</td>
-                  <td>{formatDateTime(ticket.updatedAt, data.localeCode)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                  </div>
+                  <div className="meta-pair">
+                    <span>{t.common.priority}</span>
+                    <strong>{localizeDefinition(ticket.priority, data.locale)}</strong>
+                  </div>
+                  <div className="meta-pair">
+                    <span>{t.common.assignee}</span>
+                    <strong>{ticket.assignee?.displayName ?? t.common.none}</strong>
+                  </div>
+                  <div className="meta-pair">
+                    <span>{t.common.updatedAt}</span>
+                    <strong>{formatDateTime(ticket.updatedAt, data.localeCode, data.timeZone)}</strong>
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
         ) : (
           <EmptyState title={t.tickets.listEmpty} body={t.states.emptySearch} />
         )}

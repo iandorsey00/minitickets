@@ -16,6 +16,31 @@ export default async function TicketDetailPage({
   }
 
   const t = data.dictionary;
+  const historyItems = [
+    ...data.ticket.activities.map((activity) => ({
+      id: `activity-${activity.id}`,
+      createdAt: activity.createdAt,
+      kind: "activity" as const,
+      actorName: activity.actor?.displayName ?? (data.locale === "ZH_CN" ? "系统" : "System"),
+      title: data.locale === "ZH_CN" ? activity.messageZh : activity.messageEn,
+    })),
+    ...data.ticket.comments.map((comment) => ({
+      id: `comment-${comment.id}`,
+      createdAt: comment.createdAt,
+      kind: "comment" as const,
+      actorName: comment.author.displayName,
+      body: comment.body,
+    })),
+    ...data.ticket.attachments.map((attachment) => ({
+      id: `attachment-${attachment.id}`,
+      createdAt: attachment.createdAt,
+      kind: "attachment" as const,
+      actorName: attachment.uploadedBy.displayName,
+      originalName: attachment.originalName,
+      filePath: attachment.filePath,
+      fileSizeBytes: attachment.fileSizeBytes,
+    })),
+  ].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
 
   return (
     <>
@@ -26,35 +51,42 @@ export default async function TicketDetailPage({
 
       <div className="detail-layout">
         <div className="stack">
-          <Panel title={t.common.description}>
-            <p>{data.ticket.description}</p>
-          </Panel>
+          <details className="panel detail-disclosure">
+            <summary className="panel-title">{t.common.description}</summary>
+            <div className="disclosure-body">
+              {data.ticket.description ? <p>{data.ticket.description}</p> : <p className="muted">{t.common.optional}</p>}
+            </div>
+          </details>
 
           <Panel title={t.common.activity}>
             <div className="timeline">
-              {data.ticket.activities.map((activity) => (
-                <div key={activity.id} className="timeline-item">
-                  <strong>{data.locale === "ZH_CN" ? activity.messageZh : activity.messageEn}</strong>
-                  <div className="muted">
-                    {activity.actor?.displayName ?? "System"} · {formatDateTime(activity.createdAt, data.localeCode)}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </Panel>
-
-          <Panel title={t.common.comments}>
-            <div className="timeline">
-              {data.ticket.comments.length ? (
-                data.ticket.comments.map((comment) => (
-                  <div key={comment.id} className="timeline-item">
-                    <strong>{comment.author.displayName}</strong>
-                    <div>{comment.body}</div>
-                    <div className="muted">{formatDateTime(comment.createdAt, data.localeCode)}</div>
+              {historyItems.length ? (
+                historyItems.map((item) => (
+                  <div key={item.id} className="timeline-item">
+                    {item.kind === "activity" ? <strong>{item.title}</strong> : null}
+                    {item.kind === "comment" ? (
+                      <>
+                        <strong>{item.actorName}</strong>
+                        <div>{item.body}</div>
+                      </>
+                    ) : null}
+                    {item.kind === "attachment" ? (
+                      <>
+                        <strong>
+                          <a href={item.filePath} target="_blank" rel="noreferrer">
+                            {item.originalName}
+                          </a>
+                        </strong>
+                        <div className="muted">{formatFileSize(item.fileSizeBytes)}</div>
+                      </>
+                    ) : null}
+                    <div className="muted">
+                      {item.actorName} · {formatDateTime(item.createdAt, data.localeCode, data.timeZone)}
+                    </div>
                   </div>
                 ))
               ) : (
-                <EmptyState title={t.tickets.noComments} />
+                <EmptyState title={t.common.activity} body={t.states.emptySearch} />
               )}
             </div>
 
@@ -68,30 +100,7 @@ export default async function TicketDetailPage({
                 <button type="submit">{t.tickets.addComment}</button>
               </div>
             </form>
-          </Panel>
-
-          <Panel title={t.common.attachments}>
-            <div className="timeline">
-              {data.ticket.attachments.length ? (
-                data.ticket.attachments.map((attachment) => (
-                  <div key={attachment.id} className="timeline-item">
-                    <strong>
-                      <a href={attachment.filePath} target="_blank" rel="noreferrer">
-                        {attachment.originalName}
-                      </a>
-                    </strong>
-                    <div className="muted">
-                      {attachment.uploadedBy.displayName} · {formatDateTime(attachment.createdAt, data.localeCode)} ·{" "}
-                      {formatFileSize(attachment.fileSizeBytes)}
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <EmptyState title={t.common.attachments} body={t.states.emptySearch} />
-              )}
-            </div>
-
-            <form action={addAttachmentAction} className="stack">
+            <form action={addAttachmentAction} className="stack" encType="multipart/form-data">
               <input type="hidden" name="ticketId" value={data.ticket.id} />
               <div className="field">
                 <label htmlFor="file">{t.common.uploadFile}</label>
@@ -129,7 +138,7 @@ export default async function TicketDetailPage({
               </div>
               <div className="meta-item">
                 <span>{t.common.dueDate}</span>
-                <span>{formatDate(data.ticket.dueDate, data.localeCode)}</span>
+                <span>{formatDate(data.ticket.dueDate, data.localeCode, data.timeZone)}</span>
               </div>
               <div className="meta-item">
                 <span>{t.common.paymentLabel}</span>
@@ -151,7 +160,7 @@ export default async function TicketDetailPage({
               </div>
               <div className="field">
                 <label htmlFor="description">{t.common.description}</label>
-                <textarea id="description" name="description" defaultValue={data.ticket.description} required />
+                <textarea id="description" name="description" defaultValue={data.ticket.description} />
               </div>
               <div className="field">
                 <label htmlFor="statusId">{t.common.status}</label>
