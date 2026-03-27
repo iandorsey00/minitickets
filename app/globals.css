@@ -353,7 +353,6 @@ textarea {
 
 .workspace-switcher {
   display: flex;
-  gap: 0.75rem;
   align-items: center;
   min-width: 0;
 }
@@ -364,16 +363,6 @@ textarea {
   padding-top: 0.7rem;
   padding-bottom: 0.7rem;
   line-height: 1.2;
-}
-
-.workspace-switcher .ghost-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex: 0 0 auto;
-  min-inline-size: 7rem;
-  min-height: 3.2rem;
-  white-space: nowrap;
 }
 
 .header-search {
@@ -790,7 +779,7 @@ textarea {
     padding: 0.75rem 1rem;
     gap: 0.65rem;
     grid-template-columns: minmax(0, 1fr) auto;
-    align-items: start;
+    align-items: center;
   }
 
   .page-header {
@@ -812,36 +801,36 @@ textarea {
   .workspace-switcher {
     grid-column: 1 / 2;
     width: 100%;
-    flex-direction: row;
-    gap: 0.45rem;
-    align-items: center;
   }
 
   .workspace-switcher select,
-  .workspace-switcher .ghost-button,
   .topbar-actions .ghost-button {
     min-height: 2.65rem;
   }
 
-  .workspace-switcher .ghost-button {
-    min-inline-size: auto;
-    padding: 0.55rem 0.85rem;
-  }
-
   .header-search {
-    grid-column: 1 / -1;
+    grid-column: 1 / 2;
+    width: 100%;
   }
 
   .topbar-actions {
     grid-column: 2 / 3;
-    flex-direction: row;
+    grid-row: 1 / span 2;
+    flex-direction: column;
     align-items: center;
     gap: 0.45rem;
     justify-self: end;
+    align-self: stretch;
+    justify-content: space-between;
   }
 
   .user-chip {
     display: none;
+  }
+
+  .topbar-actions .ghost-button {
+    min-inline-size: 5.9rem;
+    justify-content: center;
   }
 
   .admin-user-actions {
@@ -891,9 +880,9 @@ textarea {
   }
 
   .ticket-list-meta {
-    flex: 0 0 42%;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 0.45rem 0.6rem;
+    flex: 0 0 38%;
+    grid-template-columns: 1fr;
+    gap: 0.3rem;
   }
 
   .meta-pair {

@@ -88,7 +88,7 @@ export function AppShell({
 
       <div className="main-column">
         <header className="topbar">
-          <form action={switchWorkspaceAction} className="workspace-switcher">
+          <form action={switchWorkspaceAction} className="workspace-switcher" id="workspace-switcher-form">
             <label htmlFor="workspaceId" className="sr-only">
               Workspace
             </label>
@@ -100,9 +100,6 @@ export function AppShell({
               ))}
             </select>
             <input type="hidden" name="nextPath" value={pathname || "/dashboard"} />
-            <button type="submit" className="ghost-button">
-              {dictionary.nav.workspaces}
-            </button>
           </form>
 
           <form action="/tickets" className="header-search">
@@ -117,6 +114,9 @@ export function AppShell({
             <div className="user-chip">
               <span>{user.displayName}</span>
             </div>
+            <button type="submit" className="ghost-button" form="workspace-switcher-form">
+              {dictionary.nav.workspaces}
+            </button>
             <form action={logoutAction}>
               <button type="submit" className="ghost-button">
                 {dictionary.nav.logout}
