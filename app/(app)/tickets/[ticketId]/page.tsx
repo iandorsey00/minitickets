@@ -17,13 +17,15 @@ export default async function TicketDetailPage({
 
   const t = data.dictionary;
   const historyItems = [
-    ...data.ticket.activities.map((activity) => ({
-      id: `activity-${activity.id}`,
-      createdAt: activity.createdAt,
-      kind: "activity" as const,
-      actorName: activity.actor?.displayName ?? (data.locale === "ZH_CN" ? "系统" : "System"),
-      title: data.locale === "ZH_CN" ? activity.messageZh : activity.messageEn,
-    })),
+    ...data.ticket.activities
+      .filter((activity) => !["ticket.comment_added", "ticket.attachment_added"].includes(activity.eventType))
+      .map((activity) => ({
+        id: `activity-${activity.id}`,
+        createdAt: activity.createdAt,
+        kind: "activity" as const,
+        actorName: activity.actor?.displayName ?? (data.locale === "ZH_CN" ? "系统" : "System"),
+        title: data.locale === "ZH_CN" ? activity.messageZh : activity.messageEn,
+      })),
     ...data.ticket.comments.map((comment) => ({
       id: `comment-${comment.id}`,
       createdAt: comment.createdAt,
@@ -39,6 +41,7 @@ export default async function TicketDetailPage({
       originalName: attachment.originalName,
       filePath: attachment.filePath,
       fileSizeBytes: attachment.fileSizeBytes,
+      mimeType: attachment.mimeType,
     })),
   ].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
 
@@ -77,6 +80,12 @@ export default async function TicketDetailPage({
                             {item.originalName}
                           </a>
                         </strong>
+                        {item.mimeType?.startsWith("image/") ? (
+                          <a href={item.filePath} target="_blank" rel="noreferrer" className="attachment-preview-link">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={item.filePath} alt={item.originalName} className="attachment-preview" />
+                          </a>
+                        ) : null}
                         <div className="muted">{formatFileSize(item.fileSizeBytes)}</div>
                       </>
                     ) : null}

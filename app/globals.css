@@ -600,6 +600,20 @@ textarea {
   margin-bottom: 0.2rem;
 }
 
+.attachment-preview-link {
+  display: inline-block;
+  margin-top: 0.6rem;
+}
+
+.attachment-preview {
+  display: block;
+  width: min(100%, 320px);
+  max-height: 240px;
+  object-fit: cover;
+  border-radius: 0.9rem;
+  border: 1px solid var(--color-line);
+}
+
 .detail-disclosure {
   padding-bottom: 0;
 }
@@ -791,9 +805,28 @@ textarea {
     justify-content: flex-start;
   }
 
+  .ticket-list-row {
+    gap: 0.85rem;
+  }
+
+  .ticket-list-main strong {
+    font-size: 1.02rem;
+    line-height: 1.35;
+  }
+
   .ticket-list-meta {
     width: 100%;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.65rem 0.9rem;
+  }
+
+  .meta-pair > span {
+    font-size: 0.78rem;
+  }
+
+  .meta-pair > strong,
+  .meta-pair .badge {
+    font-size: 0.92rem;
   }
 
   .detail-layout {
@@ -802,7 +835,17 @@ textarea {
 }
 
 @media (max-width: 640px) {
+  .ticket-list-row {
+    flex-direction: row;
+    align-items: flex-start;
+  }
+
+  .ticket-list-main {
+    flex: 1 1 auto;
+  }
+
   .ticket-list-meta {
+    flex: 0 0 44%;
     grid-template-columns: 1fr;
   }
 }
