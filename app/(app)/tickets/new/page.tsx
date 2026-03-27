@@ -14,11 +14,18 @@ export default async function NewTicketPage() {
   const t = context.dictionary;
   const people = await prisma.user.findMany({
     where: {
-      memberships: {
-        some: {
-          workspaceId: { in: context.accessibleWorkspaceIds },
+      OR: [
+        {
+          memberships: {
+            some: {
+              workspaceId: { in: context.accessibleWorkspaceIds },
+            },
+          },
         },
-      },
+        {
+          role: "ADMIN",
+        },
+      ],
     },
     include: {
       memberships: {

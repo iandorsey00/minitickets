@@ -278,7 +278,7 @@ async function main() {
           ticketId: ticket.id,
           actorUserId: ticket.requesterId,
           eventType: "ticket.created",
-          messageZh: "已提交请求。",
+          messageZh: "已提交工单。",
           messageEn: "Request submitted.",
         },
       });

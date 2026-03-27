@@ -263,11 +263,18 @@ export async function getTicketDetail(ticketId: string) {
     getDefinitions(),
     prisma.user.findMany({
       where: {
-        memberships: {
-          some: {
-            workspaceId: ticket.workspaceId,
+        OR: [
+          {
+            memberships: {
+              some: {
+                workspaceId: ticket.workspaceId,
+              },
+            },
           },
-        },
+          {
+            role: "ADMIN",
+          },
+        ],
       },
       orderBy: { displayName: "asc" },
     }),

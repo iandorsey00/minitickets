@@ -184,7 +184,14 @@ export async function createTicketAction(formData: FormData) {
       select: { id: true },
     });
 
-    if (!assigneeMembership) {
+    const assignee = assigneeMembership
+      ? null
+      : await prisma.user.findUnique({
+          where: { id: parsed.data.assigneeId },
+          select: { role: true },
+        });
+
+    if (!assigneeMembership && assignee?.role !== UserRole.ADMIN) {
       redirect("/tickets/new?error=invalid");
     }
   }
@@ -238,7 +245,7 @@ export async function createTicketAction(formData: FormData) {
         create: {
           actorUserId: user.id,
           eventType: "ticket.created",
-          messageZh: "已提交请求。",
+          messageZh: "已提交工单。",
           messageEn: "Request submitted.",
         },
       },
@@ -348,7 +355,14 @@ export async function updateTicketAction(formData: FormData) {
       select: { id: true },
     });
 
-    if (!assigneeMembership) {
+    const assignee = assigneeMembership
+      ? null
+      : await prisma.user.findUnique({
+          where: { id: nextValues.assigneeId },
+          select: { role: true },
+        });
+
+    if (!assigneeMembership && assignee?.role !== UserRole.ADMIN) {
       redirect(`/tickets/${ticketId}`);
     }
   }
