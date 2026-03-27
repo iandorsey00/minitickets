@@ -290,7 +290,7 @@ export async function createTicketAction(formData: FormData) {
     console.error("Failed to send created-ticket email", error);
   }
 
-  if (ticket.assignee && ticket.assignee.id !== user.id) {
+  if (ticket.assignee) {
     try {
       await sendTicketEmail({
         kind: "assigned",
@@ -450,7 +450,7 @@ export async function updateTicketAction(formData: FormData) {
     });
   }
 
-  if (updatedTicket.assignee && updatedTicket.assignee.id !== user.id && nextValues.assigneeId !== ticket.assigneeId) {
+  if (updatedTicket.assignee && nextValues.assigneeId !== ticket.assigneeId) {
     try {
       await sendTicketEmail({
         kind: "assigned",
@@ -477,7 +477,7 @@ export async function updateTicketAction(formData: FormData) {
       [updatedTicket.requester, updatedTicket.assignee].filter(
         (recipient): recipient is typeof updatedTicket.requester => Boolean(recipient),
       ),
-    ).filter((recipient) => recipient.id !== user.id);
+    );
 
     for (const recipient of recipients) {
       try {
@@ -577,7 +577,7 @@ export async function addCommentAction(formData: FormData) {
 
   const emailRecipients = uniqueRecipients(
     [ticket.requester, ticket.assignee].filter((recipient): recipient is typeof ticket.requester => Boolean(recipient)),
-  ).filter((recipient) => recipient.id !== user.id);
+  );
 
   for (const recipient of emailRecipients) {
     try {
