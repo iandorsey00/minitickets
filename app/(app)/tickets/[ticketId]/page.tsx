@@ -16,6 +16,8 @@ export default async function TicketDetailPage({
   }
 
   const t = data.dictionary;
+  const resolvedStatusId = data.definitions.statuses.find((status) => status.key === "RESOLVED")?.id ?? null;
+  const showResolveAction = resolvedStatusId && !["RESOLVED", "CLOSED", "CANCELLED"].includes(data.ticket.status.key);
   const historyItems = [
     ...data.ticket.activities
       .filter((activity) => !["ticket.comment_added", "ticket.attachment_added"].includes(activity.eventType))
@@ -243,6 +245,16 @@ export default async function TicketDetailPage({
           </Panel>
         </div>
       </div>
+
+      {showResolveAction ? (
+        <form action={updateTicketAction} className="floating-action-form">
+          <input type="hidden" name="ticketId" value={data.ticket.id} />
+          <input type="hidden" name="statusId" value={resolvedStatusId} />
+          <button type="submit" className="floating-action">
+            {t.common.resolveTicket}
+          </button>
+        </form>
+      ) : null}
     </>
   );
 }

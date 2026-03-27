@@ -25,6 +25,7 @@ import { hashPassword, verifyPassword } from "@/lib/password";
 import { createPasswordSetupToken, hashPasswordSetupToken } from "@/lib/password-setup";
 import { prisma } from "@/lib/prisma";
 import { fallbackTicketPrefixFromSlug, formatTicketNumber, normalizeTicketPrefix } from "@/lib/tickets";
+import { autoCloseResolvedTickets } from "@/lib/ticket-status";
 import { getTicketAttachmentDiskPath, getUploadsRoot } from "@/lib/uploads";
 
 const loginSchema = z.object({
@@ -318,9 +319,13 @@ export async function createTicketAction(formData: FormData) {
 }
 
 export async function updateTicketAction(formData: FormData) {
+  await autoCloseResolvedTickets();
   const user = await requireUser();
   const ticketId = String(formData.get("ticketId") ?? "");
-  const ticket = await prisma.ticket.findUnique({ where: { id: ticketId } });
+  const ticket = await prisma.ticket.findUnique({
+    where: { id: ticketId },
+    include: { status: true },
+  });
 
   if (!ticket) {
     redirect("/tickets");
@@ -345,6 +350,15 @@ export async function updateTicketAction(formData: FormData) {
     title: String(formData.get("title") ?? ticket.title),
     description: String(formData.get("description") ?? ticket.description),
   };
+
+  const nextStatus = await prisma.statusDefinition.findUnique({
+    where: { id: nextValues.statusId },
+    select: { key: true },
+  });
+
+  if (!nextStatus) {
+    redirect(`/tickets/${ticketId}`);
+  }
 
   if (nextValues.assigneeId) {
     const assigneeMembership = await prisma.workspaceMembership.findFirst({
@@ -406,6 +420,14 @@ export async function updateTicketAction(formData: FormData) {
     data: {
       ...nextValues,
       dueDate: nextValues.dueDate ? new Date(nextValues.dueDate) : null,
+      resolvedAt:
+        nextStatus.key === "RESOLVED"
+          ? ticket.status.key === "RESOLVED" && ticket.resolvedAt
+            ? ticket.resolvedAt
+            : new Date()
+          : nextStatus.key === "CLOSED"
+            ? ticket.resolvedAt ?? new Date()
+            : null,
       activities: activities.length ? { create: activities } : undefined,
     },
     include: {

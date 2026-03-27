@@ -133,6 +133,7 @@ model Ticket {
   title       String
   description String
   dueDate     DateTime?
+  resolvedAt  DateTime?
   paymentLabel String?
   paymentLast4 String?
   createdAt   DateTime            @default(now())

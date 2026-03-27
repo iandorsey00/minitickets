@@ -403,6 +403,10 @@ textarea {
   z-index: 20;
 }
 
+.floating-action-form {
+  display: contents;
+}
+
 .floating-action:hover {
   filter: brightness(1.03);
 }

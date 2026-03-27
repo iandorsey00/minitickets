@@ -15,6 +15,7 @@ import { getCurrentUser, requireUser } from "@/lib/auth";
 import { ensureCoreDefinitions } from "@/lib/catalog";
 import { getDictionary } from "@/lib/i18n";
 import { prisma } from "@/lib/prisma";
+import { autoCloseResolvedTickets } from "@/lib/ticket-status";
 
 export async function getPreferencesForLayout() {
   const user = await getCurrentUser();
@@ -44,6 +45,7 @@ export async function getPreferencesForLayout() {
 }
 
 export async function getViewerContext(requestedWorkspaceId?: string) {
+  await autoCloseResolvedTickets();
   const user = await requireUser();
   const cookieStore = await cookies();
 

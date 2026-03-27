@@ -55,6 +55,8 @@ export function AppShell({
   children,
 }: ShellProps) {
   const pathname = usePathname();
+  const ticketDetailMatch = pathname.match(/^\/tickets\/([^/]+)$/);
+  const isTicketDetailPage = Boolean(ticketDetailMatch);
   const navItems = [
     { href: "/tickets", label: dictionary.nav.tickets },
     { href: "/dashboard", label: dictionary.nav.dashboard },
@@ -127,7 +129,7 @@ export function AppShell({
 
         <main className="content">{children}</main>
 
-        {pathname !== "/tickets/new" ? (
+        {pathname !== "/tickets/new" && !isTicketDetailPage ? (
           <Link href="/tickets/new" className="floating-action">
             {dictionary.nav.createTicket}
           </Link>

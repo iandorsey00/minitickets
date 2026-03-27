@@ -1,0 +1,51 @@
+import { prisma } from "@/lib/prisma";
+
+const AUTO_CLOSE_DAYS = 7;
+
+export async function autoCloseResolvedTickets() {
+  const cutoff = new Date(Date.now() - AUTO_CLOSE_DAYS * 24 * 60 * 60 * 1000);
+  const [resolvedStatus, closedStatus] = await Promise.all([
+    prisma.statusDefinition.findUnique({
+      where: { key: "RESOLVED" },
+      select: { id: true },
+    }),
+    prisma.statusDefinition.findUnique({
+      where: { key: "CLOSED" },
+      select: { id: true },
+    }),
+  ]);
+
+  if (!resolvedStatus || !closedStatus) {
+    return;
+  }
+
+  const tickets = await prisma.ticket.findMany({
+    where: {
+      statusId: resolvedStatus.id,
+      resolvedAt: {
+        lte: cutoff,
+      },
+    },
+    select: { id: true },
+  });
+
+  if (!tickets.length) {
+    return;
+  }
+
+  const ticketIds = tickets.map((ticket) => ticket.id);
+
+  await prisma.ticket.updateMany({
+    where: { id: { in: ticketIds } },
+    data: { statusId: closedStatus.id },
+  });
+
+  await prisma.ticketActivity.createMany({
+    data: ticketIds.map((ticketId) => ({
+      ticketId,
+      eventType: "ticket.auto_closed",
+      messageZh: "系统已自动关闭已解决 7 天的工单。",
+      messageEn: "The system auto-closed this resolved ticket after 7 days.",
+    })),
+  });
+}
