@@ -86,7 +86,7 @@ export default async function TicketDetailPage({
     <>
       <PageHeader
         title={data.ticket.title}
-        subtitle={`${data.ticket.ticketNumber} · ${data.ticket.workspace.name}`}
+        subtitle={data.ticket.ticketNumber}
         action={
           <TicketShareMenu
             label={t.common.share}
