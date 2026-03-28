@@ -1,5 +1,13 @@
 import path from "node:path";
 
+const safeInlineMimeTypes = new Set([
+  "image/jpeg",
+  "image/png",
+  "image/gif",
+  "image/webp",
+  "application/pdf",
+]);
+
 function getDatabaseDirectory() {
   const rawUrl = process.env.DATABASE_URL ?? "file:./dev.db";
   const fileUrl = rawUrl.startsWith("file:") ? rawUrl.slice(5) : rawUrl;
@@ -19,4 +27,12 @@ export function getTicketAttachmentDiskPath(ticketId: string, storedName: string
 
 export function getTicketAttachmentUrl(ticketId: string, storedName: string) {
   return `/attachments/tickets/${ticketId}/${storedName}`;
+}
+
+export function canRenderInline(mimeType?: string | null) {
+  return Boolean(mimeType && safeInlineMimeTypes.has(mimeType));
+}
+
+export function getSafeAttachmentMimeType(mimeType?: string | null) {
+  return canRenderInline(mimeType) ? mimeType! : "application/octet-stream";
 }

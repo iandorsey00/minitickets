@@ -2,7 +2,7 @@ import { readFile } from "node:fs/promises";
 
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { getTicketAttachmentDiskPath } from "@/lib/uploads";
+import { canRenderInline, getSafeAttachmentMimeType, getTicketAttachmentDiskPath } from "@/lib/uploads";
 
 export async function GET(
   _request: Request,
@@ -57,10 +57,11 @@ export async function GET(
   return new Response(file, {
     status: 200,
     headers: {
-      "Content-Type": attachment.mimeType || "application/octet-stream",
-      "Content-Disposition": `inline; filename="${encodeURIComponent(attachment.originalName)}"`,
+      "Content-Type": getSafeAttachmentMimeType(attachment.mimeType),
+      "Content-Disposition": `${canRenderInline(attachment.mimeType) ? "inline" : "attachment"}; filename="${encodeURIComponent(attachment.originalName)}"`,
       "Cache-Control": "private, no-store",
       Vary: "Cookie",
+      "X-Content-Type-Options": "nosniff",
       "X-Robots-Tag": "noindex, noarchive",
     },
   });

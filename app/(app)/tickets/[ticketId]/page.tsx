@@ -1,7 +1,7 @@
 import { addAttachmentAction, addCommentAction, updateTicketAction } from "@/lib/actions";
 import { getTicketDetail } from "@/lib/data";
 import { formatDate, formatDateTime, formatFileSize, localizeDefinition } from "@/lib/format";
-import { getTicketAttachmentUrl } from "@/lib/uploads";
+import { canRenderInline, getTicketAttachmentUrl } from "@/lib/uploads";
 import { Badge, EmptyState, PageHeader, Panel } from "@/components/ui";
 
 export default async function TicketDetailPage({
@@ -83,7 +83,7 @@ export default async function TicketDetailPage({
                             {item.originalName}
                           </a>
                         </strong>
-                        {item.mimeType?.startsWith("image/") ? (
+                        {canRenderInline(item.mimeType) && item.mimeType?.startsWith("image/") ? (
                           <a href={item.filePath} target="_blank" rel="noreferrer" className="attachment-preview-link">
                             {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img src={item.filePath} alt={item.originalName} className="attachment-preview" />
@@ -117,6 +117,7 @@ export default async function TicketDetailPage({
               <div className="field">
                 <label htmlFor="file">{t.common.uploadFile}</label>
                 <input id="file" name="file" type="file" required />
+                <p className="muted">{t.common.uploadWarning}</p>
               </div>
               <div>
                 <button type="submit">{t.common.uploadFile}</button>

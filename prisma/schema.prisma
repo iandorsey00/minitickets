@@ -255,3 +255,16 @@ model PasswordSetupToken {
 
   @@index([userId, expiresAt])
 }
+
+model AuthRateLimit {
+  id              String   @id @default(cuid())
+  action          String
+  key             String
+  attempts        Int      @default(0)
+  windowStartedAt DateTime @default(now())
+  blockedUntil    DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([action, key])
+}

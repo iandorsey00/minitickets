@@ -5,7 +5,7 @@ import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 
 import { AccentColor, Locale, ThemePreference, UserRole, WorkspaceRole } from "@prisma/client";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
@@ -24,6 +24,7 @@ import { sendPasswordSetupEmail, sendTicketEmail, sendWelcomeEmail } from "@/lib
 import { hashPassword, verifyPassword } from "@/lib/password";
 import { createPasswordSetupToken, hashPasswordSetupToken } from "@/lib/password-setup";
 import { prisma } from "@/lib/prisma";
+import { assertRateLimit, clearRateLimit } from "@/lib/rate-limit";
 import { fallbackTicketPrefixFromSlug, formatTicketNumber, normalizeTicketPrefix } from "@/lib/tickets";
 import { autoCloseResolvedTickets } from "@/lib/ticket-status";
 import { getTicketAttachmentDiskPath, getTicketAttachmentUrl, getUploadsRoot } from "@/lib/uploads";
@@ -78,6 +79,22 @@ function uniqueRecipients<T extends { id: string }>(items: T[]) {
   return Array.from(new Map(items.map((item) => [item.id, item])).values());
 }
 
+function safeInternalPath(pathname: string) {
+  if (!pathname.startsWith("/") || pathname.startsWith("//")) {
+    return "/tickets";
+  }
+  return pathname;
+}
+
+async function getClientIp() {
+  const headerStore = await headers();
+  const forwarded = headerStore.get("x-forwarded-for");
+  if (forwarded) {
+    return forwarded.split(",")[0]?.trim() || "unknown";
+  }
+  return headerStore.get("x-real-ip") || "unknown";
+}
+
 export async function loginAction(formData: FormData) {
   const parsed = loginSchema.safeParse({
     email: formData.get("email"),
@@ -85,6 +102,12 @@ export async function loginAction(formData: FormData) {
   });
 
   if (!parsed.success) {
+    redirect("/login?error=invalid");
+  }
+
+  try {
+    await assertRateLimit("login", `${parsed.data.email.toLowerCase()}|${await getClientIp()}`, 5);
+  } catch {
     redirect("/login?error=invalid");
   }
 
@@ -101,6 +124,7 @@ export async function loginAction(formData: FormData) {
   }
 
   await createSession(user.id);
+  await clearRateLimit("login", `${parsed.data.email.toLowerCase()}|${await getClientIp()}`);
 
   const cookieStore = await cookies();
   cookieStore.set(LOCALE_COOKIE, user.locale, { path: "/" });
@@ -118,7 +142,7 @@ export async function logoutAction() {
 export async function switchWorkspaceAction(formData: FormData) {
   const user = await requireUser();
   const workspaceId = String(formData.get("workspaceId") ?? "");
-  const nextPath = String(formData.get("nextPath") ?? "/tickets");
+  const nextPath = safeInternalPath(String(formData.get("nextPath") ?? "/tickets"));
 
   const allowed =
     user.role === UserRole.ADMIN
@@ -831,6 +855,12 @@ export async function completePasswordSetupAction(formData: FormData) {
     redirect(`/setup-password?token=${encodeURIComponent(String(formData.get("token") ?? ""))}&error=invalid`);
   }
 
+  try {
+    await assertRateLimit("password_setup", `${hashPasswordSetupToken(parsed.data.token)}|${await getClientIp()}`, 5);
+  } catch {
+    redirect("/setup-password?error=expired");
+  }
+
   const tokenHash = hashPasswordSetupToken(parsed.data.token);
   const setupToken = await prisma.passwordSetupToken.findUnique({
     where: { tokenHash },
@@ -853,6 +883,8 @@ export async function completePasswordSetupAction(formData: FormData) {
       data: { usedAt: new Date() },
     }),
   ]);
+
+  await clearRateLimit("password_setup", `${tokenHash}|${await getClientIp()}`);
 
   if (!currentUser) {
     await createSession(setupToken.userId);
