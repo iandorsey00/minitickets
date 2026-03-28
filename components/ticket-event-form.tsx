@@ -127,7 +127,7 @@ export function TicketEventForm({ action, ticketId, labels, reminderOptions }: T
         <div className="event-reminder-options">
           {reminderOptions.map((option) => (
             <label key={option.value} className="checkbox-row">
-              <input type="checkbox" name="reminderOffsets" value={String(option.value)} defaultChecked />
+              <input type="checkbox" name="reminderOffsets" value={String(option.value)} />
               <span>{option.label}</span>
             </label>
           ))}

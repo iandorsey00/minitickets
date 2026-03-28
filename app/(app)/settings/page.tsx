@@ -1,5 +1,5 @@
 import { updateSettingsAction } from "@/lib/actions";
-import { accentLabelMap, accentValues, localeValues, themeValues, timeZoneLabelMap, timeZoneValues } from "@/lib/constants";
+import { accentHexMap, accentLabelMap, accentValues, localeValues, themeValues, timeZoneLabelMap, timeZoneValues } from "@/lib/constants";
 import { getViewerContext } from "@/lib/data";
 import { Badge, PageHeader, Panel } from "@/components/ui";
 
@@ -25,7 +25,7 @@ export default async function SettingsPage({
     <>
       <PageHeader title={t.settings.title} subtitle={t.settings.profile} />
       <Panel title={t.settings.appearance}>
-        <form action={updateSettingsAction} className="stack">
+        <form action={updateSettingsAction} className="stack" id="settings-form">
           {successMessage ? <Badge label={successMessage} tone="success" /> : null}
           {errorMessage ? <Badge label={errorMessage} tone="danger" /> : null}
           <div className="field">
@@ -68,13 +68,24 @@ export default async function SettingsPage({
           </div>
           <div className="field">
             <label htmlFor="accentColor">{t.common.accentColor}</label>
-              <select id="accentColor" name="accentColor" defaultValue={data.user.accentColor}>
-                {accentValues.map((accent) => (
-                  <option key={accent} value={accent}>
-                    {data.locale === "ZH_CN" ? accentLabelMap[accent].zh : accentLabelMap[accent].en}
-                  </option>
-                ))}
-              </select>
+            <select id="accentColor" name="accentColor" defaultValue={data.user.accentColor}>
+              {accentValues.map((accent) => (
+                <option key={accent} value={accent}>
+                  {data.locale === "ZH_CN" ? accentLabelMap[accent].zh : accentLabelMap[accent].en}
+                </option>
+              ))}
+            </select>
+            <div className="accent-swatch-list" aria-hidden="true">
+              {accentValues.map((accent) => (
+                <div
+                  key={accent}
+                  className={`accent-swatch ${accent === data.user.accentColor ? "is-active" : ""}`}
+                  title={data.locale === "ZH_CN" ? accentLabelMap[accent].zh : accentLabelMap[accent].en}
+                >
+                  <span className="accent-swatch-block" style={{ backgroundColor: accentHexMap[accent] }} />
+                </div>
+              ))}
+            </div>
           </div>
           <div className="field">
             <label htmlFor="emailMfaEnabled">{t.settings.emailMfa}</label>

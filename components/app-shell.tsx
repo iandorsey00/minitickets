@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 import { BrowserNotificationCenter } from "@/components/browser-notification-center";
-import { AdminIcon, DashboardIcon, PencilIcon, SettingsIcon, TicketIcon } from "@/components/icons";
+import { AdminIcon, DashboardIcon, PencilIcon, SaveIcon, SettingsIcon, TicketIcon } from "@/components/icons";
 import { logoutAction, switchWorkspaceAction } from "@/lib/actions";
 
 type ShellProps = {
@@ -23,6 +23,11 @@ type ShellProps = {
     };
     common: {
       search: string;
+      save: string;
+    };
+    settings: {
+      title: string;
+      saveAction: string;
     };
   };
   user: {
@@ -60,6 +65,7 @@ export function AppShell({
   const pathname = usePathname();
   const ticketDetailMatch = pathname.match(/^\/tickets\/([^/]+)$/);
   const isTicketDetailPage = Boolean(ticketDetailMatch);
+  const isSettingsPage = pathname.startsWith("/settings");
   const hasMultipleWorkspaces = memberships.length > 1;
   const currentWorkspaceName =
     memberships.find((membership) => membership.workspaceId === currentWorkspaceId)?.workspace.name ??
@@ -144,7 +150,14 @@ export function AppShell({
 
         <main className="content">{children}</main>
 
-        {pathname !== "/tickets/new" && !isTicketDetailPage ? (
+        {isSettingsPage ? (
+          <button type="submit" className="floating-action" form="settings-form">
+            <span className="button-content">
+              <SaveIcon className="floating-action-icon" />
+              <span>{dictionary.settings.saveAction}</span>
+            </span>
+          </button>
+        ) : pathname !== "/tickets/new" && !isTicketDetailPage ? (
           <Link href="/tickets/new" className="floating-action">
             <PencilIcon className="floating-action-icon" />
             <span>{dictionary.nav.createTicket}</span>

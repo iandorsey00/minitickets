@@ -78,6 +78,19 @@ export const accentLabelMap: Record<
   PURPLE: { zh: "紫色", en: "Purple" },
 };
 
+export const accentHexMap: Record<(typeof accentValues)[number], string> = {
+  BLUE: "#2563eb",
+  CYAN: "#0891b2",
+  TEAL: "#0f766e",
+  GREEN: "#16a34a",
+  LIME: "#65a30d",
+  YELLOW: "#ca8a04",
+  ORANGE: "#ea580c",
+  RED: "#dc2626",
+  PINK: "#db2777",
+  PURPLE: "#7c3aed",
+};
+
 export const timeZoneLabelMap: Record<(typeof timeZoneValues)[number], { zh: string; en: string }> = {
   "America/Los_Angeles": { zh: "洛杉矶（太平洋时间）", en: "Los Angeles (Pacific Time)" },
   "America/Denver": { zh: "丹佛（山区时间）", en: "Denver (Mountain Time)" },

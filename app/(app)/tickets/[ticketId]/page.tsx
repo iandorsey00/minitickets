@@ -6,7 +6,7 @@ import { formatDate, formatDateTime, formatFileSize, localizeDefinition } from "
 import { formatReminderOffsetLabel } from "@/lib/reminder-labels";
 import { defaultTicketEventReminderOffsets } from "@/lib/ticket-events";
 import { canRenderInline, getTicketAttachmentUrl } from "@/lib/uploads";
-import { CommentIcon, UploadIcon } from "@/components/icons";
+import { CommentIcon, SaveIcon, UploadIcon } from "@/components/icons";
 import { FilePicker } from "@/components/file-picker";
 import { Badge, EmptyState, PageHeader, Panel } from "@/components/ui";
 import { TicketEventForm } from "@/components/ticket-event-form";
@@ -25,9 +25,18 @@ export default async function TicketDetailPage({
   }
 
   const t = data.dictionary;
-  const resolvedStatusId = data.definitions.statuses.find((status) => status.key === "RESOLVED")?.id ?? null;
-  const showResolveAction = resolvedStatusId && !["RESOLVED", "CLOSED", "CANCELLED"].includes(data.ticket.status.key);
   const selectedPaymentMethodIds = new Set(data.ticket.paymentMethods.map((item) => item.paymentMethodId));
+  const showEventsOpenByDefault = data.ticket.events.length > 0;
+  const showChildrenOpenByDefault = data.ticket.childTickets.length > 0 || Boolean(data.ticket.parentTicket);
+  const descriptionPreview = data.ticket.description ? data.ticket.description.replace(/\s+/g, " ").slice(0, 80) : "";
+  const eventsPreview = data.ticket.events.length
+    ? `${data.ticket.events.length} · ${data.ticket.events[0].title} · ${formatDateTime(data.ticket.events[0].scheduledFor, data.localeCode, data.timeZone)}`
+    : "";
+  const childrenPreview = data.ticket.parentTicket
+    ? `${t.common.parentTicket} · ${data.ticket.parentTicket.ticketNumber}`
+    : data.ticket.childTickets.length
+      ? `${t.common.childTickets} · ${data.ticket.childTickets.length}`
+      : "";
   const historyItems = [
     ...data.ticket.activities
       .filter((activity) => !["ticket.comment_added", "ticket.attachment_added"].includes(activity.eventType))
@@ -109,10 +118,27 @@ export default async function TicketDetailPage({
         <div className="stack ticket-page-section-stack">
           {data.ticket.description ? (
             <details className="panel detail-disclosure">
-              <summary className="panel-title">{t.common.description}</summary>
-              <div className="disclosure-body">
-                <p>{data.ticket.description}</p>
-              </div>
+              <summary className="panel-title">
+                <span className="detail-summary-main">{t.common.description}</span>
+                <span className="detail-summary-preview">{descriptionPreview}</span>
+              </summary>
+              <form action={updateTicketAction} className="stack disclosure-body">
+                <input type="hidden" name="ticketId" value={data.ticket.id} />
+                <div className="field">
+                  <label htmlFor="description-inline" className="sr-only">
+                    {t.common.description}
+                  </label>
+                  <textarea
+                    id="description-inline"
+                    name="description"
+                    defaultValue={data.ticket.description}
+                    placeholder={t.common.description}
+                  />
+                </div>
+                <div>
+                  <button type="submit">{t.common.save}</button>
+                </div>
+              </form>
             </details>
           ) : null}
 
@@ -260,89 +286,13 @@ export default async function TicketDetailPage({
 
       <div className="detail-secondary-layout">
         <div className="stack ticket-page-section-stack">
-          <Panel title={t.tickets.eventsTitle}>
-            <div className="stack ticket-events-stack">
-              {data.ticket.events.length ? (
-                data.ticket.events.map((event) => (
-                  <div key={event.id} className="event-card">
-                    <div className="event-card-header">
-                      <strong>{event.title}</strong>
-                      <form action={deleteTicketEventAction}>
-                        <input type="hidden" name="ticketId" value={data.ticket.id} />
-                        <input type="hidden" name="eventId" value={event.id} />
-                        <button type="submit" className="ghost-button event-delete-button">
-                          {t.tickets.deleteEvent}
-                        </button>
-                      </form>
-                    </div>
-                    <div className="muted">{formatDateTime(event.scheduledFor, data.localeCode, data.timeZone)}</div>
-                    {event.notes ? <p>{event.notes}</p> : null}
-                    <div className="event-reminder-badges">
-                      {event.reminders.length ? (
-                        event.reminders.map((reminder) => (
-                          <Badge
-                            key={reminder.id}
-                            label={formatReminderOffsetLabel(reminder.offsetMinutes, data.locale)}
-                            tone="neutral"
-                          />
-                        ))
-                      ) : (
-                        <span className="muted">{t.tickets.noEventReminders}</span>
-                      )}
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <EmptyState title={t.tickets.eventsTitle} body={t.tickets.eventsEmpty} />
-              )}
-
-              <div className="ticket-subsection">
-                <TicketEventForm
-                  action={createTicketEventAction}
-                  ticketId={data.ticket.id}
-                  labels={{
-                    title: t.common.title,
-                    notes: t.tickets.eventNotes,
-                    scheduledFor: t.tickets.eventScheduledFor,
-                    reminders: t.tickets.eventReminders,
-                    create: t.tickets.createEvent,
-                    optional: t.common.optional,
-                  }}
-                  reminderOptions={defaultTicketEventReminderOffsets.map((offset) => ({
-                    value: offset,
-                    label: formatReminderOffsetLabel(offset, data.locale),
-                  }))}
-                />
-              </div>
-            </div>
-          </Panel>
-        </div>
-
-        <div className="stack ticket-page-section-stack">
-          <Panel title={t.common.edit}>
-            <form action={updateTicketAction} className="stack">
+          <details className="panel detail-disclosure" open={false}>
+            <summary className="panel-title">{t.common.edit}</summary>
+            <form action={updateTicketAction} className="stack disclosure-body" id="ticket-edit-form">
               <input type="hidden" name="ticketId" value={data.ticket.id} />
               <div className="field">
                 <label htmlFor="title">{t.common.title}</label>
                 <input id="title" name="title" defaultValue={data.ticket.title} required />
-              </div>
-              <div className="field">
-                <label htmlFor="description">{t.common.description}</label>
-                <textarea id="description" name="description" defaultValue={data.ticket.description} />
-              </div>
-              <div className="field">
-                <label htmlFor="parentTicketId">
-                  {t.common.parentTicket} <span className="muted">({t.common.optional})</span>
-                </label>
-                <select id="parentTicketId" name="parentTicketId" defaultValue={data.ticket.parentTicketId ?? ""}>
-                  <option value="">{t.common.none}</option>
-                  {data.parentTicketCandidates.map((candidate) => (
-                    <option key={candidate.id} value={candidate.id}>
-                      {candidate.ticketNumber} · {candidate.title}
-                    </option>
-                  ))}
-                </select>
-                <p className="muted">{t.common.topLevelOnlyHint}</p>
               </div>
               <div className="field">
                 <label htmlFor="statusId">{t.common.status}</label>
@@ -438,37 +388,122 @@ export default async function TicketDetailPage({
                 <button type="submit">{t.common.save}</button>
               </div>
             </form>
-          </Panel>
+          </details>
+          <details className="panel detail-disclosure" open={showEventsOpenByDefault}>
+            <summary className="panel-title">
+              <span className="detail-summary-main">{t.tickets.eventsTitle}</span>
+              <span className="detail-summary-preview">{eventsPreview}</span>
+            </summary>
+            <div className="stack ticket-events-stack disclosure-body">
+              {data.ticket.events.length ? (
+                data.ticket.events.map((event) => (
+                  <div key={event.id} className="event-card">
+                    <div className="event-card-header">
+                      <strong>{event.title}</strong>
+                      <form action={deleteTicketEventAction}>
+                        <input type="hidden" name="ticketId" value={data.ticket.id} />
+                        <input type="hidden" name="eventId" value={event.id} />
+                        <button type="submit" className="ghost-button event-delete-button">
+                          {t.tickets.deleteEvent}
+                        </button>
+                      </form>
+                    </div>
+                    <div className="muted event-card-time">
+                      {formatDateTime(event.scheduledFor, data.localeCode, data.timeZone)}
+                    </div>
+                    {event.notes ? <p>{event.notes}</p> : null}
+                    <div className="event-reminder-badges">
+                      {event.reminders.length ? (
+                        event.reminders.map((reminder) => (
+                          <Badge
+                            key={reminder.id}
+                            label={formatReminderOffsetLabel(reminder.offsetMinutes, data.locale)}
+                            tone="neutral"
+                          />
+                        ))
+                      ) : (
+                        <span className="muted">{t.tickets.noEventReminders}</span>
+                      )}
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <EmptyState title={t.tickets.eventsTitle} body={t.tickets.eventsEmpty} />
+              )}
+
+              <div className="ticket-subsection">
+                <TicketEventForm
+                  action={createTicketEventAction}
+                  ticketId={data.ticket.id}
+                  labels={{
+                    title: t.common.title,
+                    notes: t.tickets.eventNotes,
+                    scheduledFor: t.tickets.eventScheduledFor,
+                    reminders: t.tickets.eventReminders,
+                    create: t.tickets.createEvent,
+                    optional: t.common.optional,
+                  }}
+                  reminderOptions={defaultTicketEventReminderOffsets.map((offset) => ({
+                    value: offset,
+                    label: formatReminderOffsetLabel(offset, data.locale),
+                  }))}
+                />
+              </div>
+            </div>
+          </details>
+
+          <details className="panel detail-disclosure" open={showChildrenOpenByDefault}>
+            <summary className="panel-title">
+              <span className="detail-summary-main">{t.common.childTickets}</span>
+              <span className="detail-summary-preview">{childrenPreview}</span>
+            </summary>
+            <div className="disclosure-body">
+              <form action={updateTicketAction} className="stack ticket-subsection">
+                <input type="hidden" name="ticketId" value={data.ticket.id} />
+                <div className="field">
+                  <label htmlFor="parentTicketId-inline">
+                    {t.common.parentTicket} <span className="muted">({t.common.optional})</span>
+                  </label>
+                  <select id="parentTicketId-inline" name="parentTicketId" defaultValue={data.ticket.parentTicketId ?? ""}>
+                    <option value="">{t.common.none}</option>
+                    {data.parentTicketCandidates.map((candidate) => (
+                      <option key={candidate.id} value={candidate.id}>
+                        {candidate.ticketNumber} · {candidate.title}
+                      </option>
+                    ))}
+                  </select>
+                  <p className="muted">{t.common.topLevelOnlyHint}</p>
+                </div>
+                <div>
+                  <button type="submit">{t.common.save}</button>
+                </div>
+              </form>
+              {data.ticket.childTickets.length ? (
+                <div className="list">
+                  {data.ticket.childTickets.map((child) => (
+                    <Link key={child.id} href={`/tickets/${child.id}`} className="list-row">
+                      <div>
+                        <div className="ticket-number">{child.ticketNumber}</div>
+                        <strong>{child.title}</strong>
+                      </div>
+                      <Badge label={localizeDefinition(child.status, data.locale)} tone="accent" />
+                    </Link>
+                  ))}
+                </div>
+              ) : (
+                <EmptyState title={t.common.childTickets} body={t.tickets.childrenEmpty} />
+              )}
+            </div>
+          </details>
         </div>
       </div>
 
-      <Panel title={t.common.childTickets}>
-        {data.ticket.childTickets.length ? (
-          <div className="list">
-            {data.ticket.childTickets.map((child) => (
-              <Link key={child.id} href={`/tickets/${child.id}`} className="list-row">
-                <div>
-                  <div className="ticket-number">{child.ticketNumber}</div>
-                  <strong>{child.title}</strong>
-                </div>
-                <Badge label={localizeDefinition(child.status, data.locale)} tone="accent" />
-              </Link>
-            ))}
-          </div>
-        ) : (
-          <EmptyState title={t.common.childTickets} body={t.tickets.childrenEmpty} />
-        )}
-      </Panel>
-
-      {showResolveAction ? (
-        <form action={updateTicketAction} className="floating-action-form">
-          <input type="hidden" name="ticketId" value={data.ticket.id} />
-          <input type="hidden" name="statusId" value={resolvedStatusId} />
-          <button type="submit" className="floating-action">
-            {t.common.resolveTicket}
-          </button>
-        </form>
-      ) : null}
+      <button type="submit" className="floating-action" form="ticket-edit-form">
+        <span className="button-content">
+          <SaveIcon className="floating-action-icon" />
+          <span>{t.common.save}</span>
+        </span>
+      </button>
     </>
   );
 }

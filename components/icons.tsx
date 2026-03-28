@@ -103,3 +103,14 @@ export function PencilIcon({ className }: IconProps) {
     </IconBase>
   );
 }
+
+export function SaveIcon({ className }: IconProps) {
+  return (
+    <IconBase className={className}>
+      <path
+        d="M5.5 3h10.79a2 2 0 0 1 1.42.59l2.7 2.7A2 2 0 0 1 21 7.7V18.5A2.5 2.5 0 0 1 18.5 21h-13A2.5 2.5 0 0 1 3 18.5v-13A2.5 2.5 0 0 1 5.5 3Zm1 2A1.5 1.5 0 0 0 5 6.5v12A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5V8.33a1 1 0 0 0-.29-.7L16.37 5.3a1 1 0 0 0-.7-.29h-.17v3.74A1.25 1.25 0 0 1 14.25 10h-6.5A1.25 1.25 0 0 1 6.5 8.75V5Zm2 0v3h5V5h-5Zm-1 8.75A1.25 1.25 0 0 1 8.75 12.5h6.5a1.25 1.25 0 0 1 1.25 1.25v3.5a1.25 1.25 0 0 1-1.25 1.25h-6.5a1.25 1.25 0 0 1-1.25-1.25v-3.5Z"
+        fill="currentColor"
+      />
+    </IconBase>
+  );
+}
