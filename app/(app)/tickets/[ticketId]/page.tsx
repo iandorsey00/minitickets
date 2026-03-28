@@ -19,6 +19,7 @@ export default async function TicketDetailPage({
   const t = data.dictionary;
   const resolvedStatusId = data.definitions.statuses.find((status) => status.key === "RESOLVED")?.id ?? null;
   const showResolveAction = resolvedStatusId && !["RESOLVED", "CLOSED", "CANCELLED"].includes(data.ticket.status.key);
+  const selectedPaymentMethodIds = new Set(data.ticket.paymentMethods.map((item) => item.paymentMethodId));
   const historyItems = [
     ...data.ticket.activities
       .filter((activity) => !["ticket.comment_added", "ticket.attachment_added"].includes(activity.eventType))
@@ -57,12 +58,14 @@ export default async function TicketDetailPage({
 
       <div className="detail-layout">
         <div className="stack">
-          <details className="panel detail-disclosure">
-            <summary className="panel-title">{t.common.description}</summary>
-            <div className="disclosure-body">
-              {data.ticket.description ? <p>{data.ticket.description}</p> : <p className="muted">{t.common.optional}</p>}
-            </div>
-          </details>
+          {data.ticket.description ? (
+            <details className="panel detail-disclosure">
+              <summary className="panel-title">{t.common.description}</summary>
+              <div className="disclosure-body">
+                <p>{data.ticket.description}</p>
+              </div>
+            </details>
+          ) : null}
 
           <Panel title={t.common.activity}>
             <div className="timeline">
@@ -117,7 +120,7 @@ export default async function TicketDetailPage({
               <div className="field">
                 <label htmlFor="file">{t.common.uploadFile}</label>
                 <input id="file" name="file" type="file" required />
-                <p className="muted">{t.common.uploadWarning}</p>
+                <p className="warning-text">{t.common.uploadWarning}</p>
               </div>
               <div>
                 <button type="submit">{t.common.uploadFile}</button>
@@ -154,12 +157,20 @@ export default async function TicketDetailPage({
                 <span>{formatDate(data.ticket.dueDate, data.localeCode, data.timeZone)}</span>
               </div>
               <div className="meta-item">
-                <span>{t.common.paymentLabel}</span>
-                <span>{data.ticket.paymentLabel ?? t.common.none}</span>
-              </div>
-              <div className="meta-item">
-                <span>{t.common.paymentLast4}</span>
-                <span>{data.ticket.paymentLast4 ?? t.common.none}</span>
+                <span>{t.common.paymentMethods}</span>
+                {data.ticket.paymentMethods.length ? (
+                  <div className="stack" style={{ gap: "0.4rem" }}>
+                    {data.ticket.paymentMethods.map((item) => (
+                      <span key={item.id}>{item.paymentMethod.label} · {item.paymentMethod.last4}</span>
+                    ))}
+                  </div>
+                ) : data.ticket.paymentLabel || data.ticket.paymentLast4 ? (
+                  <span>
+                    {[data.ticket.paymentLabel, data.ticket.paymentLast4].filter(Boolean).join(" · ")}
+                  </span>
+                ) : (
+                  <span>{t.common.none}</span>
+                )}
               </div>
             </div>
           </Panel>
@@ -226,6 +237,25 @@ export default async function TicketDetailPage({
                 />
               </div>
               <div className="field">
+                <label htmlFor="savedPaymentMethodIds">
+                  {t.common.paymentMethods} <span className="muted">({t.common.optional})</span>
+                </label>
+                <select
+                  id="savedPaymentMethodIds"
+                  name="savedPaymentMethodIds"
+                  multiple
+                  size={Math.min(4, Math.max(2, data.savedPaymentMethods.length || 2))}
+                  defaultValue={Array.from(selectedPaymentMethodIds)}
+                >
+                  {data.savedPaymentMethods.map((method) => (
+                    <option key={method.id} value={method.id}>
+                      {method.label} · {method.last4}
+                    </option>
+                  ))}
+                </select>
+                {!data.savedPaymentMethods.length ? <p className="muted">{t.common.noSavedPaymentMethods}</p> : null}
+              </div>
+              <div className="field">
                 <label htmlFor="paymentLabel">{t.common.paymentLabel}</label>
                 <input id="paymentLabel" name="paymentLabel" defaultValue={data.ticket.paymentLabel ?? ""} maxLength={60} />
               </div>
@@ -239,6 +269,12 @@ export default async function TicketDetailPage({
                   pattern="\d{4}"
                   maxLength={4}
                 />
+              </div>
+              <div className="field">
+                <label>
+                  <input type="checkbox" name="savePaymentMethod" value="yes" style={{ width: "auto", marginRight: "0.55rem" }} />
+                  {t.common.savePaymentMethod}
+                </label>
               </div>
               <div>
                 <button type="submit">{t.common.save}</button>

@@ -18,6 +18,13 @@ type DefinitionOption = {
   label: string;
 };
 
+type PaymentMethodOption = {
+  id: string;
+  label: string;
+  last4: string;
+  workspaceId: string;
+};
+
 type TicketCreateFormProps = {
   action: (formData: FormData) => void | Promise<void>;
   dictionary: {
@@ -34,6 +41,9 @@ type TicketCreateFormProps = {
       description: string;
       paymentLabel: string;
       paymentLast4: string;
+      paymentMethods: string;
+      savePaymentMethod: string;
+      noSavedPaymentMethods: string;
       submitRequest: string;
     };
   };
@@ -42,6 +52,7 @@ type TicketCreateFormProps = {
   categories: DefinitionOption[];
   priorities: DefinitionOption[];
   statuses: DefinitionOption[];
+  paymentMethods: PaymentMethodOption[];
   defaults: {
     workspaceId: string;
     categoryId?: string | null;
@@ -59,6 +70,7 @@ export function TicketCreateForm({
   categories,
   priorities,
   statuses,
+  paymentMethods,
   defaults,
 }: TicketCreateFormProps) {
   const [workspaceId, setWorkspaceId] = useState(defaults.workspaceId);
@@ -69,6 +81,10 @@ export function TicketCreateForm({
   const workspacePeople = useMemo(
     () => people.filter((person) => person.workspaceIds.includes(workspaceId)),
     [people, workspaceId],
+  );
+  const workspacePaymentMethods = useMemo(
+    () => paymentMethods.filter((method) => method.workspaceId === workspaceId),
+    [paymentMethods, workspaceId],
   );
 
   return (
@@ -186,6 +202,21 @@ export function TicketCreateForm({
       </div>
       <div className="form-grid">
         <div className="field">
+          <label htmlFor="savedPaymentMethodIds">
+            {dictionary.common.paymentMethods} <span className="muted">({dictionary.common.optional})</span>
+          </label>
+          <select id="savedPaymentMethodIds" name="savedPaymentMethodIds" multiple size={Math.min(4, Math.max(2, workspacePaymentMethods.length || 2))}>
+            {workspacePaymentMethods.map((method) => (
+              <option key={method.id} value={method.id}>
+                {method.label} · {method.last4}
+              </option>
+            ))}
+          </select>
+          {!workspacePaymentMethods.length ? <p className="muted">{dictionary.common.noSavedPaymentMethods}</p> : null}
+        </div>
+      </div>
+      <div className="form-grid">
+        <div className="field">
           <label htmlFor="paymentLabel">
             {dictionary.common.paymentLabel} <span className="muted">({dictionary.common.optional})</span>
           </label>
@@ -197,6 +228,12 @@ export function TicketCreateForm({
           </label>
           <input id="paymentLast4" name="paymentLast4" inputMode="numeric" pattern="\d{4}" maxLength={4} />
         </div>
+      </div>
+      <div className="field">
+        <label>
+          <input type="checkbox" name="savePaymentMethod" value="yes" style={{ width: "auto", marginRight: "0.55rem" }} />
+          {dictionary.common.savePaymentMethod}
+        </label>
       </div>
       <div>
         <button type="submit">{dictionary.common.submitRequest}</button>

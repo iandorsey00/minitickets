@@ -95,6 +95,51 @@ async function getClientIp() {
   return headerStore.get("x-real-ip") || "unknown";
 }
 
+async function resolveSavedPaymentMethodIds(
+  userId: string,
+  workspaceId: string,
+  selectedIds: string[],
+  manualLabel?: string | null,
+  manualLast4?: string | null,
+  saveManualMethod?: boolean,
+) {
+  const normalizedSelectedIds = Array.from(new Set(selectedIds.filter(Boolean)));
+  const existingMethods = normalizedSelectedIds.length
+    ? await prisma.paymentMethod.findMany({
+        where: {
+          id: { in: normalizedSelectedIds },
+          workspaceId,
+        },
+        select: { id: true },
+      })
+    : [];
+
+  const validIds = existingMethods.map((method) => method.id);
+
+  if (saveManualMethod && manualLabel && manualLast4) {
+    const savedMethod = await prisma.paymentMethod.upsert({
+      where: {
+        workspaceId_label_last4: {
+          workspaceId,
+          label: manualLabel,
+          last4: manualLast4,
+        },
+      },
+      update: {},
+      create: {
+        workspaceId,
+        createdByUserId: userId,
+        label: manualLabel,
+        last4: manualLast4,
+      },
+      select: { id: true },
+    });
+    validIds.push(savedMethod.id);
+  }
+
+  return Array.from(new Set(validIds));
+}
+
 export async function loginAction(formData: FormData) {
   const parsed = loginSchema.safeParse({
     email: formData.get("email"),
@@ -189,6 +234,11 @@ export async function createTicketAction(formData: FormData) {
     redirect("/tickets/new?error=invalid");
   }
 
+  const selectedPaymentMethodIds = formData
+    .getAll("savedPaymentMethodIds")
+    .map((value) => String(value))
+    .filter(Boolean);
+
   const membership = await prisma.workspaceMembership.findFirst({
     where: {
       userId: user.id,
@@ -266,6 +316,21 @@ export async function createTicketAction(formData: FormData) {
       dueDate: parsed.data.dueDate ? new Date(parsed.data.dueDate) : null,
       paymentLabel: parsed.data.paymentLabel || null,
       paymentLast4: parsed.data.paymentLast4 || null,
+      paymentMethods: {
+        create:
+          (
+            await resolveSavedPaymentMethodIds(
+              user.id,
+              parsed.data.workspaceId,
+              selectedPaymentMethodIds,
+              parsed.data.paymentLabel || null,
+              parsed.data.paymentLast4 || null,
+              formData.get("savePaymentMethod") === "yes",
+            )
+          ).map((paymentMethodId) => ({
+            paymentMethodId,
+          })),
+      },
       activities: {
         create: {
           actorUserId: user.id,
@@ -374,6 +439,10 @@ export async function updateTicketAction(formData: FormData) {
     title: String(formData.get("title") ?? ticket.title),
     description: String(formData.get("description") ?? ticket.description),
   };
+  const selectedPaymentMethodIds = formData
+    .getAll("savedPaymentMethodIds")
+    .map((value) => String(value))
+    .filter(Boolean);
 
   const nextStatus = await prisma.statusDefinition.findUnique({
     where: { id: nextValues.statusId },
@@ -452,6 +521,22 @@ export async function updateTicketAction(formData: FormData) {
           : nextStatus.key === "CLOSED"
             ? ticket.resolvedAt ?? new Date()
             : null,
+      paymentMethods: {
+        deleteMany: {},
+        create:
+          (
+            await resolveSavedPaymentMethodIds(
+              user.id,
+              ticket.workspaceId,
+              selectedPaymentMethodIds,
+              nextValues.paymentLabel,
+              nextValues.paymentLast4,
+              formData.get("savePaymentMethod") === "yes",
+            )
+          ).map((paymentMethodId) => ({
+            paymentMethodId,
+          })),
+      },
       activities: activities.length ? { create: activities } : undefined,
     },
     include: {

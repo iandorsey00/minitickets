@@ -39,6 +39,12 @@ export default async function NewTicketPage() {
     },
     orderBy: { displayName: "asc" },
   });
+  const savedPaymentMethods = await prisma.paymentMethod.findMany({
+    where: {
+      workspaceId: { in: context.accessibleWorkspaceIds },
+    },
+    orderBy: [{ label: "asc" }, { last4: "asc" }],
+  });
   const inProgressStatus = definitions.statuses.find((item) => item.key === "IN_PROGRESS");
 
   return (
@@ -68,6 +74,12 @@ export default async function NewTicketPage() {
           statuses={definitions.statuses.filter((item) => item.isActive).map((item) => ({
             id: item.id,
             label: localizeDefinition(item, context.locale),
+          }))}
+          paymentMethods={savedPaymentMethods.map((method) => ({
+            id: method.id,
+            label: method.label,
+            last4: method.last4,
+            workspaceId: method.workspaceId,
           }))}
           defaults={{
             workspaceId: context.currentWorkspace?.id ?? context.memberships[0]?.workspace.id ?? "",

@@ -57,10 +57,14 @@ export function AppShell({
   const pathname = usePathname();
   const ticketDetailMatch = pathname.match(/^\/tickets\/([^/]+)$/);
   const isTicketDetailPage = Boolean(ticketDetailMatch);
+  const hasMultipleWorkspaces = memberships.length > 1;
+  const currentWorkspaceName =
+    memberships.find((membership) => membership.workspaceId === currentWorkspaceId)?.workspace.name ??
+    memberships[0]?.workspace.name ??
+    "";
   const navItems = [
     { href: "/tickets", label: dictionary.nav.tickets },
     { href: "/dashboard", label: dictionary.nav.dashboard },
-    { href: "/tickets/new", label: dictionary.nav.createTicket },
     { href: "/workspaces", label: dictionary.nav.workspaces },
     ...(user.role === "ADMIN" ? [{ href: "/admin", label: dictionary.nav.admin }] : []),
     { href: "/settings", label: dictionary.nav.settings },
@@ -90,19 +94,25 @@ export function AppShell({
 
       <div className="main-column">
         <header className="topbar">
-          <form action={switchWorkspaceAction} className="workspace-switcher" id="workspace-switcher-form">
-            <label htmlFor="workspaceId" className="sr-only">
-              Workspace
-            </label>
-            <select id="workspaceId" name="workspaceId" defaultValue={currentWorkspaceId ?? ""}>
-              {memberships.map((membership) => (
-                <option key={membership.workspace.id} value={membership.workspace.id}>
-                  {membership.workspace.name}
-                </option>
-              ))}
-            </select>
-            <input type="hidden" name="nextPath" value={pathname || "/dashboard"} />
-          </form>
+          {hasMultipleWorkspaces ? (
+            <form action={switchWorkspaceAction} className="workspace-switcher" id="workspace-switcher-form">
+              <label htmlFor="workspaceId" className="sr-only">
+                Workspace
+              </label>
+              <select id="workspaceId" name="workspaceId" defaultValue={currentWorkspaceId ?? ""}>
+                {memberships.map((membership) => (
+                  <option key={membership.workspace.id} value={membership.workspace.id}>
+                    {membership.workspace.name}
+                  </option>
+                ))}
+              </select>
+              <input type="hidden" name="nextPath" value={pathname || "/dashboard"} />
+            </form>
+          ) : (
+            <div className="workspace-label" aria-label={dictionary.nav.workspaces}>
+              {currentWorkspaceName}
+            </div>
+          )}
 
           <form action="/tickets" className="header-search">
             <label htmlFor="header-search" className="sr-only">
@@ -116,9 +126,11 @@ export function AppShell({
             <div className="user-chip">
               <span>{user.displayName}</span>
             </div>
-            <button type="submit" className="ghost-button" form="workspace-switcher-form">
-              {dictionary.nav.workspaces}
-            </button>
+            {hasMultipleWorkspaces ? (
+              <button type="submit" className="ghost-button" form="workspace-switcher-form">
+                {dictionary.nav.workspaces}
+              </button>
+            ) : null}
             <form action={logoutAction}>
               <button type="submit" className="ghost-button">
                 {dictionary.nav.logout}

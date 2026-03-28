@@ -103,6 +103,11 @@ textarea {
   font: inherit;
 }
 
+select[multiple] {
+  min-height: 8.5rem;
+  padding: 0.45rem 0.35rem;
+}
+
 button,
 .button,
 .ghost-button {
@@ -207,6 +212,11 @@ textarea {
 .muted,
 .row-meta {
   color: var(--color-muted);
+}
+
+.warning-text {
+  color: #dc2626;
+  font-size: 0.92rem;
 }
 
 .hero-card {
@@ -355,6 +365,15 @@ textarea {
   display: flex;
   align-items: center;
   min-width: 0;
+}
+
+.workspace-label {
+  display: flex;
+  align-items: center;
+  min-height: 3.2rem;
+  padding: 0.7rem 0.1rem;
+  border-bottom: 1px solid var(--color-line);
+  font-weight: 600;
 }
 
 .workspace-switcher select {
@@ -584,6 +603,8 @@ textarea {
 }
 
 .timeline-item {
+  padding-top: 0.2rem;
+  padding-bottom: 0.95rem;
   padding-left: 0.9rem;
   border-left: 1px solid var(--color-line);
 }
@@ -805,6 +826,12 @@ textarea {
   .workspace-switcher {
     grid-column: 1 / 2;
     width: 100%;
+  }
+
+  .workspace-label {
+    grid-column: 1 / 2;
+    width: 100%;
+    min-height: 2.65rem;
   }
 
   .workspace-switcher select,

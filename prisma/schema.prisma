@@ -59,6 +59,7 @@ model User {
   comments            TicketComment[]
   activities          TicketActivity[]      @relation("ActorActivities")
   uploadedAttachments TicketAttachment[]    @relation("UploadedAttachments")
+  createdPaymentMethods PaymentMethod[]     @relation("CreatedPaymentMethods")
   notifications       Notification[]
   sessions            Session[]
   authAccounts        AuthAccount[]
@@ -75,6 +76,7 @@ model Workspace {
   createdAt     DateTime              @default(now())
   updatedAt     DateTime              @updatedAt
   memberships   WorkspaceMembership[]
+  paymentMethods PaymentMethod[]
   tickets       Ticket[]
 }
 
@@ -153,6 +155,7 @@ model Ticket {
   comments    TicketComment[]
   activities  TicketActivity[]
   attachments TicketAttachment[]
+  paymentMethods TicketPaymentMethod[]
   notifications Notification[]
 
   @@index([workspaceId, createdAt])
@@ -267,4 +270,32 @@ model AuthRateLimit {
   updatedAt       DateTime @updatedAt
 
   @@unique([action, key])
+}
+
+model PaymentMethod {
+  id          String   @id @default(cuid())
+  workspaceId String
+  createdByUserId String
+  label       String
+  last4       String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  createdBy   User     @relation("CreatedPaymentMethods", fields: [createdByUserId], references: [id], onDelete: Cascade)
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  tickets     TicketPaymentMethod[]
+
+  @@unique([workspaceId, label, last4])
+  @@index([workspaceId])
+}
+
+model TicketPaymentMethod {
+  id              String        @id @default(cuid())
+  ticketId         String
+  paymentMethodId  String
+  createdAt        DateTime      @default(now())
+  ticket           Ticket        @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  paymentMethod    PaymentMethod @relation(fields: [paymentMethodId], references: [id], onDelete: Cascade)
+
+  @@unique([ticketId, paymentMethodId])
+  @@index([paymentMethodId])
 }

@@ -254,6 +254,16 @@ export async function getTicketDetail(ticketId: string) {
         },
         orderBy: { createdAt: "asc" },
       },
+      paymentMethods: {
+        include: {
+          paymentMethod: true,
+        },
+        orderBy: {
+          paymentMethod: {
+            label: "asc",
+          },
+        },
+      },
     },
   });
 
@@ -261,7 +271,7 @@ export async function getTicketDetail(ticketId: string) {
     return null;
   }
 
-  const [definitions, workspacePeople] = await Promise.all([
+  const [definitions, workspacePeople, savedPaymentMethods] = await Promise.all([
     getDefinitions(),
     prisma.user.findMany({
       where: {
@@ -280,6 +290,12 @@ export async function getTicketDetail(ticketId: string) {
       },
       orderBy: { displayName: "asc" },
     }),
+    prisma.paymentMethod.findMany({
+      where: {
+        workspaceId: ticket.workspaceId,
+      },
+      orderBy: [{ label: "asc" }, { last4: "asc" }],
+    }),
   ]);
 
   return {
@@ -287,6 +303,7 @@ export async function getTicketDetail(ticketId: string) {
     ticket,
     definitions,
     workspacePeople,
+    savedPaymentMethods,
   };
 }
 
