@@ -1012,6 +1012,31 @@ export async function assignMembershipAction(formData: FormData) {
   revalidatePath("/admin/workspaces");
 }
 
+export async function removeMembershipAction(formData: FormData) {
+  const user = await requireUser();
+  if (user.role !== UserRole.ADMIN) {
+    redirect("/dashboard");
+  }
+
+  const targetUserId = String(formData.get("userId") ?? "");
+  const workspaceId = String(formData.get("workspaceId") ?? "");
+
+  if (!targetUserId || !workspaceId) {
+    redirect("/admin/users");
+  }
+
+  await prisma.workspaceMembership.deleteMany({
+    where: {
+      userId: targetUserId,
+      workspaceId,
+    },
+  });
+
+  revalidatePath("/admin");
+  revalidatePath("/admin/users");
+  revalidatePath("/admin/workspaces");
+}
+
 export async function createDefinitionAction(formData: FormData) {
   const user = await requireUser();
   if (user.role !== UserRole.ADMIN) {

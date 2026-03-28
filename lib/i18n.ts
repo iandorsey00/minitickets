@@ -138,6 +138,9 @@ const dictionaries = {
       createWorkspace: "新建工作区",
       createDefinition: "新增条目",
       membershipNote: "可在下方直接为用户分配工作区。",
+      currentMemberships: "当前工作区",
+      addMembership: "添加工作区",
+      removeMembership: "移除",
     },
     settings: {
       title: "设置",
@@ -288,6 +291,9 @@ const dictionaries = {
       createWorkspace: "Create workspace",
       createDefinition: "Create item",
       membershipNote: "Assign users to workspaces directly below.",
+      currentMemberships: "Current workspaces",
+      addMembership: "Add workspace",
+      removeMembership: "Remove",
     },
     settings: {
       title: "Settings",

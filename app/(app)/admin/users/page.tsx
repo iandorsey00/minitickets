@@ -1,4 +1,10 @@
-import { assignMembershipAction, createUserAction, resendUserInviteAction, toggleUserActiveAction } from "@/lib/actions";
+import {
+  assignMembershipAction,
+  createUserAction,
+  removeMembershipAction,
+  resendUserInviteAction,
+  toggleUserActiveAction,
+} from "@/lib/actions";
 import { accentLabelMap, accentValues, localeValues } from "@/lib/constants";
 import { getAdminData } from "@/lib/data";
 import { Badge, PageHeader, Panel } from "@/components/ui";
@@ -110,30 +116,72 @@ export default async function AdminUsersPage() {
       <Panel title={t.common.members}>
         <div className="grid-2">
           {data.users.map((user) => (
-            <form key={user.id} action={assignMembershipAction} className="panel">
-              <input type="hidden" name="userId" value={user.id} />
+            <div key={user.id} className="panel">
               <div className="stack">
                 <strong>{user.displayName}</strong>
-                <div className="field">
-                  <label htmlFor={`workspace-${user.id}`}>{t.common.workspace}</label>
-                  <select id={`workspace-${user.id}`} name="workspaceId">
-                    {data.workspaces.map((workspace) => (
-                      <option key={workspace.id} value={workspace.id}>
-                        {workspace.name}
-                      </option>
-                    ))}
-                  </select>
+                <div className="stack" style={{ gap: "0.6rem" }}>
+                  <span className="muted">{t.admin.currentMemberships}</span>
+                  {user.memberships.length ? (
+                    <div className="helper-links" style={{ flexWrap: "wrap", gap: "0.5rem" }}>
+                      {user.memberships.map((membership) => (
+                        <form
+                          key={`${user.id}-${membership.workspaceId}`}
+                          action={removeMembershipAction}
+                          style={{ display: "inline-flex", alignItems: "center", gap: "0.4rem" }}
+                        >
+                          <input type="hidden" name="userId" value={user.id} />
+                          <input type="hidden" name="workspaceId" value={membership.workspaceId} />
+                          <Badge
+                            label={`${membership.workspace.name} · ${
+                              membership.role === "ADMIN" ? t.common.adminRole : t.common.member
+                            }`}
+                            tone="neutral"
+                          />
+                          <button type="submit" className="ghost-button">
+                            {t.admin.removeMembership}
+                          </button>
+                        </form>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="muted">{t.states.emptySearch}</div>
+                  )}
                 </div>
-                <div className="field">
-                  <label htmlFor={`workspace-role-${user.id}`}>{t.common.role}</label>
-                  <select id={`workspace-role-${user.id}`} name="role">
-                    <option value="MEMBER">{t.common.member}</option>
-                    <option value="ADMIN">{t.common.adminRole}</option>
-                  </select>
-                </div>
-                <button type="submit">{t.common.save}</button>
+                <form action={assignMembershipAction} className="stack">
+                  <input type="hidden" name="userId" value={user.id} />
+                  <div className="field">
+                    <label htmlFor={`workspace-${user.id}`}>{t.admin.addMembership}</label>
+                    <select id={`workspace-${user.id}`} name="workspaceId">
+                      {data.workspaces
+                        .filter(
+                          (workspace) =>
+                            !user.memberships.some((membership) => membership.workspaceId === workspace.id),
+                        )
+                        .map((workspace) => (
+                          <option key={workspace.id} value={workspace.id}>
+                            {workspace.name}
+                          </option>
+                        ))}
+                    </select>
+                  </div>
+                  <div className="field">
+                    <label htmlFor={`workspace-role-${user.id}`}>{t.common.role}</label>
+                    <select id={`workspace-role-${user.id}`} name="role">
+                      <option value="MEMBER">{t.common.member}</option>
+                      <option value="ADMIN">{t.common.adminRole}</option>
+                    </select>
+                  </div>
+                  <button
+                    type="submit"
+                    disabled={data.workspaces.every((workspace) =>
+                      user.memberships.some((membership) => membership.workspaceId === workspace.id),
+                    )}
+                  >
+                    {t.common.save}
+                  </button>
+                </form>
               </div>
-            </form>
+            </div>
           ))}
         </div>
       </Panel>
