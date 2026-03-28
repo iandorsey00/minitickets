@@ -1113,6 +1113,17 @@ textarea {
   font-size: 0.85rem;
 }
 
+.ticket-parent-link {
+  display: inline-grid;
+  gap: 0.18rem;
+  text-decoration: none;
+  color: inherit;
+}
+
+.ticket-parent-link:hover {
+  color: var(--color-accent);
+}
+
 .due-date-value {
   transition: color 160ms ease;
 }

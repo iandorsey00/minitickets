@@ -599,6 +599,17 @@ export default async function TicketDetailPage({
                   </div>
                 </form>
               ) : null}
+              {data.ticket.parentTicket ? (
+                <div className="ticket-subsection">
+                  <div className="meta-pair">
+                    <span>{t.common.parentTicket}</span>
+                    <Link href={`/tickets/${data.ticket.parentTicket.id}`} className="ticket-parent-link">
+                      <span className="ticket-number">{data.ticket.parentTicket.ticketNumber}</span>
+                      <strong>{data.ticket.parentTicket.title}</strong>
+                    </Link>
+                  </div>
+                </div>
+              ) : null}
               {data.ticket.childTickets.length ? (
                 <div className="list">
                   {data.ticket.childTickets.map((child) => (
