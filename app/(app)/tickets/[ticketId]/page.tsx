@@ -3,6 +3,7 @@ import { getTicketDetail } from "@/lib/data";
 import { formatDate, formatDateTime, formatFileSize, localizeDefinition } from "@/lib/format";
 import { canRenderInline, getTicketAttachmentUrl } from "@/lib/uploads";
 import { Badge, EmptyState, PageHeader, Panel } from "@/components/ui";
+import { TicketShareMenu } from "@/components/ticket-share-menu";
 
 export default async function TicketDetailPage({
   params,
@@ -48,12 +49,53 @@ export default async function TicketDetailPage({
       mimeType: attachment.mimeType,
     })),
   ].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+  const ticketUrl = `${(process.env.APP_URL ?? "http://localhost:3000").replace(/\/+$/, "")}/tickets/${data.ticket.id}`;
+  const titleExport = `${data.ticket.ticketNumber} ${data.ticket.title}\n${ticketUrl}`;
+  const summaryLines = [
+    `${data.ticket.ticketNumber} ${data.ticket.title}`,
+    `${t.common.workspace}：${data.ticket.workspace.name}`,
+    `${t.common.status}：${localizeDefinition(data.ticket.status, data.locale)}`,
+    `${t.common.assignee}：${data.ticket.assignee?.displayName ?? t.common.none}`,
+    `${t.common.updatedAt}：${formatDateTime(data.ticket.updatedAt, data.localeCode, data.timeZone)}`,
+    ticketUrl,
+  ];
+  const threadLines = [
+    ...summaryLines,
+    "",
+    ...historyItems.flatMap((item) => {
+      const timestamp = formatDateTime(item.createdAt, data.localeCode, data.timeZone);
+      if (item.kind === "activity") {
+        return [`${timestamp} · ${item.actorName}`, item.title, ""];
+      }
+      if (item.kind === "comment") {
+        return [`${timestamp} · ${item.actorName}`, item.body, ""];
+      }
+      return [
+        `${timestamp} · ${item.actorName}`,
+        `${t.common.attachments}：${item.originalName} (${formatFileSize(item.fileSizeBytes)})`,
+        item.filePath,
+        "",
+      ];
+    }),
+  ];
 
   return (
     <>
       <PageHeader
         title={data.ticket.title}
         subtitle={`${data.ticket.ticketNumber} · ${data.ticket.workspace.name}`}
+        action={
+          <TicketShareMenu
+            label={t.common.share}
+            copiedLabel={t.common.copied}
+            copyTitleLabel={t.common.copyTicketTitle}
+            copySummaryLabel={t.common.copyTicketSummary}
+            copyThreadLabel={t.common.copyTicketThread}
+            titleText={titleExport}
+            summaryText={summaryLines.join("\n")}
+            threadText={threadLines.join("\n")}
+          />
+        }
       />
 
       <div className="detail-layout">

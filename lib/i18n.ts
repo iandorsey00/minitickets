@@ -42,6 +42,11 @@ const dictionaries = {
     },
     common: {
       search: "搜索",
+      share: "分享",
+      copied: "已复制。",
+      copyTicketTitle: "复制工单标题",
+      copyTicketSummary: "复制工单摘要",
+      copyTicketThread: "复制完整记录",
       keyword: "关键词",
       save: "保存",
       cancel: "取消",
@@ -211,6 +216,11 @@ const dictionaries = {
     },
     common: {
       search: "Search",
+      share: "Share",
+      copied: "Copied.",
+      copyTicketTitle: "Copy ticket title",
+      copyTicketSummary: "Copy ticket summary",
+      copyTicketThread: "Copy full record",
       keyword: "Keyword",
       save: "Save",
       cancel: "Cancel",

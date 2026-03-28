@@ -144,7 +144,15 @@ export function AppShell({
 
         {pathname !== "/tickets/new" && !isTicketDetailPage ? (
           <Link href="/tickets/new" className="floating-action">
-            {dictionary.nav.createTicket}
+            <span className="floating-action-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" focusable="false">
+                <path
+                  d="m3 17.25 9.9-9.9 3.75 3.75-9.9 9.9H3v-3.75Zm14.71-10.04a1.003 1.003 0 0 0 0-1.42l-1.5-1.5a1.003 1.003 0 0 0-1.42 0l-1.17 1.17 3.75 3.75 1.34-1.34Z"
+                  fill="currentColor"
+                />
+              </svg>
+            </span>
+            <span>{dictionary.nav.createTicket}</span>
           </Link>
         ) : null}
       </div>
