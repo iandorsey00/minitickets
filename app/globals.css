@@ -351,11 +351,26 @@ textarea {
 }
 
 .nav-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.65rem;
   padding: 0.8rem 0;
   border-radius: 0;
   color: var(--color-muted);
   font-weight: 600;
   transition: 160ms ease;
+}
+
+.nav-link-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+}
+
+.nav-link-icon svg {
+  width: 1.05rem;
+  height: 1.05rem;
 }
 
 .nav-link.is-active,
@@ -471,6 +486,31 @@ textarea {
 .share-menu-icon svg {
   width: 1rem;
   height: 1rem;
+}
+
+.inline-icon,
+.button-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+}
+
+.inline-icon svg,
+.button-icon svg {
+  width: 1rem;
+  height: 1rem;
+}
+
+.button-content,
+.label-with-icon {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+.label-with-icon {
+  font-weight: 600;
 }
 
 .floating-action-form {
@@ -692,6 +732,27 @@ textarea {
 
 .field label {
   font-weight: 600;
+}
+
+.file-picker {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.file-picker-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.file-picker-name {
+  color: var(--color-text);
+}
+
+.file-picker-name.is-empty {
+  color: var(--color-muted);
 }
 
 .detail-layout {

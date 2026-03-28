@@ -6,6 +6,8 @@ import { formatDate, formatDateTime, formatFileSize, localizeDefinition } from "
 import { formatReminderOffsetLabel } from "@/lib/reminder-labels";
 import { defaultTicketEventReminderOffsets } from "@/lib/ticket-events";
 import { canRenderInline, getTicketAttachmentUrl } from "@/lib/uploads";
+import { CommentIcon, UploadIcon } from "@/components/icons";
+import { FilePicker } from "@/components/file-picker";
 import { Badge, EmptyState, PageHeader, Panel } from "@/components/ui";
 import { TicketEventForm } from "@/components/ticket-event-form";
 import { TicketShareMenu } from "@/components/ticket-share-menu";
@@ -155,22 +157,43 @@ export default async function TicketDetailPage({
             <form action={addCommentAction} className="stack ticket-subsection">
               <input type="hidden" name="ticketId" value={data.ticket.id} />
               <div className="field">
-                <label htmlFor="body">{t.tickets.addComment}</label>
+                <label htmlFor="body" className="label-with-icon">
+                  <CommentIcon className="inline-icon" />
+                  <span>{t.tickets.addComment}</span>
+                </label>
                 <textarea id="body" name="body" placeholder={t.tickets.commentPlaceholder} required />
               </div>
               <div>
-                <button type="submit">{t.tickets.addComment}</button>
+                <button type="submit">
+                  <span className="button-content">
+                    <CommentIcon className="button-icon" />
+                    <span>{t.tickets.addComment}</span>
+                  </span>
+                </button>
               </div>
             </form>
             <form action={addAttachmentAction} className="stack ticket-subsection" encType="multipart/form-data">
               <input type="hidden" name="ticketId" value={data.ticket.id} />
               <div className="field">
-                <label htmlFor="file">{t.common.uploadFile}</label>
-                <input id="file" name="file" type="file" required />
+                <label className="label-with-icon">
+                  <UploadIcon className="inline-icon" />
+                  <span>{t.common.uploadFile}</span>
+                </label>
+                <FilePicker
+                  name="file"
+                  label={t.common.chooseFile}
+                  emptyLabel={t.common.noFileSelected}
+                  required
+                />
                 <p className="warning-text">{t.common.uploadWarning}</p>
               </div>
               <div>
-                <button type="submit">{t.common.uploadFile}</button>
+                <button type="submit">
+                  <span className="button-content">
+                    <UploadIcon className="button-icon" />
+                    <span>{t.common.uploadFile}</span>
+                  </span>
+                </button>
               </div>
             </form>
           </Panel>

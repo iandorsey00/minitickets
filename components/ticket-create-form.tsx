@@ -2,6 +2,8 @@
 
 import { useMemo, useState } from "react";
 
+import { PencilIcon } from "@/components/icons";
+
 type WorkspaceOption = {
   id: string;
   name: string;
@@ -52,6 +54,8 @@ type TicketCreateFormProps = {
       paymentMethods: string;
       savePaymentMethod: string;
       noSavedPaymentMethods: string;
+      chooseFile: string;
+      noFileSelected: string;
       submitRequest: string;
       topLevelOnlyHint: string;
     };
@@ -277,7 +281,12 @@ export function TicketCreateForm({
         </label>
       </div>
       <div>
-        <button type="submit">{dictionary.common.submitRequest}</button>
+        <button type="submit">
+          <span className="button-content">
+            <PencilIcon className="button-icon" />
+            <span>{dictionary.common.submitRequest}</span>
+          </span>
+        </button>
       </div>
     </form>
   );

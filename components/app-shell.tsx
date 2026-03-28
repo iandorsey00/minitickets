@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 import { BrowserNotificationCenter } from "@/components/browser-notification-center";
+import { AdminIcon, DashboardIcon, PencilIcon, SettingsIcon, TicketIcon, WorkspaceIcon } from "@/components/icons";
 import { logoutAction, switchWorkspaceAction } from "@/lib/actions";
 
 type ShellProps = {
@@ -65,11 +66,11 @@ export function AppShell({
     memberships[0]?.workspace.name ??
     "";
   const navItems = [
-    { href: "/tickets", label: dictionary.nav.tickets },
-    { href: "/dashboard", label: dictionary.nav.dashboard },
-    { href: "/workspaces", label: dictionary.nav.workspaces },
-    ...(user.role === "ADMIN" ? [{ href: "/admin", label: dictionary.nav.admin }] : []),
-    { href: "/settings", label: dictionary.nav.settings },
+    { href: "/tickets", label: dictionary.nav.tickets, icon: TicketIcon },
+    { href: "/dashboard", label: dictionary.nav.dashboard, icon: DashboardIcon },
+    { href: "/workspaces", label: dictionary.nav.workspaces, icon: WorkspaceIcon },
+    ...(user.role === "ADMIN" ? [{ href: "/admin", label: dictionary.nav.admin, icon: AdminIcon }] : []),
+    { href: "/settings", label: dictionary.nav.settings, icon: SettingsIcon },
   ];
 
   return (
@@ -88,7 +89,8 @@ export function AppShell({
               href={item.href}
               className={`nav-link ${isActive(pathname, item.href) ? "is-active" : ""}`}
             >
-              {item.label}
+              <item.icon className="nav-link-icon" />
+              <span>{item.label}</span>
             </Link>
           ))}
         </nav>
@@ -145,14 +147,7 @@ export function AppShell({
 
         {pathname !== "/tickets/new" && !isTicketDetailPage ? (
           <Link href="/tickets/new" className="floating-action">
-            <span className="floating-action-icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24" focusable="false">
-                <path
-                  d="m3 17.25 9.9-9.9 3.75 3.75-9.9 9.9H3v-3.75Zm14.71-10.04a1.003 1.003 0 0 0 0-1.42l-1.5-1.5a1.003 1.003 0 0 0-1.42 0l-1.17 1.17 3.75 3.75 1.34-1.34Z"
-                  fill="currentColor"
-                />
-              </svg>
-            </span>
+            <PencilIcon className="floating-action-icon" />
             <span>{dictionary.nav.createTicket}</span>
           </Link>
         ) : null}

@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { PencilIcon } from "@/components/icons";
 import { EmptyState, PageHeader, Panel, Badge } from "@/components/ui";
 import { formatDateTime, localizeDefinition } from "@/lib/format";
 import { getTicketsData } from "@/lib/data";
@@ -49,7 +50,10 @@ export default async function TicketsPage({
         subtitle={data.currentWorkspace?.name ?? t.common.workspace}
         action={
           <Link href="/tickets/new" className="button">
-            {t.nav.createTicket}
+            <span className="button-content">
+              <PencilIcon className="button-icon" />
+              <span>{t.nav.createTicket}</span>
+            </span>
           </Link>
         }
       />

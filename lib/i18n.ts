@@ -5,7 +5,7 @@ export type AppLocale = "ZH_CN" | "EN";
 const dictionaries = {
   ZH_CN: {
     appName: "轻量工单",
-    appSubtitle: "",
+    appSubtitle: "MiniTickets",
     nav: {
       dashboard: "仪表盘",
       tickets: "工单",
@@ -86,6 +86,8 @@ const dictionaries = {
       title: "标题",
       description: "说明",
       attachments: "附件",
+      chooseFile: "选择文件",
+      noFileSelected: "尚未选择文件",
       uploadFile: "上传文件",
       uploadWarning: "请不要上传银行卡号、完整卡号、CVV、路由号码或其他敏感支付信息。",
       uploadedBy: "上传人",
@@ -272,6 +274,8 @@ const dictionaries = {
       title: "Title",
       description: "Description",
       attachments: "Attachments",
+      chooseFile: "Choose file",
+      noFileSelected: "No file selected",
       uploadFile: "Upload file",
       uploadWarning: "Do not upload bank account numbers, full card numbers, CVV, routing numbers, or other sensitive payment information.",
       uploadedBy: "Uploaded by",
