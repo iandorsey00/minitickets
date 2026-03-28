@@ -22,10 +22,19 @@ type TicketEventFormProps = {
 };
 
 export function TicketEventForm({ action, ticketId, labels, reminderOptions }: TicketEventFormProps) {
-  const [scheduledLocal, setScheduledLocal] = useState("");
+  const [scheduledDate, setScheduledDate] = useState("");
+  const [scheduledTime, setScheduledTime] = useState("");
   const scheduledForValue = useMemo(
-    () => (scheduledLocal ? new Date(scheduledLocal).toISOString() : ""),
-    [scheduledLocal],
+    () => {
+      if (!scheduledDate || !scheduledTime) {
+        return "";
+      }
+
+      const localValue = `${scheduledDate}T${scheduledTime}`;
+      const parsed = new Date(localValue);
+      return Number.isNaN(parsed.getTime()) ? "" : parsed.toISOString();
+    },
+    [scheduledDate, scheduledTime],
   );
 
   return (
@@ -38,15 +47,25 @@ export function TicketEventForm({ action, ticketId, labels, reminderOptions }: T
       </div>
       <div className="field">
         <label htmlFor="event-scheduled-local">{labels.scheduledFor}</label>
-        <input
-          id="event-scheduled-local"
-          type="datetime-local"
-          value={scheduledLocal}
-          onChange={(event) => {
-            setScheduledLocal(event.target.value);
-          }}
-          required
-        />
+        <div className="split-inputs">
+          <input
+            id="event-scheduled-local"
+            type="date"
+            value={scheduledDate}
+            onChange={(event) => {
+              setScheduledDate(event.target.value);
+            }}
+            required
+          />
+          <input
+            type="time"
+            value={scheduledTime}
+            onChange={(event) => {
+              setScheduledTime(event.target.value);
+            }}
+            required
+          />
+        </div>
       </div>
       <div className="field">
         <label htmlFor="event-notes">

@@ -160,7 +160,6 @@ export function TicketCreateForm({
               </option>
             ))}
           </select>
-          <p className="muted">{dictionary.common.topLevelOnlyHint}</p>
         </div>
         <div className="field">
           <label htmlFor="categoryId">{dictionary.common.category}</label>
@@ -236,6 +235,7 @@ export function TicketCreateForm({
           <input id="dueDate" name="dueDate" type="date" />
         </div>
       </div>
+      <p className="muted form-grid-note">{dictionary.common.topLevelOnlyHint}</p>
       <div className="field">
         <label htmlFor="title">{dictionary.common.title}</label>
         <input id="title" name="title" required minLength={3} maxLength={120} />
