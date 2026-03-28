@@ -1,9 +1,9 @@
 import type { Locale, PrismaClient } from "@prisma/client";
 
-import { localeTokenMap } from "@/lib/constants";
-import { sendTicketEventEmail } from "@/lib/email";
-import { prisma } from "@/lib/prisma";
-import { formatReminderOffsetLabel } from "@/lib/reminder-labels";
+import { localeTokenMap } from "./constants.ts";
+import { sendTicketEventEmail } from "./email.ts";
+import { prisma } from "./prisma.ts";
+import { formatReminderOffsetLabel } from "./reminder-labels.ts";
 
 export const defaultTicketEventReminderOffsets = [120, 30, 0] as const;
 

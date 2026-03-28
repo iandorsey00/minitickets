@@ -1,7 +1,7 @@
 import type { Locale } from "@prisma/client";
 
-import { localeTokenMap } from "@/lib/constants";
-import { formatReminderOffsetLabel } from "@/lib/reminder-labels";
+import { localeTokenMap } from "./constants.ts";
+import { formatReminderOffsetLabel } from "./reminder-labels.ts";
 
 type MailRecipient = {
   email: string;
