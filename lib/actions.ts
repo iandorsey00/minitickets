@@ -26,7 +26,7 @@ import { createPasswordSetupToken, hashPasswordSetupToken } from "@/lib/password
 import { prisma } from "@/lib/prisma";
 import { fallbackTicketPrefixFromSlug, formatTicketNumber, normalizeTicketPrefix } from "@/lib/tickets";
 import { autoCloseResolvedTickets } from "@/lib/ticket-status";
-import { getTicketAttachmentDiskPath, getUploadsRoot } from "@/lib/uploads";
+import { getTicketAttachmentDiskPath, getTicketAttachmentUrl, getUploadsRoot } from "@/lib/uploads";
 
 const loginSchema = z.object({
   email: z.email(),
@@ -652,7 +652,7 @@ export async function addAttachmentAction(formData: FormData) {
       storedName,
       mimeType: file.type || null,
       fileSizeBytes: file.size,
-      filePath: `/uploads/tickets/${ticket.id}/${storedName}`,
+      filePath: getTicketAttachmentUrl(ticket.id, storedName),
     },
   });
 

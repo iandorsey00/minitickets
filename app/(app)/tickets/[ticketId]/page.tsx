@@ -1,6 +1,7 @@
 import { addAttachmentAction, addCommentAction, updateTicketAction } from "@/lib/actions";
 import { getTicketDetail } from "@/lib/data";
 import { formatDate, formatDateTime, formatFileSize, localizeDefinition } from "@/lib/format";
+import { getTicketAttachmentUrl } from "@/lib/uploads";
 import { Badge, EmptyState, PageHeader, Panel } from "@/components/ui";
 
 export default async function TicketDetailPage({
@@ -41,7 +42,7 @@ export default async function TicketDetailPage({
       kind: "attachment" as const,
       actorName: attachment.uploadedBy.displayName,
       originalName: attachment.originalName,
-      filePath: attachment.filePath,
+      filePath: getTicketAttachmentUrl(data.ticket.id, attachment.storedName),
       fileSizeBytes: attachment.fileSizeBytes,
       mimeType: attachment.mimeType,
     })),

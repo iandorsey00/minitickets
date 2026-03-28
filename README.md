@@ -96,7 +96,7 @@ Basic deployment flow:
 
 Notes:
 
-- Current uploads are local-disk storage under `public/uploads`, which is acceptable for a single-server deployment.
+- Current uploads are local-disk storage under the app data directory and are served only through authenticated routes, which is acceptable for a single-server deployment.
 - For stronger durability later, move attachments to object storage such as S3 or R2.
 - Welcome and ticket emails use the Resend API key from `.env` or `.env.production`.
 

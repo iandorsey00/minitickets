@@ -16,3 +16,7 @@ export function getUploadsRoot() {
 export function getTicketAttachmentDiskPath(ticketId: string, storedName: string) {
   return path.join(getUploadsRoot(), "tickets", ticketId, storedName);
 }
+
+export function getTicketAttachmentUrl(ticketId: string, storedName: string) {
+  return `/attachments/tickets/${ticketId}/${storedName}`;
+}
