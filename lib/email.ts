@@ -19,6 +19,11 @@ type PasswordSetupEmailInput = {
   workspaceName?: string;
 };
 
+type LoginCodeEmailInput = {
+  recipient: MailRecipient;
+  code: string;
+};
+
 type TicketEmailInput = {
   kind: "created" | "assigned" | "comment_added" | "resolved";
   recipient: MailRecipient;
@@ -122,27 +127,69 @@ function buildPasswordSetupEmail({ recipient, setupToken, workspaceName }: Passw
     };
   }
 
+  return {
+    subject: "设置你的轻量工单密码",
+    text: [
+      `${recipient.displayName}，你好：`,
+      "",
+      "你的轻量工单账户已经创建。",
+      workspaceLineZh,
+      "这个链接会直接打开设置密码页面。",
+      `请立即设置密码：${setupUrl}`,
+      "",
+      "此链接将在 24 小时后失效。",
+    ].join("\n"),
+    html: `
+      <p>${recipient.displayName}，你好：</p>
+      <p>你的轻量工单账户已经创建。</p>
+      ${workspaceName ? `<p><strong>工作区：</strong>${workspaceName}</p>` : ""}
+      <p><a href="${setupUrl}">打开设置密码页面</a></p>
+      <p>此链接将在 24 小时后失效。</p>
+    `,
+  };
+}
+
+function buildLoginCodeEmail({ recipient, code }: LoginCodeEmailInput) {
+  if (recipient.locale === "EN") {
     return {
-      subject: "设置你的轻量工单密码",
+      subject: "Your MiniTickets verification code",
       text: [
-        `${recipient.displayName}，你好：`,
+        `Hi ${recipient.displayName},`,
         "",
-        "你的轻量工单账户已经创建。",
-        workspaceLineZh,
-        "这个链接会直接打开设置密码页面。",
-        `请立即设置密码：${setupUrl}`,
+        "Use this verification code to finish signing in to MiniTickets:",
         "",
-        "此链接将在 24 小时后失效。",
+        code,
+        "",
+        "This code expires in 10 minutes.",
       ].join("\n"),
       html: `
-        <p>${recipient.displayName}，你好：</p>
-        <p>你的轻量工单账户已经创建。</p>
-        ${workspaceName ? `<p><strong>工作区：</strong>${workspaceName}</p>` : ""}
-        <p><a href="${setupUrl}">打开设置密码页面</a></p>
-        <p>此链接将在 24 小时后失效。</p>
+        <p>Hi ${recipient.displayName},</p>
+        <p>Use this verification code to finish signing in to MiniTickets:</p>
+        <p style="font-size: 2rem; font-weight: 700; letter-spacing: 0.18em;">${code}</p>
+        <p>This code expires in 10 minutes.</p>
       `,
     };
   }
+
+  return {
+    subject: "你的轻量工单验证码",
+    text: [
+      `${recipient.displayName}，你好：`,
+      "",
+      "请使用以下验证码完成轻量工单登录：",
+      "",
+      code,
+      "",
+      "此验证码将在 10 分钟后失效。",
+    ].join("\n"),
+    html: `
+      <p>${recipient.displayName}，你好：</p>
+      <p>请使用以下验证码完成轻量工单登录：</p>
+      <p style="font-size: 2rem; font-weight: 700; letter-spacing: 0.18em;">${code}</p>
+      <p>此验证码将在 10 分钟后失效。</p>
+    `,
+  };
+}
 
 function buildTicketEmail({ actorName, commentBody, kind, recipient, ticket }: TicketEmailInput) {
   const ticketUrl = `${getBaseUrl()}/tickets/${ticket.id}`;
@@ -294,6 +341,11 @@ export async function sendWelcomeEmail(input: WelcomeEmailInput) {
 
 export async function sendPasswordSetupEmail(input: PasswordSetupEmailInput) {
   const message = buildPasswordSetupEmail(input);
+  return sendViaResend(input.recipient.email, message.subject, message.text, message.html);
+}
+
+export async function sendLoginCodeEmail(input: LoginCodeEmailInput) {
+  const message = buildLoginCodeEmail(input);
   return sendViaResend(input.recipient.email, message.subject, message.text, message.html);
 }
 

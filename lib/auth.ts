@@ -3,11 +3,12 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { cache } from "react";
 
-import { SESSION_COOKIE } from "@/lib/constants";
+import { LOGIN_CHALLENGE_COOKIE, SESSION_COOKIE } from "@/lib/constants";
 import { verifyPassword } from "@/lib/password";
 import { prisma } from "@/lib/prisma";
 
 const SESSION_DAYS = 14;
+const LOGIN_CHALLENGE_MINUTES = 10;
 
 function sha256(input: string) {
   return crypto.createHash("sha256").update(input).digest("hex");
@@ -46,6 +47,71 @@ export async function destroySession() {
   }
   cookieStore.delete(SESSION_COOKIE);
 }
+
+export async function createLoginEmailChallenge(userId: string) {
+  const rawToken = crypto.randomBytes(32).toString("hex");
+  const tokenHash = sha256(rawToken);
+  const code = String(crypto.randomInt(0, 1_000_000)).padStart(6, "0");
+  const codeHash = sha256(code);
+  const expiresAt = new Date(Date.now() + LOGIN_CHALLENGE_MINUTES * 60 * 1000);
+
+  await prisma.loginEmailChallenge.deleteMany({
+    where: { userId },
+  });
+
+  await prisma.loginEmailChallenge.create({
+    data: {
+      userId,
+      tokenHash,
+      codeHash,
+      expiresAt,
+    },
+  });
+
+  const cookieStore = await cookies();
+  cookieStore.set(LOGIN_CHALLENGE_COOKIE, rawToken, {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    expires: expiresAt,
+    path: "/",
+  });
+
+  return { code, expiresAt };
+}
+
+export async function clearLoginEmailChallenge() {
+  const cookieStore = await cookies();
+  const rawToken = cookieStore.get(LOGIN_CHALLENGE_COOKIE)?.value;
+  if (rawToken) {
+    await prisma.loginEmailChallenge.deleteMany({
+      where: { tokenHash: sha256(rawToken) },
+    });
+  }
+  cookieStore.delete(LOGIN_CHALLENGE_COOKIE);
+}
+
+export const getPendingLoginChallenge = cache(async () => {
+  const cookieStore = await cookies();
+  const rawToken = cookieStore.get(LOGIN_CHALLENGE_COOKIE)?.value;
+
+  if (!rawToken) {
+    return null;
+  }
+
+  const challenge = await prisma.loginEmailChallenge.findUnique({
+    where: { tokenHash: sha256(rawToken) },
+    include: {
+      user: true,
+    },
+  });
+
+  if (!challenge || challenge.usedAt || challenge.expiresAt < new Date() || !challenge.user.isActive) {
+    return null;
+  }
+
+  return challenge;
+});
 
 export const getCurrentUser = cache(async () => {
   const cookieStore = await cookies();

@@ -21,6 +21,8 @@ export default async function LoginPage({
   const errorMessage =
     params.error === "inactive"
       ? dictionary.auth.inactive
+      : params.error === "mfa_send"
+        ? dictionary.auth.mfaSendFailed
       : params.error === "invalid"
         ? dictionary.auth.invalid
         : null;

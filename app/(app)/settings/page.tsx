@@ -75,6 +75,18 @@ export default async function SettingsPage({
               </select>
           </div>
           <div className="field">
+            <label htmlFor="emailMfaEnabled">{t.settings.emailMfa}</label>
+            <label className="checkbox-row" htmlFor="emailMfaEnabled">
+              <input
+                id="emailMfaEnabled"
+                name="emailMfaEnabled"
+                type="checkbox"
+                defaultChecked={data.user.emailMfaEnabled}
+              />
+              <span>{t.settings.emailMfaHelp}</span>
+            </label>
+          </div>
+          <div className="field">
             <label htmlFor="password">{t.common.password}</label>
             <input id="password" name="password" type="password" />
             <p className="muted">{t.settings.passwordHelp}</p>

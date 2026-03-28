@@ -1,4 +1,5 @@
 export const SESSION_COOKIE = "minitickets_session";
+export const LOGIN_CHALLENGE_COOKIE = "minitickets_login_challenge";
 export const LOCALE_COOKIE = "minitickets_locale";
 export const THEME_COOKIE = "minitickets_theme";
 export const ACCENT_COOKIE = "minitickets_accent";

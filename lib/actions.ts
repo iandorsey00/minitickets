@@ -10,7 +10,15 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 
-import { createSession, destroySession, getCurrentUser, requireUser } from "@/lib/auth";
+import {
+  clearLoginEmailChallenge,
+  createLoginEmailChallenge,
+  createSession,
+  destroySession,
+  getCurrentUser,
+  getPendingLoginChallenge,
+  requireUser,
+} from "@/lib/auth";
 import {
   ACCENT_COOKIE,
   LOCALE_COOKIE,
@@ -20,7 +28,7 @@ import {
 } from "@/lib/constants";
 import { getDefaultDefinitionIds } from "@/lib/data";
 import { ensureCoreDefinitions } from "@/lib/catalog";
-import { sendPasswordSetupEmail, sendTicketEmail, sendWelcomeEmail } from "@/lib/email";
+import { sendLoginCodeEmail, sendPasswordSetupEmail, sendTicketEmail, sendWelcomeEmail } from "@/lib/email";
 import { hashPassword, verifyPassword } from "@/lib/password";
 import { createPasswordSetupToken, hashPasswordSetupToken } from "@/lib/password-setup";
 import { prisma } from "@/lib/prisma";
@@ -65,6 +73,7 @@ const settingsSchema = z.object({
   timeZone: z.enum(timeZoneValues),
   themePreference: z.nativeEnum(ThemePreference),
   accentColor: z.nativeEnum(AccentColor),
+  emailMfaEnabled: z.boolean(),
   password: z.string().optional(),
   passwordConfirm: z.string().optional(),
 });
@@ -73,6 +82,10 @@ const setupPasswordSchema = z.object({
   token: z.string().min(20),
   password: z.string().min(8),
   passwordConfirm: z.string().min(8),
+});
+
+const verifyLoginCodeSchema = z.object({
+  code: z.string().regex(/^\d{6}$/),
 });
 
 function uniqueRecipients<T extends { id: string }>(items: T[]) {
@@ -168,6 +181,27 @@ export async function loginAction(formData: FormData) {
     redirect("/login?error=inactive");
   }
 
+  if (user.emailMfaEnabled) {
+    try {
+      const { code } = await createLoginEmailChallenge(user.id);
+      await sendLoginCodeEmail({
+        recipient: {
+          email: user.email,
+          displayName: user.displayName,
+          locale: user.locale,
+        },
+        code,
+      });
+    } catch (error) {
+      console.error("Failed to send login verification code", error);
+      await clearLoginEmailChallenge();
+      redirect("/login?error=mfa_send");
+    }
+
+    await clearRateLimit("login", `${parsed.data.email.toLowerCase()}|${await getClientIp()}`);
+    redirect("/verify-login");
+  }
+
   await createSession(user.id);
   await clearRateLimit("login", `${parsed.data.email.toLowerCase()}|${await getClientIp()}`);
 
@@ -177,6 +211,79 @@ export async function loginAction(formData: FormData) {
   cookieStore.set(ACCENT_COOKIE, user.accentColor, { path: "/" });
 
   redirect("/tickets");
+}
+
+export async function verifyLoginCodeAction(formData: FormData) {
+  const parsed = verifyLoginCodeSchema.safeParse({
+    code: formData.get("code"),
+  });
+
+  const pendingChallenge = await getPendingLoginChallenge();
+  if (!pendingChallenge) {
+    redirect("/login");
+  }
+
+  if (!parsed.success) {
+    redirect("/verify-login?error=invalid");
+  }
+
+  try {
+    await assertRateLimit("login_mfa_verify", `${pendingChallenge.tokenHash}|${await getClientIp()}`, 5);
+  } catch {
+    redirect("/verify-login?error=expired");
+  }
+
+  const codeHash = crypto.createHash("sha256").update(parsed.data.code).digest("hex");
+  if (codeHash !== pendingChallenge.codeHash) {
+    redirect("/verify-login?error=invalid");
+  }
+
+  await prisma.loginEmailChallenge.update({
+    where: { tokenHash: pendingChallenge.tokenHash },
+    data: { usedAt: new Date() },
+  });
+
+  await clearRateLimit("login_mfa_verify", `${pendingChallenge.tokenHash}|${await getClientIp()}`);
+  await clearLoginEmailChallenge();
+  await createSession(pendingChallenge.userId);
+
+  const cookieStore = await cookies();
+  cookieStore.set(LOCALE_COOKIE, pendingChallenge.user.locale, { path: "/" });
+  cookieStore.set(THEME_COOKIE, pendingChallenge.user.themePreference, { path: "/" });
+  cookieStore.set(ACCENT_COOKIE, pendingChallenge.user.accentColor, { path: "/" });
+
+  redirect("/tickets");
+}
+
+export async function resendLoginCodeAction() {
+  const pendingChallenge = await getPendingLoginChallenge();
+  if (!pendingChallenge) {
+    redirect("/login");
+  }
+
+  try {
+    await assertRateLimit("login_mfa_send", `${pendingChallenge.userId}|${await getClientIp()}`, 3);
+  } catch {
+    redirect("/verify-login?error=expired");
+  }
+
+  try {
+    const { code } = await createLoginEmailChallenge(pendingChallenge.userId);
+    await sendLoginCodeEmail({
+      recipient: {
+        email: pendingChallenge.user.email,
+        displayName: pendingChallenge.user.displayName,
+        locale: pendingChallenge.user.locale,
+      },
+      code,
+    });
+  } catch (error) {
+    console.error("Failed to resend login verification code", error);
+    await clearLoginEmailChallenge();
+    redirect("/verify-login?error=invalid");
+  }
+
+  redirect("/verify-login?sent=1");
 }
 
 export async function logoutAction() {
@@ -787,6 +894,7 @@ export async function updateSettingsAction(formData: FormData) {
     timeZone: formData.get("timeZone"),
     themePreference: formData.get("themePreference"),
     accentColor: formData.get("accentColor"),
+    emailMfaEnabled: formData.get("emailMfaEnabled") === "on",
     password: formData.get("password") || undefined,
     passwordConfirm: formData.get("passwordConfirm") || undefined,
   });
@@ -805,6 +913,7 @@ export async function updateSettingsAction(formData: FormData) {
     timeZone: string;
     themePreference: ThemePreference;
     accentColor: AccentColor;
+    emailMfaEnabled: boolean;
     passwordHash?: string;
   } = {
     displayName: parsed.data.displayName,
@@ -812,6 +921,7 @@ export async function updateSettingsAction(formData: FormData) {
     timeZone: parsed.data.timeZone,
     themePreference: parsed.data.themePreference,
     accentColor: parsed.data.accentColor,
+    emailMfaEnabled: parsed.data.emailMfaEnabled,
   };
 
   if (parsed.data.password) {
