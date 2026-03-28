@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { Metadata } from "next";
+import type { ReactNode } from "react";
 
 import { addAttachmentAction, addCommentAction, createTicketEventAction, deleteTicketEventAction, reopenTicketAction, updateTicketAction } from "@/lib/actions";
 import { getTicketDetail } from "@/lib/data";
@@ -9,7 +10,7 @@ import { defaultTicketEventReminderOffsets } from "@/lib/ticket-events";
 import { MAX_ATTACHMENT_SIZE_BYTES, canRenderInline, getTicketAttachmentUrl } from "@/lib/uploads";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { CommentIcon, UploadIcon } from "@/components/icons";
+import { CommentIcon, DocumentIcon, UploadIcon } from "@/components/icons";
 import { FilePicker } from "@/components/file-picker";
 import { Badge, EmptyState, PageHeader, Panel } from "@/components/ui";
 import { TicketEventForm } from "@/components/ticket-event-form";
@@ -56,6 +57,22 @@ export async function generateMetadata({
   return {
     title: ticket.ticketNumber,
   };
+}
+
+function linkifyCommentBody(body: string): ReactNode[] {
+  const parts = body.split(/(https?:\/\/[^\s<]+)/giu);
+
+  return parts.map((part, index) => {
+    if (!/^https?:\/\//iu.test(part)) {
+      return part;
+    }
+
+    return (
+      <a key={`${part}-${index}`} href={part} target="_blank" rel="noreferrer" className="comment-link">
+        {part}
+      </a>
+    );
+  });
 }
 
 export default async function TicketDetailPage({
@@ -220,7 +237,7 @@ export default async function TicketDetailPage({
                     {item.kind === "comment" ? (
                       <>
                         <strong>{item.actorName}</strong>
-                        <div>{item.body}</div>
+                        <div className="comment-body">{linkifyCommentBody(item.body)}</div>
                       </>
                     ) : null}
                     {item.kind === "attachment" ? (
@@ -235,7 +252,12 @@ export default async function TicketDetailPage({
                             {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img src={item.filePath} alt={item.originalName} className="attachment-preview" />
                           </a>
-                        ) : null}
+                        ) : (
+                          <a href={item.filePath} target="_blank" rel="noreferrer" className="document-preview-card">
+                            <DocumentIcon className="document-preview-icon" />
+                            <span>{item.originalName}</span>
+                          </a>
+                        )}
                         <div className="muted">{formatFileSize(item.fileSizeBytes)}</div>
                       </>
                     ) : null}

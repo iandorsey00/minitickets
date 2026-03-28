@@ -93,6 +93,17 @@ export function UploadIcon({ className }: IconProps) {
   );
 }
 
+export function DocumentIcon({ className }: IconProps) {
+  return (
+    <IconBase className={className}>
+      <path
+        d="M7 3.75A1.75 1.75 0 0 1 8.75 2h5.9c.46 0 .9.18 1.23.51l3.61 3.61c.33.33.51.77.51 1.23v12.9A1.75 1.75 0 0 1 18.25 22h-9.5A1.75 1.75 0 0 1 7 20.25V3.75Zm8 .25v2.75c0 .69.56 1.25 1.25 1.25H19L15 4Zm-4.25 8a.75.75 0 0 0 0 1.5h5.5a.75.75 0 0 0 0-1.5h-5.5Zm0 3.5a.75.75 0 0 0 0 1.5h5.5a.75.75 0 0 0 0-1.5h-5.5Z"
+        fill="currentColor"
+      />
+    </IconBase>
+  );
+}
+
 export function PencilIcon({ className }: IconProps) {
   return (
     <IconBase className={className}>

@@ -860,6 +860,17 @@ textarea {
   margin-bottom: 0.2rem;
 }
 
+.comment-body {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.comment-link {
+  color: var(--color-accent);
+  text-decoration: underline;
+  text-underline-offset: 0.16em;
+}
+
 .ticket-events-stack {
   gap: 1.1rem;
 }
@@ -908,6 +919,27 @@ textarea {
 .attachment-preview-link {
   display: inline-block;
   margin-top: 0.6rem;
+}
+
+.document-preview-card {
+  margin-top: 0.6rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.75rem 0.95rem;
+  border: 1px solid var(--color-line);
+  border-radius: 0.9rem;
+  background: color-mix(in srgb, var(--color-panel) 88%, white 12%);
+  text-decoration: none;
+  color: inherit;
+  max-width: min(100%, 320px);
+}
+
+.document-preview-icon {
+  width: 1.4rem;
+  height: 1.4rem;
+  color: var(--color-accent);
+  flex: 0 0 auto;
 }
 
 .attachment-preview {
