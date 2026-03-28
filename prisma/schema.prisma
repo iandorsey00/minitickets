@@ -51,6 +51,7 @@ model User {
   themePreference     ThemePreference       @default(SYSTEM)
   accentColor         AccentColor           @default(BLUE)
   emailMfaEnabled     Boolean               @default(false)
+  commentEmailsEnabled Boolean              @default(false)
   isActive            Boolean               @default(true)
   createdAt           DateTime              @default(now())
   updatedAt           DateTime              @updatedAt

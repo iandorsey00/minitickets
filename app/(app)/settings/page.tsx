@@ -105,6 +105,18 @@ export default async function SettingsPage({
             </label>
           </div>
           <div className="field">
+            <label htmlFor="commentEmailsEnabled">{t.settings.commentEmails}</label>
+            <label className="checkbox-row" htmlFor="commentEmailsEnabled">
+              <input
+                id="commentEmailsEnabled"
+                name="commentEmailsEnabled"
+                type="checkbox"
+                defaultChecked={data.user.commentEmailsEnabled}
+              />
+              <span>{t.settings.commentEmailsHelp}</span>
+            </label>
+          </div>
+          <div className="field">
             <label htmlFor="password">{t.common.password}</label>
             <input id="password" name="password" type="password" />
             <p className="muted">{t.settings.passwordHelp}</p>

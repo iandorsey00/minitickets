@@ -6,7 +6,7 @@ import { formatDate, formatDateTime, formatFileSize, localizeDefinition } from "
 import { formatReminderOffsetLabel } from "@/lib/reminder-labels";
 import { defaultTicketEventReminderOffsets } from "@/lib/ticket-events";
 import { canRenderInline, getTicketAttachmentUrl } from "@/lib/uploads";
-import { CommentIcon, SaveIcon, UploadIcon } from "@/components/icons";
+import { CommentIcon, UploadIcon } from "@/components/icons";
 import { FilePicker } from "@/components/file-picker";
 import { Badge, EmptyState, PageHeader, Panel } from "@/components/ui";
 import { TicketEventForm } from "@/components/ticket-event-form";
@@ -497,13 +497,6 @@ export default async function TicketDetailPage({
           </details>
         </div>
       </div>
-
-      <button type="submit" className="floating-action" form="ticket-edit-form">
-        <span className="button-content">
-          <SaveIcon className="floating-action-icon" />
-          <span>{t.common.save}</span>
-        </span>
-      </button>
     </>
   );
 }

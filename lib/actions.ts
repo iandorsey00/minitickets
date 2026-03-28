@@ -94,6 +94,7 @@ const settingsSchema = z.object({
   themePreference: z.nativeEnum(ThemePreference),
   accentColor: z.nativeEnum(AccentColor),
   emailMfaEnabled: z.boolean(),
+  commentEmailsEnabled: z.boolean(),
   password: z.string().optional(),
   passwordConfirm: z.string().optional(),
 });
@@ -116,6 +117,32 @@ function escapeRegExp(value: string) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
+function getUserMentionAliases<T extends { displayName: string; email: string }>(user: T) {
+  const aliases = new Set<string>();
+  const displayName = user.displayName.trim();
+  const email = user.email.trim();
+
+  if (displayName) {
+    aliases.add(displayName);
+
+    const firstToken = displayName.split(/\s+/)[0]?.trim();
+    if (firstToken && firstToken.length >= 2) {
+      aliases.add(firstToken);
+    }
+  }
+
+  if (email) {
+    aliases.add(email);
+
+    const localPart = email.split("@")[0]?.trim();
+    if (localPart && localPart.length >= 2) {
+      aliases.add(localPart);
+    }
+  }
+
+  return Array.from(aliases);
+}
+
 function getMentionedUsersFromComment<T extends { id: string; displayName: string; email: string }>(
   body: string,
   users: T[],
@@ -124,13 +151,24 @@ function getMentionedUsersFromComment<T extends { id: string; displayName: strin
   const normalizedBody = body.normalize("NFKC");
   const sortedUsers = [...users].sort((a, b) => b.displayName.length - a.displayName.length);
   const mentioned: T[] = [];
+  const aliasCounts = new Map<string, number>();
+
+  for (const user of sortedUsers) {
+    for (const alias of getUserMentionAliases(user)) {
+      const normalizedAlias = alias.toLocaleLowerCase();
+      aliasCounts.set(normalizedAlias, (aliasCounts.get(normalizedAlias) ?? 0) + 1);
+    }
+  }
 
   for (const user of sortedUsers) {
     if (user.id === authorId) {
       continue;
     }
 
-    const patterns = [user.displayName.trim(), user.email.trim()].filter(Boolean);
+    const patterns = getUserMentionAliases(user).filter((pattern) => {
+      const normalizedPattern = pattern.toLocaleLowerCase();
+      return pattern === user.displayName.trim() || pattern === user.email.trim() || aliasCounts.get(normalizedPattern) === 1;
+    });
     const matched = patterns.some((pattern) => {
       const escaped = escapeRegExp(pattern);
       return new RegExp(`(^|[^\\p{L}\\p{N}_])@${escaped}(?=$|[\\s.,:;!?，。；：！？）)\\]\\}])`, "iu").test(normalizedBody);
@@ -1156,7 +1194,12 @@ export async function addCommentAction(formData: FormData) {
 
   const emailRecipients = uniqueRecipients(
     [ticket.requester, ticket.assignee].filter(
-      (recipient): recipient is typeof ticket.requester => Boolean(recipient && !mentionedUserIds.has(recipient.id)),
+      (recipient): recipient is typeof ticket.requester =>
+        Boolean(
+          recipient &&
+            recipient.commentEmailsEnabled &&
+            !mentionedUserIds.has(recipient.id),
+        ),
     ),
   );
 
@@ -1285,6 +1328,7 @@ export async function updateSettingsAction(formData: FormData) {
     themePreference: formData.get("themePreference"),
     accentColor: formData.get("accentColor"),
     emailMfaEnabled: formData.get("emailMfaEnabled") === "on",
+    commentEmailsEnabled: formData.get("commentEmailsEnabled") === "on",
     password: formData.get("password") || undefined,
     passwordConfirm: formData.get("passwordConfirm") || undefined,
   });
@@ -1304,6 +1348,7 @@ export async function updateSettingsAction(formData: FormData) {
     themePreference: ThemePreference;
     accentColor: AccentColor;
     emailMfaEnabled: boolean;
+    commentEmailsEnabled: boolean;
     passwordHash?: string;
   } = {
     displayName: parsed.data.displayName,
@@ -1312,6 +1357,7 @@ export async function updateSettingsAction(formData: FormData) {
     themePreference: parsed.data.themePreference,
     accentColor: parsed.data.accentColor,
     emailMfaEnabled: parsed.data.emailMfaEnabled,
+    commentEmailsEnabled: parsed.data.commentEmailsEnabled,
   };
 
   if (parsed.data.password) {
