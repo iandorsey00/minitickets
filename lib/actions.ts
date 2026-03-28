@@ -1207,7 +1207,9 @@ export async function addCommentAction(formData: FormData) {
   }
 
   revalidatePath(`/tickets/${ticket.id}`);
+  revalidatePath("/tickets");
   revalidatePath("/dashboard");
+  redirect(`/tickets/${ticket.id}`);
 }
 
 export async function addAttachmentAction(formData: FormData) {
