@@ -1,8 +1,11 @@
-import { addAttachmentAction, addCommentAction, updateTicketAction } from "@/lib/actions";
+import { addAttachmentAction, addCommentAction, createTicketEventAction, updateTicketAction } from "@/lib/actions";
 import { getTicketDetail } from "@/lib/data";
 import { formatDate, formatDateTime, formatFileSize, localizeDefinition } from "@/lib/format";
+import { formatReminderOffsetLabel } from "@/lib/reminder-labels";
+import { defaultTicketEventReminderOffsets } from "@/lib/ticket-events";
 import { canRenderInline, getTicketAttachmentUrl } from "@/lib/uploads";
 import { Badge, EmptyState, PageHeader, Panel } from "@/components/ui";
+import { TicketEventForm } from "@/components/ticket-event-form";
 import { TicketShareMenu } from "@/components/ticket-share-menu";
 
 export default async function TicketDetailPage({
@@ -213,6 +216,54 @@ export default async function TicketDetailPage({
                 ) : (
                   <span>{t.common.none}</span>
                 )}
+              </div>
+            </div>
+          </Panel>
+
+          <Panel title={t.tickets.eventsTitle}>
+            <div className="stack ticket-events-stack">
+              {data.ticket.events.length ? (
+                data.ticket.events.map((event) => (
+                  <div key={event.id} className="event-card">
+                    <strong>{event.title}</strong>
+                    <div className="muted">{formatDateTime(event.scheduledFor, data.localeCode, data.timeZone)}</div>
+                    {event.notes ? <p>{event.notes}</p> : null}
+                    <div className="event-reminder-badges">
+                      {event.reminders.length ? (
+                        event.reminders.map((reminder) => (
+                          <Badge
+                            key={reminder.id}
+                            label={formatReminderOffsetLabel(reminder.offsetMinutes, data.locale)}
+                            tone="neutral"
+                          />
+                        ))
+                      ) : (
+                        <span className="muted">{t.tickets.noEventReminders}</span>
+                      )}
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <EmptyState title={t.tickets.eventsTitle} body={t.tickets.eventsEmpty} />
+              )}
+
+              <div className="ticket-subsection">
+                <TicketEventForm
+                  action={createTicketEventAction}
+                  ticketId={data.ticket.id}
+                  labels={{
+                    title: t.common.title,
+                    notes: t.tickets.eventNotes,
+                    scheduledFor: t.tickets.eventScheduledFor,
+                    reminders: t.tickets.eventReminders,
+                    create: t.tickets.createEvent,
+                    optional: t.common.optional,
+                  }}
+                  reminderOptions={defaultTicketEventReminderOffsets.map((offset) => ({
+                    value: offset,
+                    label: formatReminderOffsetLabel(offset, data.locale),
+                  }))}
+                />
               </div>
             </div>
           </Panel>

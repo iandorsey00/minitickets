@@ -61,6 +61,7 @@ model User {
   activities          TicketActivity[]      @relation("ActorActivities")
   uploadedAttachments TicketAttachment[]    @relation("UploadedAttachments")
   createdPaymentMethods PaymentMethod[]     @relation("CreatedPaymentMethods")
+  createdTicketEvents  TicketEvent[]        @relation("CreatedTicketEvents")
   notifications       Notification[]
   sessions            Session[]
   authAccounts        AuthAccount[]
@@ -159,6 +160,7 @@ model Ticket {
   attachments TicketAttachment[]
   paymentMethods TicketPaymentMethod[]
   notifications Notification[]
+  events      TicketEvent[]
 
   @@index([workspaceId, createdAt])
   @@index([requesterId, createdAt])
@@ -218,11 +220,41 @@ model Notification {
   bodyZh      String?
   bodyEn      String?
   isRead      Boolean  @default(false)
+  browserDeliveredAt DateTime?
   createdAt   DateTime @default(now())
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   ticket      Ticket?  @relation(fields: [ticketId], references: [id], onDelete: Cascade)
 
   @@index([userId, createdAt])
+  @@index([userId, browserDeliveredAt, createdAt])
+}
+
+model TicketEvent {
+  id              String               @id @default(cuid())
+  ticketId        String
+  createdByUserId String
+  title           String
+  notes           String?
+  scheduledFor    DateTime
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+  ticket          Ticket               @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  createdBy       User                 @relation("CreatedTicketEvents", fields: [createdByUserId], references: [id], onDelete: Restrict)
+  reminders       TicketEventReminder[]
+
+  @@index([ticketId, scheduledFor])
+}
+
+model TicketEventReminder {
+  id            String    @id @default(cuid())
+  eventId       String
+  offsetMinutes Int
+  sentAt        DateTime?
+  createdAt     DateTime  @default(now())
+  event         TicketEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, offsetMinutes])
+  @@index([sentAt])
 }
 
 model Session {

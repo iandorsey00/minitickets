@@ -46,6 +46,9 @@ type TicketCreateFormProps = {
       noSavedPaymentMethods: string;
       submitRequest: string;
     };
+    tickets: {
+      confidentialityNotice: string;
+    };
   };
   workspaces: WorkspaceOption[];
   people: PersonOption[];
@@ -199,6 +202,7 @@ export function TicketCreateForm({
       <div className="field">
         <label htmlFor="description">{dictionary.common.description}</label>
         <textarea id="description" name="description" maxLength={5000} />
+        <p className="caution-text">{dictionary.tickets.confidentialityNotice}</p>
       </div>
       <div className="form-grid">
         <div className="field">

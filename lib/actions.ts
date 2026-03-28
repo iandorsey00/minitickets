@@ -28,11 +28,18 @@ import {
 } from "@/lib/constants";
 import { getDefaultDefinitionIds } from "@/lib/data";
 import { ensureCoreDefinitions } from "@/lib/catalog";
-import { sendLoginCodeEmail, sendPasswordSetupEmail, sendTicketEmail, sendWelcomeEmail } from "@/lib/email";
+import {
+  sendLoginCodeEmail,
+  sendPasswordSetupEmail,
+  sendTicketEmail,
+  sendTicketEventEmail,
+  sendWelcomeEmail,
+} from "@/lib/email";
 import { hashPassword, verifyPassword } from "@/lib/password";
 import { createPasswordSetupToken, hashPasswordSetupToken } from "@/lib/password-setup";
 import { prisma } from "@/lib/prisma";
 import { assertRateLimit, clearRateLimit } from "@/lib/rate-limit";
+import { sanitizeTicketEventReminderOffsets } from "@/lib/ticket-events";
 import { fallbackTicketPrefixFromSlug, formatTicketNumber, normalizeTicketPrefix } from "@/lib/tickets";
 import { autoCloseResolvedTickets } from "@/lib/ticket-status";
 import { getTicketAttachmentDiskPath, getTicketAttachmentUrl, getUploadsRoot } from "@/lib/uploads";
@@ -67,6 +74,13 @@ const attachmentSchema = z.object({
   ticketId: z.string().min(1),
 });
 
+const ticketEventSchema = z.object({
+  ticketId: z.string().min(1),
+  title: z.string().min(2).max(120),
+  scheduledFor: z.string().datetime(),
+  notes: z.string().max(2000).optional(),
+});
+
 const settingsSchema = z.object({
   displayName: z.string().min(2).max(60),
   locale: z.nativeEnum(Locale),
@@ -90,13 +104,6 @@ const verifyLoginCodeSchema = z.object({
 
 function uniqueRecipients<T extends { id: string }>(items: T[]) {
   return Array.from(new Map(items.map((item) => [item.id, item])).values());
-}
-
-function safeInternalPath(pathname: string) {
-  if (!pathname.startsWith("/") || pathname.startsWith("//")) {
-    return "/tickets";
-  }
-  return pathname;
 }
 
 async function getClientIp() {
@@ -294,7 +301,6 @@ export async function logoutAction() {
 export async function switchWorkspaceAction(formData: FormData) {
   const user = await requireUser();
   const workspaceId = String(formData.get("workspaceId") ?? "");
-  const nextPath = safeInternalPath(String(formData.get("nextPath") ?? "/tickets"));
 
   const allowed =
     user.role === UserRole.ADMIN
@@ -318,7 +324,7 @@ export async function switchWorkspaceAction(formData: FormData) {
     cookieStore.set(WORKSPACE_COOKIE, workspaceId, { path: "/" });
   }
 
-  redirect(nextPath);
+  redirect("/tickets");
 }
 
 export async function createTicketAction(formData: FormData) {
@@ -463,6 +469,8 @@ export async function createTicketAction(formData: FormData) {
         eventType: "ticket.assigned",
         titleZh: `你被分配到工单 ${ticket.ticketNumber}`,
         titleEn: `You were assigned ${ticket.ticketNumber}`,
+        bodyZh: ticket.title,
+        bodyEn: ticket.title,
       },
     });
   }
@@ -662,6 +670,8 @@ export async function updateTicketAction(formData: FormData) {
         eventType: "ticket.assigned",
         titleZh: `工单 ${ticket.ticketNumber} 已分配给你`,
         titleEn: `${ticket.ticketNumber} was assigned to you`,
+        bodyZh: updatedTicket.title,
+        bodyEn: updatedTicket.title,
       },
     });
   }
@@ -695,6 +705,20 @@ export async function updateTicketAction(formData: FormData) {
       ),
     );
 
+    if (recipients.length) {
+      await prisma.notification.createMany({
+        data: recipients.map((recipient) => ({
+          userId: recipient.id,
+          ticketId: updatedTicket.id,
+          eventType: "ticket.resolved",
+          titleZh: `${updatedTicket.ticketNumber} 已更新为${updatedTicket.status.labelZh}`,
+          titleEn: `${updatedTicket.ticketNumber} is now ${updatedTicket.status.labelEn}`,
+          bodyZh: updatedTicket.title,
+          bodyEn: updatedTicket.title,
+        })),
+      });
+    }
+
     for (const recipient of recipients) {
       try {
         await sendTicketEmail({
@@ -721,6 +745,132 @@ export async function updateTicketAction(formData: FormData) {
   }
 
   revalidatePath(`/tickets/${ticketId}`);
+  revalidatePath("/tickets");
+  revalidatePath("/dashboard");
+}
+
+export async function createTicketEventAction(formData: FormData) {
+  const user = await requireUser();
+  const parsed = ticketEventSchema.safeParse({
+    ticketId: formData.get("ticketId"),
+    title: formData.get("title"),
+    scheduledFor: formData.get("scheduledFor"),
+    notes: formData.get("notes") || undefined,
+  });
+
+  if (!parsed.success) {
+    redirect(`/tickets/${String(formData.get("ticketId") ?? "")}`);
+  }
+
+  const ticket = await prisma.ticket.findUnique({
+    where: { id: parsed.data.ticketId },
+    include: {
+      workspace: true,
+      requester: true,
+      assignee: true,
+    },
+  });
+
+  if (!ticket) {
+    redirect("/tickets");
+  }
+
+  const membership = await prisma.workspaceMembership.findFirst({
+    where: {
+      userId: user.id,
+      workspaceId: ticket.workspaceId,
+    },
+  });
+
+  if (!membership && user.role !== UserRole.ADMIN) {
+    redirect("/tickets");
+  }
+
+  const reminderOffsets = sanitizeTicketEventReminderOffsets(
+    formData.getAll("reminderOffsets").map((value) => String(value)),
+  );
+  const scheduledFor = new Date(parsed.data.scheduledFor);
+
+  if (Number.isNaN(scheduledFor.getTime()) || scheduledFor.getTime() < Date.now() - 60_000) {
+    redirect(`/tickets/${ticket.id}`);
+  }
+
+  const event = await prisma.ticketEvent.create({
+    data: {
+      ticketId: ticket.id,
+      createdByUserId: user.id,
+      title: parsed.data.title,
+      notes: parsed.data.notes?.trim() || null,
+      scheduledFor,
+      reminders: reminderOffsets.length
+        ? {
+            create: reminderOffsets.map((offsetMinutes) => ({
+              offsetMinutes,
+            })),
+          }
+        : undefined,
+    },
+    include: {
+      reminders: true,
+    },
+  });
+
+  await prisma.ticketActivity.create({
+    data: {
+      ticketId: ticket.id,
+      actorUserId: user.id,
+      eventType: "ticket.event_created",
+      messageZh: `已安排事件：${parsed.data.title}`,
+      messageEn: `Scheduled event: ${parsed.data.title}`,
+    },
+  });
+
+  const recipients = uniqueRecipients(
+    [ticket.requester, ticket.assignee].filter((recipient): recipient is typeof ticket.requester => Boolean(recipient)),
+  );
+
+  if (recipients.length) {
+    await prisma.notification.createMany({
+      data: recipients.map((recipient) => ({
+        userId: recipient.id,
+        ticketId: ticket.id,
+        eventType: "ticket.event.created",
+        titleZh: `已安排事件：${event.title}`,
+        titleEn: `Scheduled event: ${event.title}`,
+        bodyZh: `${ticket.ticketNumber} · ${event.title}`,
+        bodyEn: `${ticket.ticketNumber} · ${event.title}`,
+      })),
+    });
+  }
+
+  for (const recipient of recipients) {
+    try {
+      await sendTicketEventEmail({
+        kind: "created",
+        recipient: {
+          email: recipient.email,
+          displayName: recipient.displayName,
+          locale: recipient.locale,
+          timeZone: recipient.timeZone,
+        },
+        ticket: {
+          id: ticket.id,
+          ticketNumber: ticket.ticketNumber,
+          title: ticket.title,
+          workspaceName: ticket.workspace.name,
+        },
+        event: {
+          title: event.title,
+          notes: event.notes ?? undefined,
+          scheduledFor: event.scheduledFor,
+        },
+      });
+    } catch (error) {
+      console.error("Failed to send created-event email", error);
+    }
+  }
+
+  revalidatePath(`/tickets/${ticket.id}`);
   revalidatePath("/tickets");
   revalidatePath("/dashboard");
 }
@@ -787,6 +937,8 @@ export async function addCommentAction(formData: FormData) {
         eventType: "ticket.comment_added",
         titleZh: `工单 ${ticket.ticketNumber} 有新评论`,
         titleEn: `New comment on ${ticket.ticketNumber}`,
+        bodyZh: parsed.data.body.slice(0, 140),
+        bodyEn: parsed.data.body.slice(0, 140),
       })),
     });
   }

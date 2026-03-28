@@ -1,0 +1,10 @@
+[Unit]
+Description=Run MiniTickets event reminders every 5 minutes
+
+[Timer]
+OnCalendar=${REMINDER_ON_CALENDAR}
+Persistent=true
+Unit=${REMINDER_SERVICE_NAME}.service
+
+[Install]
+WantedBy=timers.target

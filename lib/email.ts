@@ -1,9 +1,13 @@
 import type { Locale } from "@prisma/client";
 
+import { localeTokenMap } from "@/lib/constants";
+import { formatReminderOffsetLabel } from "@/lib/reminder-labels";
+
 type MailRecipient = {
   email: string;
   displayName: string;
   locale: Locale;
+  timeZone?: string;
 };
 
 type WelcomeEmailInput = {
@@ -39,6 +43,23 @@ type TicketEmailInput = {
   commentBody?: string;
 };
 
+type TicketEventEmailInput = {
+  kind: "created" | "reminder";
+  recipient: MailRecipient;
+  ticket: {
+    id: string;
+    ticketNumber: string;
+    title: string;
+    workspaceName: string;
+  };
+  event: {
+    title: string;
+    notes?: string;
+    scheduledFor: Date;
+  };
+  offsetMinutes?: number;
+};
+
 function getBaseUrl() {
   return (process.env.APP_URL ?? "http://localhost:3000").replace(/\/+$/, "");
 }
@@ -49,6 +70,14 @@ function getMailFrom() {
 
 function getResendApiKey() {
   return process.env.RESEND_API_KEY ?? process.env.SMTP_PASS ?? "";
+}
+
+function formatEventDate(date: Date, locale: Locale, timeZone?: string) {
+  return new Intl.DateTimeFormat(localeTokenMap[locale], {
+    dateStyle: "medium",
+    timeStyle: "short",
+    timeZone,
+  }).format(date);
 }
 
 function buildWelcomeEmail({ displayName, locale, password, userEmail }: WelcomeEmailInput) {
@@ -305,6 +334,83 @@ function buildTicketEmail({ actorName, commentBody, kind, recipient, ticket }: T
   };
 }
 
+function buildTicketEventEmail({ event, kind, offsetMinutes, recipient, ticket }: TicketEventEmailInput) {
+  const ticketUrl = `${getBaseUrl()}/tickets/${ticket.id}`;
+  const scheduledForText = formatEventDate(event.scheduledFor, recipient.locale, recipient.timeZone);
+  const reminderText =
+    kind === "reminder" ? formatReminderOffsetLabel(offsetMinutes ?? 0, recipient.locale) : null;
+
+  if (recipient.locale === "EN") {
+    if (kind === "created") {
+      return {
+        subject: `Event scheduled for ${ticket.ticketNumber}`,
+        text: [
+          `Hi ${recipient.displayName},`,
+          "",
+          `A ticket event has been scheduled for ${ticket.ticketNumber}.`,
+          `Event: ${event.title}`,
+          `When: ${scheduledForText}`,
+          `Workspace: ${ticket.workspaceName}`,
+          event.notes ? `Notes: ${event.notes}` : "",
+          `Open: ${ticketUrl}`,
+        ]
+          .filter(Boolean)
+          .join("\n"),
+      };
+    }
+
+    return {
+      subject: `Reminder: ${event.title}`,
+      text: [
+        `Hi ${recipient.displayName},`,
+        "",
+        `This is your reminder for ${ticket.ticketNumber}.`,
+        `Event: ${event.title}`,
+        reminderText ? `Reminder: ${reminderText}` : "",
+        `When: ${scheduledForText}`,
+        event.notes ? `Notes: ${event.notes}` : "",
+        `Open: ${ticketUrl}`,
+      ]
+        .filter(Boolean)
+        .join("\n"),
+    };
+  }
+
+  if (kind === "created") {
+    return {
+      subject: `${ticket.ticketNumber} 已安排事件`,
+      text: [
+        `${recipient.displayName}，你好：`,
+        "",
+        `工单 ${ticket.ticketNumber} 已安排新的事件。`,
+        `事件：${event.title}`,
+        `时间：${scheduledForText}`,
+        `工作区：${ticket.workspaceName}`,
+        event.notes ? `备注：${event.notes}` : "",
+        `查看工单：${ticketUrl}`,
+      ]
+        .filter(Boolean)
+        .join("\n"),
+    };
+  }
+
+  return {
+    subject: `提醒：${event.title}`,
+    text: [
+      `${recipient.displayName}，你好：`,
+      "",
+      `这是工单 ${ticket.ticketNumber} 的提醒。`,
+      `事件：${event.title}`,
+      reminderText ? `提醒时间：${reminderText}` : "",
+      `事件时间：${scheduledForText}`,
+      event.notes ? `备注：${event.notes}` : "",
+      `查看工单：${ticketUrl}`,
+    ]
+      .filter(Boolean)
+      .join("\n"),
+  };
+}
+
 async function sendViaResend(to: string, subject: string, text: string, html?: string) {
   const apiKey = getResendApiKey();
   if (!apiKey) {
@@ -351,5 +457,10 @@ export async function sendLoginCodeEmail(input: LoginCodeEmailInput) {
 
 export async function sendTicketEmail(input: TicketEmailInput) {
   const message = buildTicketEmail(input);
+  return sendViaResend(input.recipient.email, message.subject, message.text);
+}
+
+export async function sendTicketEventEmail(input: TicketEventEmailInput) {
+  const message = buildTicketEventEmail(input);
   return sendViaResend(input.recipient.email, message.subject, message.text);
 }

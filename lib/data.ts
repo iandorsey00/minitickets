@@ -254,6 +254,15 @@ export async function getTicketDetail(ticketId: string) {
         },
         orderBy: { createdAt: "asc" },
       },
+      events: {
+        include: {
+          createdBy: true,
+          reminders: {
+            orderBy: { offsetMinutes: "desc" },
+          },
+        },
+        orderBy: { scheduledFor: "asc" },
+      },
       paymentMethods: {
         include: {
           paymentMethod: true,

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
+import { BrowserNotificationCenter } from "@/components/browser-notification-center";
 import { logoutAction, switchWorkspaceAction } from "@/lib/actions";
 
 type ShellProps = {
@@ -94,6 +95,7 @@ export function AppShell({
       </aside>
 
       <div className="main-column">
+        <BrowserNotificationCenter supported />
         <header className="topbar">
           <form action="/tickets" className="header-search">
             <label htmlFor="header-search" className="sr-only">
@@ -116,7 +118,6 @@ export function AppShell({
                     </option>
                   ))}
                 </select>
-                <input type="hidden" name="nextPath" value={pathname || "/dashboard"} />
               </form>
               <button type="submit" className="ghost-button workspace-switch-button" form="workspace-switcher-form">
                 {dictionary.nav.switchWorkspace}

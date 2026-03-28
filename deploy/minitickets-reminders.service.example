@@ -1,0 +1,11 @@
+[Unit]
+Description=MiniTickets event reminders
+After=network.target
+
+[Service]
+Type=oneshot
+User=${REMINDER_USER}
+Group=${REMINDER_GROUP}
+WorkingDirectory=${APP_DIR}
+EnvironmentFile=${ENV_FILE}
+ExecStart=${NODE_BIN_DIR}/node --experimental-strip-types ${APP_DIR}/scripts/process-ticket-reminders.ts
