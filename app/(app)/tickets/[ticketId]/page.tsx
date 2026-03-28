@@ -162,6 +162,7 @@ export default async function TicketDetailPage({
                   <span>{t.tickets.addComment}</span>
                 </label>
                 <textarea id="body" name="body" placeholder={t.tickets.commentPlaceholder} required />
+                <p className="caution-text">{t.tickets.confidentialityNotice}</p>
               </div>
               <div>
                 <button type="submit">
@@ -254,7 +255,11 @@ export default async function TicketDetailPage({
               </div>
             </div>
           </Panel>
+        </div>
+      </div>
 
+      <div className="detail-secondary-layout">
+        <div className="stack ticket-page-section-stack">
           <Panel title={t.tickets.eventsTitle}>
             <div className="stack ticket-events-stack">
               {data.ticket.events.length ? (
@@ -311,25 +316,9 @@ export default async function TicketDetailPage({
               </div>
             </div>
           </Panel>
+        </div>
 
-          <Panel title={t.common.childTickets}>
-            {data.ticket.childTickets.length ? (
-              <div className="list">
-                {data.ticket.childTickets.map((child) => (
-                  <Link key={child.id} href={`/tickets/${child.id}`} className="list-row">
-                    <div>
-                      <div className="ticket-number">{child.ticketNumber}</div>
-                      <strong>{child.title}</strong>
-                    </div>
-                    <Badge label={localizeDefinition(child.status, data.locale)} tone="accent" />
-                  </Link>
-                ))}
-              </div>
-            ) : (
-              <EmptyState title={t.common.childTickets} body={t.tickets.childrenEmpty} />
-            )}
-          </Panel>
-
+        <div className="stack ticket-page-section-stack">
           <Panel title={t.common.edit}>
             <form action={updateTicketAction} className="stack">
               <input type="hidden" name="ticketId" value={data.ticket.id} />
@@ -452,6 +441,24 @@ export default async function TicketDetailPage({
           </Panel>
         </div>
       </div>
+
+      <Panel title={t.common.childTickets}>
+        {data.ticket.childTickets.length ? (
+          <div className="list">
+            {data.ticket.childTickets.map((child) => (
+              <Link key={child.id} href={`/tickets/${child.id}`} className="list-row">
+                <div>
+                  <div className="ticket-number">{child.ticketNumber}</div>
+                  <strong>{child.title}</strong>
+                </div>
+                <Badge label={localizeDefinition(child.status, data.locale)} tone="accent" />
+              </Link>
+            ))}
+          </div>
+        ) : (
+          <EmptyState title={t.common.childTickets} body={t.tickets.childrenEmpty} />
+        )}
+      </Panel>
 
       {showResolveAction ? (
         <form action={updateTicketAction} className="floating-action-form">
