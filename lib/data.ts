@@ -280,7 +280,7 @@ export async function getTicketDetail(ticketId: string) {
     return null;
   }
 
-  const [definitions, workspacePeople, savedPaymentMethods] = await Promise.all([
+  const [definitions, workspacePeople, savedPaymentMethods, parentTicketCandidates] = await Promise.all([
     getDefinitions(),
     prisma.user.findMany({
       where: {
@@ -305,6 +305,19 @@ export async function getTicketDetail(ticketId: string) {
       },
       orderBy: [{ label: "asc" }, { last4: "asc" }],
     }),
+    prisma.ticket.findMany({
+      where: {
+        workspaceId: ticket.workspaceId,
+        parentTicketId: null,
+        id: { not: ticket.id },
+      },
+      select: {
+        id: true,
+        ticketNumber: true,
+        title: true,
+      },
+      orderBy: { updatedAt: "desc" },
+    }),
   ]);
 
   return {
@@ -313,6 +326,7 @@ export async function getTicketDetail(ticketId: string) {
     definitions,
     workspacePeople,
     savedPaymentMethods,
+    parentTicketCandidates: ticket.childTickets.length ? [] : parentTicketCandidates,
   };
 }
 
@@ -409,6 +423,22 @@ export async function getAdminData() {
 
 export const ticketIncludes = {
   workspace: true,
+  parentTicket: {
+    select: {
+      id: true,
+      ticketNumber: true,
+      title: true,
+    },
+  },
+  childTickets: {
+    select: {
+      id: true,
+      ticketNumber: true,
+      title: true,
+      status: true,
+    },
+    orderBy: { createdAt: "asc" },
+  },
   requester: true,
   assignee: true,
   status: true,

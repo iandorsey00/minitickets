@@ -45,6 +45,19 @@ export default async function NewTicketPage() {
     },
     orderBy: [{ label: "asc" }, { last4: "asc" }],
   });
+  const parentTickets = await prisma.ticket.findMany({
+    where: {
+      workspaceId: { in: context.accessibleWorkspaceIds },
+      parentTicketId: null,
+    },
+    select: {
+      id: true,
+      ticketNumber: true,
+      title: true,
+      workspaceId: true,
+    },
+    orderBy: { updatedAt: "desc" },
+  });
   const inProgressStatus = definitions.statuses.find((item) => item.key === "IN_PROGRESS");
 
   return (
@@ -81,8 +94,10 @@ export default async function NewTicketPage() {
             last4: method.last4,
             workspaceId: method.workspaceId,
           }))}
+          parentTickets={parentTickets}
           defaults={{
             workspaceId: context.currentWorkspace?.id ?? context.memberships[0]?.workspace.id ?? "",
+            parentTicketId: null,
             categoryId: defaults.categoryId,
             priorityId: defaults.priorityId,
             statusId: defaults.statusId,

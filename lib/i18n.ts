@@ -79,6 +79,8 @@ const dictionaries = {
       requester: "提交人",
       assignee: "处理人",
       workspace: "工作区",
+      parentTicket: "父工单",
+      childTickets: "子工单",
       workspaceRole: "工作区角色",
       dueDate: "截止日期",
       title: "标题",
@@ -115,6 +117,7 @@ const dictionaries = {
       optional: "可选",
       yes: "是",
       no: "否",
+      topLevelOnlyHint: "目前只支持一级子工单。",
     },
     dashboard: {
       title: "仪表盘",
@@ -144,6 +147,7 @@ const dictionaries = {
       eventReminders: "提醒时间",
       createEvent: "创建事件",
       noEventReminders: "没有提醒",
+      childrenEmpty: "还没有子工单。",
     },
     workspaces: {
       title: "工作区",
@@ -261,6 +265,8 @@ const dictionaries = {
       requester: "Requester",
       assignee: "Assignee",
       workspace: "Workspace",
+      parentTicket: "Parent ticket",
+      childTickets: "Child tickets",
       workspaceRole: "Workspace role",
       dueDate: "Due date",
       title: "Title",
@@ -297,6 +303,7 @@ const dictionaries = {
       optional: "Optional",
       yes: "Yes",
       no: "No",
+      topLevelOnlyHint: "Only one child level is supported right now.",
     },
     dashboard: {
       title: "Dashboard",
@@ -326,6 +333,7 @@ const dictionaries = {
       eventReminders: "Reminder times",
       createEvent: "Create event",
       noEventReminders: "No reminders",
+      childrenEmpty: "No child tickets yet.",
     },
     workspaces: {
       title: "Workspaces",

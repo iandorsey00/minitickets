@@ -38,6 +38,8 @@ type TicketEmailInput = {
     workspaceName: string;
     statusLabelZh?: string;
     statusLabelEn?: string;
+    parentTicketNumber?: string;
+    parentTitle?: string;
   };
   actorName?: string;
   commentBody?: string;
@@ -224,6 +226,14 @@ function buildTicketEmail({ actorName, commentBody, kind, recipient, ticket }: T
   const ticketUrl = `${getBaseUrl()}/tickets/${ticket.id}`;
   const statusText =
     recipient.locale === "EN" ? ticket.statusLabelEn ?? "Updated" : ticket.statusLabelZh ?? "已更新";
+  const parentLineEn =
+    ticket.parentTicketNumber && ticket.parentTitle
+      ? `Parent: ${ticket.parentTicketNumber} ${ticket.parentTitle}`
+      : "";
+  const parentLineZh =
+    ticket.parentTicketNumber && ticket.parentTitle
+      ? `父工单：${ticket.parentTicketNumber} ${ticket.parentTitle}`
+      : "";
 
   if (recipient.locale === "EN") {
     if (kind === "created") {
@@ -234,8 +244,11 @@ function buildTicketEmail({ actorName, commentBody, kind, recipient, ticket }: T
           "",
           `Your ticket ${ticket.ticketNumber} has been created in ${ticket.workspaceName}.`,
           `Title: ${ticket.title}`,
+          parentLineEn,
           `Open: ${ticketUrl}`,
-        ].join("\n"),
+        ]
+          .filter(Boolean)
+          .join("\n"),
       };
     }
 
@@ -288,8 +301,11 @@ function buildTicketEmail({ actorName, commentBody, kind, recipient, ticket }: T
         "",
         `你的工单 ${ticket.ticketNumber} 已在「${ticket.workspaceName}」中创建。`,
         `标题：${ticket.title}`,
+        parentLineZh,
         `查看工单：${ticketUrl}`,
-      ].join("\n"),
+      ]
+        .filter(Boolean)
+        .join("\n"),
     };
   }
 

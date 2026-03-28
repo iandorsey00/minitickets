@@ -25,11 +25,19 @@ type PaymentMethodOption = {
   workspaceId: string;
 };
 
+type ParentTicketOption = {
+  id: string;
+  ticketNumber: string;
+  title: string;
+  workspaceId: string;
+};
+
 type TicketCreateFormProps = {
   action: (formData: FormData) => void | Promise<void>;
   dictionary: {
     common: {
       workspace: string;
+      parentTicket: string;
       category: string;
       priority: string;
       status: string;
@@ -45,6 +53,7 @@ type TicketCreateFormProps = {
       savePaymentMethod: string;
       noSavedPaymentMethods: string;
       submitRequest: string;
+      topLevelOnlyHint: string;
     };
     tickets: {
       confidentialityNotice: string;
@@ -56,8 +65,10 @@ type TicketCreateFormProps = {
   priorities: DefinitionOption[];
   statuses: DefinitionOption[];
   paymentMethods: PaymentMethodOption[];
+  parentTickets: ParentTicketOption[];
   defaults: {
     workspaceId: string;
+    parentTicketId?: string | null;
     categoryId?: string | null;
     priorityId?: string | null;
     statusId?: string | null;
@@ -74,10 +85,12 @@ export function TicketCreateForm({
   priorities,
   statuses,
   paymentMethods,
+  parentTickets,
   defaults,
 }: TicketCreateFormProps) {
   const [workspaceId, setWorkspaceId] = useState(defaults.workspaceId);
   const [assigneeId, setAssigneeId] = useState("");
+  const [parentTicketId, setParentTicketId] = useState(defaults.parentTicketId ?? "");
   const [statusId, setStatusId] = useState(defaults.statusId ?? statuses[0]?.id ?? "");
   const [statusTouched, setStatusTouched] = useState(false);
 
@@ -88,6 +101,10 @@ export function TicketCreateForm({
   const workspacePaymentMethods = useMemo(
     () => paymentMethods.filter((method) => method.workspaceId === workspaceId),
     [paymentMethods, workspaceId],
+  );
+  const workspaceParentTickets = useMemo(
+    () => parentTickets.filter((ticket) => ticket.workspaceId === workspaceId),
+    [parentTickets, workspaceId],
   );
 
   return (
@@ -105,6 +122,7 @@ export function TicketCreateForm({
               const assigneeStillAllowed = nextWorkspacePeople.some((person) => person.id === assigneeId);
 
               setWorkspaceId(nextWorkspaceId);
+              setParentTicketId("");
 
               if (!assigneeStillAllowed) {
                 setAssigneeId("");
@@ -120,6 +138,25 @@ export function TicketCreateForm({
               </option>
             ))}
           </select>
+        </div>
+        <div className="field">
+          <label htmlFor="parentTicketId">
+            {dictionary.common.parentTicket} <span className="muted">({dictionary.common.optional})</span>
+          </label>
+          <select
+            id="parentTicketId"
+            name="parentTicketId"
+            value={parentTicketId}
+            onChange={(event) => setParentTicketId(event.target.value)}
+          >
+            <option value="">{dictionary.common.none}</option>
+            {workspaceParentTickets.map((ticket) => (
+              <option key={ticket.id} value={ticket.id}>
+                {ticket.ticketNumber} · {ticket.title}
+              </option>
+            ))}
+          </select>
+          <p className="muted">{dictionary.common.topLevelOnlyHint}</p>
         </div>
         <div className="field">
           <label htmlFor="categoryId">{dictionary.common.category}</label>

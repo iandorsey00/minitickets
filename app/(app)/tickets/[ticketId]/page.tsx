@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import { addAttachmentAction, addCommentAction, createTicketEventAction, updateTicketAction } from "@/lib/actions";
 import { getTicketDetail } from "@/lib/data";
 import { formatDate, formatDateTime, formatFileSize, localizeDefinition } from "@/lib/format";
@@ -86,7 +88,7 @@ export default async function TicketDetailPage({
     <>
       <PageHeader
         title={data.ticket.title}
-        subtitle={data.ticket.ticketNumber}
+        subtitle={`${data.ticket.ticketNumber} · ${data.ticket.workspace.name}`}
         action={
           <TicketShareMenu
             label={t.common.share}
@@ -202,6 +204,16 @@ export default async function TicketDetailPage({
                 <span>{formatDate(data.ticket.dueDate, data.localeCode, data.timeZone)}</span>
               </div>
               <div className="meta-item">
+                <span>{t.common.parentTicket}</span>
+                {data.ticket.parentTicket ? (
+                  <Link href={`/tickets/${data.ticket.parentTicket.id}`}>
+                    {data.ticket.parentTicket.ticketNumber} · {data.ticket.parentTicket.title}
+                  </Link>
+                ) : (
+                  <span>{t.common.none}</span>
+                )}
+              </div>
+              <div className="meta-item">
                 <span>{t.common.paymentMethods}</span>
                 {data.ticket.paymentMethods.length ? (
                   <div className="stack" style={{ gap: "0.4rem" }}>
@@ -268,6 +280,24 @@ export default async function TicketDetailPage({
             </div>
           </Panel>
 
+          <Panel title={t.common.childTickets}>
+            {data.ticket.childTickets.length ? (
+              <div className="list">
+                {data.ticket.childTickets.map((child) => (
+                  <Link key={child.id} href={`/tickets/${child.id}`} className="list-row">
+                    <div>
+                      <div className="ticket-number">{child.ticketNumber}</div>
+                      <strong>{child.title}</strong>
+                    </div>
+                    <Badge label={localizeDefinition(child.status, data.locale)} tone="accent" />
+                  </Link>
+                ))}
+              </div>
+            ) : (
+              <EmptyState title={t.common.childTickets} body={t.tickets.childrenEmpty} />
+            )}
+          </Panel>
+
           <Panel title={t.common.edit}>
             <form action={updateTicketAction} className="stack">
               <input type="hidden" name="ticketId" value={data.ticket.id} />
@@ -278,6 +308,20 @@ export default async function TicketDetailPage({
               <div className="field">
                 <label htmlFor="description">{t.common.description}</label>
                 <textarea id="description" name="description" defaultValue={data.ticket.description} />
+              </div>
+              <div className="field">
+                <label htmlFor="parentTicketId">
+                  {t.common.parentTicket} <span className="muted">({t.common.optional})</span>
+                </label>
+                <select id="parentTicketId" name="parentTicketId" defaultValue={data.ticket.parentTicketId ?? ""}>
+                  <option value="">{t.common.none}</option>
+                  {data.parentTicketCandidates.map((candidate) => (
+                    <option key={candidate.id} value={candidate.id}>
+                      {candidate.ticketNumber} · {candidate.title}
+                    </option>
+                  ))}
+                </select>
+                <p className="muted">{t.common.topLevelOnlyHint}</p>
               </div>
               <div className="field">
                 <label htmlFor="statusId">{t.common.status}</label>

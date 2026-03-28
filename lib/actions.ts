@@ -51,6 +51,7 @@ const loginSchema = z.object({
 
 const ticketSchema = z.object({
   workspaceId: z.string().min(1),
+  parentTicketId: z.string().optional(),
   title: z.string().min(3).max(120),
   description: z.string().max(5000).optional(),
   assigneeId: z.string().optional(),
@@ -158,6 +159,33 @@ async function resolveSavedPaymentMethodIds(
   }
 
   return Array.from(new Set(validIds));
+}
+
+async function validateParentTicketSelection(parentTicketId: string | undefined | null, workspaceId: string, ticketId?: string) {
+  if (!parentTicketId) {
+    return null;
+  }
+
+  const parentTicket = await prisma.ticket.findUnique({
+    where: { id: parentTicketId },
+    select: {
+      id: true,
+      workspaceId: true,
+      parentTicketId: true,
+      ticketNumber: true,
+      title: true,
+    },
+  });
+
+  if (!parentTicket || parentTicket.workspaceId !== workspaceId || parentTicket.parentTicketId) {
+    return null;
+  }
+
+  if (ticketId && parentTicket.id === ticketId) {
+    return null;
+  }
+
+  return parentTicket;
 }
 
 export async function loginAction(formData: FormData) {
@@ -332,6 +360,7 @@ export async function createTicketAction(formData: FormData) {
 
   const parsed = ticketSchema.safeParse({
     workspaceId: formData.get("workspaceId"),
+    parentTicketId: formData.get("parentTicketId") || undefined,
     title: formData.get("title"),
     description: formData.get("description"),
     assigneeId: formData.get("assigneeId") || undefined,
@@ -384,6 +413,11 @@ export async function createTicketAction(formData: FormData) {
     }
   }
 
+  const parentTicket = await validateParentTicketSelection(parsed.data.parentTicketId, parsed.data.workspaceId);
+  if (parsed.data.parentTicketId && !parentTicket) {
+    redirect("/tickets/new?error=invalid");
+  }
+
   const defaults = await getDefaultDefinitionIds();
   await ensureCoreDefinitions();
   if (
@@ -421,6 +455,7 @@ export async function createTicketAction(formData: FormData) {
       title: parsed.data.title,
       description: parsed.data.description?.trim() || "",
       workspaceId: parsed.data.workspaceId,
+      parentTicketId: parentTicket?.id ?? null,
       requesterId: user.id,
       assigneeId: parsed.data.assigneeId || null,
       statusId: finalStatusId,
@@ -488,6 +523,8 @@ export async function createTicketAction(formData: FormData) {
         ticketNumber: ticket.ticketNumber,
         title: ticket.title,
         workspaceName: ticket.workspace.name,
+        parentTicketNumber: parentTicket?.ticketNumber,
+        parentTitle: parentTicket?.title,
       },
     });
   } catch (error) {
@@ -509,6 +546,8 @@ export async function createTicketAction(formData: FormData) {
           ticketNumber: ticket.ticketNumber,
           title: ticket.title,
           workspaceName: ticket.workspace.name,
+          parentTicketNumber: parentTicket?.ticketNumber,
+          parentTitle: parentTicket?.title,
         },
       });
     } catch (error) {
@@ -528,7 +567,20 @@ export async function updateTicketAction(formData: FormData) {
   const ticketId = String(formData.get("ticketId") ?? "");
   const ticket = await prisma.ticket.findUnique({
     where: { id: ticketId },
-    include: { status: true },
+    include: {
+      status: true,
+      parentTicket: {
+        select: {
+          id: true,
+          ticketNumber: true,
+          title: true,
+        },
+      },
+      childTickets: {
+        select: { id: true },
+        take: 1,
+      },
+    },
   });
 
   if (!ticket) {
@@ -547,6 +599,7 @@ export async function updateTicketAction(formData: FormData) {
     statusId: String(formData.get("statusId") ?? ticket.statusId),
     priorityId: String(formData.get("priorityId") ?? ticket.priorityId),
     categoryId: String(formData.get("categoryId") ?? ticket.categoryId),
+    parentTicketId: String(formData.get("parentTicketId") ?? "") || null,
     assigneeId: String(formData.get("assigneeId") ?? "") || null,
     dueDate: String(formData.get("dueDate") ?? "") || null,
     paymentLabel: String(formData.get("paymentLabel") ?? "") || null,
@@ -589,6 +642,15 @@ export async function updateTicketAction(formData: FormData) {
     }
   }
 
+  if (ticket.childTickets.length && nextValues.parentTicketId && nextValues.parentTicketId !== ticket.parentTicketId) {
+    redirect(`/tickets/${ticketId}`);
+  }
+
+  const parentTicket = await validateParentTicketSelection(nextValues.parentTicketId, ticket.workspaceId, ticket.id);
+  if (nextValues.parentTicketId && !parentTicket) {
+    redirect(`/tickets/${ticketId}`);
+  }
+
   const activities = [];
   if (nextValues.statusId !== ticket.statusId) {
     activities.push({
@@ -614,6 +676,14 @@ export async function updateTicketAction(formData: FormData) {
       messageEn: "Assignee updated.",
     });
   }
+  if (nextValues.parentTicketId !== ticket.parentTicketId) {
+    activities.push({
+      actorUserId: user.id,
+      eventType: "ticket.parent_updated",
+      messageZh: "已更新父工单。",
+      messageEn: "Parent ticket updated.",
+    });
+  }
   if (nextValues.paymentLast4 !== ticket.paymentLast4 || nextValues.paymentLabel !== ticket.paymentLabel) {
     activities.push({
       actorUserId: user.id,
@@ -627,6 +697,7 @@ export async function updateTicketAction(formData: FormData) {
     where: { id: ticketId },
     data: {
       ...nextValues,
+      parentTicketId: parentTicket?.id ?? null,
       dueDate: nextValues.dueDate ? new Date(nextValues.dueDate) : null,
       resolvedAt:
         nextStatus.key === "RESOLVED"
