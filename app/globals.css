@@ -1081,6 +1081,26 @@ textarea {
   font-size: 0.85rem;
 }
 
+.due-date-value {
+  transition: color 160ms ease;
+}
+
+.due-date-warning {
+  color: #a16207;
+}
+
+.due-date-critical {
+  color: #b91c1c;
+}
+
+[data-theme="dark"] .due-date-warning {
+  color: #facc15;
+}
+
+[data-theme="dark"] .due-date-critical {
+  color: #f87171;
+}
+
 @media (max-width: 1080px) {
   .shell,
   .detail-layout {

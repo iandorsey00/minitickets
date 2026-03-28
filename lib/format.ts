@@ -18,7 +18,7 @@ export function formatDate(date: Date | string | null | undefined, localeCode: s
   const value = typeof date === "string" ? new Date(date) : date;
   return new Intl.DateTimeFormat(localeCode, {
     dateStyle: "medium",
-    timeZone,
+    timeZone: "UTC",
   }).format(value);
 }
 

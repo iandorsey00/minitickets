@@ -5,6 +5,27 @@ import { EmptyState, PageHeader, Panel, Badge } from "@/components/ui";
 import { formatDate, formatDateTime, localizeDefinition } from "@/lib/format";
 import { getTicketsData } from "@/lib/data";
 
+function getDueDateTone(dueDate: Date | null, statusKey: string) {
+  if (!dueDate || ["RESOLVED", "CLOSED"].includes(statusKey)) {
+    return "neutral";
+  }
+
+  const today = new Date();
+  const todayUtc = Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate());
+  const dueUtc = Date.UTC(dueDate.getUTCFullYear(), dueDate.getUTCMonth(), dueDate.getUTCDate());
+  const daysRemaining = Math.floor((dueUtc - todayUtc) / 86_400_000);
+
+  if (daysRemaining <= 0) {
+    return "critical";
+  }
+
+  if (daysRemaining <= 3) {
+    return "warning";
+  }
+
+  return "neutral";
+}
+
 function hasActiveFilters(params: {
   workspaceId?: string;
   statusId?: string;
@@ -171,7 +192,9 @@ export default async function TicketsPage({
                   </div>
                   <div className="meta-pair">
                     <span>{t.common.dueDate}</span>
-                    <strong>{ticket.dueDate ? formatDate(ticket.dueDate, data.localeCode, data.timeZone) : t.common.none}</strong>
+                    <strong className={`due-date-value due-date-${getDueDateTone(ticket.dueDate, ticket.status.key)}`}>
+                      {ticket.dueDate ? formatDate(ticket.dueDate, data.localeCode, data.timeZone) : t.common.none}
+                    </strong>
                   </div>
                   <div className="meta-pair">
                     <span>{t.common.updatedAt}</span>

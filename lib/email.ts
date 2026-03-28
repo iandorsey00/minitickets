@@ -101,6 +101,13 @@ function formatEventDate(date: Date, locale: Locale, timeZone?: string) {
   }).format(date);
 }
 
+function formatCalendarDate(date: Date, locale: Locale) {
+  return new Intl.DateTimeFormat(localeTokenMap[locale], {
+    dateStyle: "medium",
+    timeZone: "UTC",
+  }).format(date);
+}
+
 function buildWelcomeEmail({ displayName, locale, password, userEmail }: WelcomeEmailInput) {
   const loginUrl = `${getBaseUrl()}/login`;
 
@@ -532,7 +539,7 @@ function buildTicketEventEmail({ event, kind, offsetMinutes, recipient, ticket }
 
 function buildTicketDueDateReminderEmail({ recipient, ticket }: TicketDueDateReminderEmailInput) {
   const ticketUrl = `${getBaseUrl()}/tickets/${ticket.id}`;
-  const dueDateText = formatEventDate(ticket.dueDate, recipient.locale, recipient.timeZone);
+  const dueDateText = formatCalendarDate(ticket.dueDate, recipient.locale);
 
   if (recipient.locale === "EN") {
     return {
