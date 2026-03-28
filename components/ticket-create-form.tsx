@@ -232,7 +232,14 @@ export function TicketCreateForm({
           <label htmlFor="dueDate">
             {dictionary.common.dueDate} <span className="muted">({dictionary.common.optional})</span>
           </label>
-          <input id="dueDate" name="dueDate" type="date" />
+          <input
+            id="dueDate"
+            name="dueDate"
+            type="text"
+            inputMode="numeric"
+            placeholder="YYYY-MM-DD"
+            pattern="\d{4}-\d{2}-\d{2}"
+          />
         </div>
       </div>
       <p className="muted form-grid-note">{dictionary.common.topLevelOnlyHint}</p>

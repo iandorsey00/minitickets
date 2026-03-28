@@ -429,7 +429,10 @@ export default async function TicketDetailPage({
                 <input
                   id="dueDate"
                   name="dueDate"
-                  type="date"
+                  type="text"
+                  inputMode="numeric"
+                  placeholder="YYYY-MM-DD"
+                  pattern="\d{4}-\d{2}-\d{2}"
                   defaultValue={data.ticket.dueDate ? new Date(data.ticket.dueDate).toISOString().slice(0, 10) : ""}
                 />
               </div>
