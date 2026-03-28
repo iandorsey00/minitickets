@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-import { addAttachmentAction, addCommentAction, createTicketEventAction, updateTicketAction } from "@/lib/actions";
+import { addAttachmentAction, addCommentAction, createTicketEventAction, deleteTicketEventAction, updateTicketAction } from "@/lib/actions";
 import { getTicketDetail } from "@/lib/data";
 import { formatDate, formatDateTime, formatFileSize, localizeDefinition } from "@/lib/format";
 import { formatReminderOffsetLabel } from "@/lib/reminder-labels";
@@ -260,7 +260,16 @@ export default async function TicketDetailPage({
               {data.ticket.events.length ? (
                 data.ticket.events.map((event) => (
                   <div key={event.id} className="event-card">
-                    <strong>{event.title}</strong>
+                    <div className="event-card-header">
+                      <strong>{event.title}</strong>
+                      <form action={deleteTicketEventAction}>
+                        <input type="hidden" name="ticketId" value={data.ticket.id} />
+                        <input type="hidden" name="eventId" value={event.id} />
+                        <button type="submit" className="ghost-button event-delete-button">
+                          {t.tickets.deleteEvent}
+                        </button>
+                      </form>
+                    </div>
                     <div className="muted">{formatDateTime(event.scheduledFor, data.localeCode, data.timeZone)}</div>
                     {event.notes ? <p>{event.notes}</p> : null}
                     <div className="event-reminder-badges">

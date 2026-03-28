@@ -19,6 +19,27 @@ export function sanitizeTicketEventReminderOffsets(values: string[]) {
   return parsed.sort((a, b) => b - a);
 }
 
+export async function getWorkspaceEventRecipients(prismaClient: PrismaClient, workspaceId: string) {
+  const memberships = await prismaClient.workspaceMembership.findMany({
+    where: {
+      workspaceId,
+      user: {
+        isActive: true,
+      },
+    },
+    include: {
+      user: true,
+    },
+    orderBy: {
+      user: {
+        displayName: "asc",
+      },
+    },
+  });
+
+  return Array.from(new Map(memberships.map((membership) => [membership.user.id, membership.user])).values());
+}
+
 function formatScheduledFor(date: Date, locale: Locale, timeZone?: string) {
   return new Intl.DateTimeFormat(localeTokenMap[locale], {
     dateStyle: "medium",
@@ -82,13 +103,7 @@ export async function processDueTicketEventReminders(options: EventReminderProce
       continue;
     }
 
-    const recipients = Array.from(
-      new Map(
-        [reminder.event.ticket.requester, reminder.event.ticket.assignee]
-          .filter((recipient): recipient is NonNullable<typeof reminder.event.ticket.requester> => Boolean(recipient))
-          .map((recipient) => [recipient.id, recipient]),
-      ).values(),
-    );
+    const recipients = await getWorkspaceEventRecipients(prismaClient, reminder.event.ticket.workspaceId);
 
     const notificationData = recipients.map((recipient) => ({
       userId: recipient.id,

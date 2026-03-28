@@ -82,6 +82,11 @@ const ticketEventSchema = z.object({
   notes: z.string().max(2000).optional(),
 });
 
+const deleteTicketEventSchema = z.object({
+  ticketId: z.string().min(1),
+  eventId: z.string().min(1),
+});
+
 const settingsSchema = z.object({
   displayName: z.string().min(2).max(60),
   locale: z.nativeEnum(Locale),
@@ -940,6 +945,76 @@ export async function createTicketEventAction(formData: FormData) {
       console.error("Failed to send created-event email", error);
     }
   }
+
+  revalidatePath(`/tickets/${ticket.id}`);
+  revalidatePath("/tickets");
+  revalidatePath("/dashboard");
+}
+
+export async function deleteTicketEventAction(formData: FormData) {
+  const user = await requireUser();
+  const parsed = deleteTicketEventSchema.safeParse({
+    ticketId: formData.get("ticketId"),
+    eventId: formData.get("eventId"),
+  });
+
+  if (!parsed.success) {
+    redirect("/tickets");
+  }
+
+  const ticket = await prisma.ticket.findUnique({
+    where: { id: parsed.data.ticketId },
+    select: {
+      id: true,
+      workspaceId: true,
+    },
+  });
+
+  if (!ticket) {
+    redirect("/tickets");
+  }
+
+  const membership = await prisma.workspaceMembership.findFirst({
+    where: {
+      userId: user.id,
+      workspaceId: ticket.workspaceId,
+    },
+  });
+
+  if (!membership && user.role !== UserRole.ADMIN) {
+    redirect("/tickets");
+  }
+
+  const event = await prisma.ticketEvent.findFirst({
+    where: {
+      id: parsed.data.eventId,
+      ticketId: ticket.id,
+    },
+    select: {
+      id: true,
+      title: true,
+    },
+  });
+
+  if (!event) {
+    redirect(`/tickets/${ticket.id}`);
+  }
+
+  await prisma.ticketEvent.delete({
+    where: {
+      id: event.id,
+    },
+  });
+
+  await prisma.ticketActivity.create({
+    data: {
+      ticketId: ticket.id,
+      actorUserId: user.id,
+      eventType: "ticket.event_deleted",
+      messageZh: `已删除事件：${event.title}`,
+      messageEn: `Deleted event: ${event.title}`,
+    },
+  });
 
   revalidatePath(`/tickets/${ticket.id}`);
   revalidatePath("/tickets");

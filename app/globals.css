@@ -596,7 +596,8 @@ textarea {
 
 .panel-title {
   margin-bottom: 0.9rem;
-  font-size: 1rem;
+  font-size: 1.16rem;
+  font-weight: 700;
 }
 
 .filter-panel {
@@ -791,6 +792,18 @@ textarea {
   gap: 0.45rem;
   padding: 0.1rem 0 1rem;
   border-bottom: 1px solid var(--color-line);
+}
+
+.event-card-header {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 0.8rem;
+}
+
+.event-delete-button {
+  padding: 0.45rem 0.8rem;
+  white-space: nowrap;
 }
 
 .event-card:last-of-type {
