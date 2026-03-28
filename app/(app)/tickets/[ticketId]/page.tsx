@@ -5,7 +5,7 @@ import { getTicketDetail } from "@/lib/data";
 import { formatDate, formatDateTime, formatFileSize, localizeDefinition } from "@/lib/format";
 import { formatReminderOffsetLabel } from "@/lib/reminder-labels";
 import { defaultTicketEventReminderOffsets } from "@/lib/ticket-events";
-import { canRenderInline, getTicketAttachmentUrl } from "@/lib/uploads";
+import { MAX_ATTACHMENT_SIZE_BYTES, canRenderInline, getTicketAttachmentUrl } from "@/lib/uploads";
 import { CommentIcon, UploadIcon } from "@/components/icons";
 import { FilePicker } from "@/components/file-picker";
 import { Badge, EmptyState, PageHeader, Panel } from "@/components/ui";
@@ -14,10 +14,13 @@ import { TicketShareMenu } from "@/components/ticket-share-menu";
 
 export default async function TicketDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ ticketId: string }>;
+  searchParams: Promise<{ upload?: string }>;
 }) {
   const { ticketId } = await params;
+  const query = await searchParams;
   const data = await getTicketDetail(ticketId);
 
   if (!data) {
@@ -25,6 +28,12 @@ export default async function TicketDetailPage({
   }
 
   const t = data.dictionary;
+  const uploadMessage =
+    query.upload === "size"
+      ? { tone: "danger" as const, label: t.common.uploadTooLarge }
+      : query.upload === "success"
+        ? { tone: "success" as const, label: t.common.uploadSuccess }
+        : null;
   const selectedPaymentMethodIds = new Set(data.ticket.paymentMethods.map((item) => item.paymentMethodId));
   const showEventsOpenByDefault = data.ticket.events.length > 0;
   const showChildrenOpenByDefault = data.ticket.childTickets.length > 0 || Boolean(data.ticket.parentTicket);
@@ -201,6 +210,7 @@ export default async function TicketDetailPage({
             </form>
             <form action={addAttachmentAction} className="stack ticket-subsection" encType="multipart/form-data">
               <input type="hidden" name="ticketId" value={data.ticket.id} />
+              {uploadMessage ? <Badge label={uploadMessage.label} tone={uploadMessage.tone} /> : null}
               <div className="field">
                 <label className="label-with-icon">
                   <UploadIcon className="inline-icon" />
@@ -213,6 +223,7 @@ export default async function TicketDetailPage({
                   required
                 />
                 <p className="warning-text">{t.common.uploadWarning}</p>
+                <p className="muted">{t.common.uploadMaxSize.replace("{size}", formatFileSize(MAX_ATTACHMENT_SIZE_BYTES))}</p>
               </div>
               <div>
                 <button type="submit">

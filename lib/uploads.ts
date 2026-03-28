@@ -1,5 +1,7 @@
 import path from "node:path";
 
+export const MAX_ATTACHMENT_SIZE_BYTES = 30 * 1024 * 1024;
+
 const safeInlineMimeTypes = new Set([
   "image/jpeg",
   "image/png",

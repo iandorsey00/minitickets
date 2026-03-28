@@ -42,7 +42,7 @@ import { assertRateLimit, clearRateLimit } from "@/lib/rate-limit";
 import { sanitizeTicketEventReminderOffsets } from "@/lib/ticket-events";
 import { fallbackTicketPrefixFromSlug, formatTicketNumber, normalizeTicketPrefix } from "@/lib/tickets";
 import { autoCloseResolvedTickets } from "@/lib/ticket-status";
-import { getTicketAttachmentDiskPath, getTicketAttachmentUrl, getUploadsRoot } from "@/lib/uploads";
+import { MAX_ATTACHMENT_SIZE_BYTES, getTicketAttachmentDiskPath, getTicketAttachmentUrl, getUploadsRoot } from "@/lib/uploads";
 
 const loginSchema = z.object({
   email: z.email(),
@@ -1270,6 +1270,10 @@ export async function addAttachmentAction(formData: FormData) {
     redirect(`/tickets/${parsed.data.ticketId}`);
   }
 
+  if (file.size > MAX_ATTACHMENT_SIZE_BYTES) {
+    redirect(`/tickets/${parsed.data.ticketId}?upload=size`);
+  }
+
   const ticket = await prisma.ticket.findUnique({
     where: { id: parsed.data.ticketId },
   });
@@ -1317,6 +1321,7 @@ export async function addAttachmentAction(formData: FormData) {
 
   revalidatePath(`/tickets/${ticket.id}`);
   revalidatePath("/dashboard");
+  redirect(`/tickets/${ticket.id}?upload=success`);
 }
 
 export async function updateSettingsAction(formData: FormData) {
