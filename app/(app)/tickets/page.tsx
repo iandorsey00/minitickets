@@ -49,9 +49,9 @@ export default async function TicketsPage({
         title={t.tickets.title}
         subtitle={data.currentWorkspace?.name ?? t.common.workspace}
         action={
-          <Link href="/tickets/new" className="button">
+          <Link href="/tickets/new" className="floating-action inline-floating-action">
             <span className="button-content">
-              <PencilIcon className="button-icon" />
+              <PencilIcon className="floating-action-icon" />
               <span>{t.nav.createTicket}</span>
             </span>
           </Link>

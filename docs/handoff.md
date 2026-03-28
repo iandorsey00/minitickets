@@ -7,6 +7,7 @@ MiniTickets is live as a bilingual, workspace-based ticketing system for persona
 ## Current behavior
 
 - Users sign in with email and password
+- Users can optionally enable email MFA
 - Every non-admin user is limited to the workspace or workspaces they belong to
 - Admins can manage users, workspaces, and global ticket definitions
 - New users are created together with a required workspace assignment
@@ -19,14 +20,21 @@ MiniTickets is live as a bilingual, workspace-based ticketing system for persona
 - Ticket description is optional at creation time
 - Ticket numbers use a global MiniTickets prefix plus a workspace prefix, for example `MTSR00001`
 - The create-ticket action label in Chinese is `提交工单`
+- Tickets can have a single parent level and many child tickets
+- Ticket events support reminder offsets such as months, hours, or “at time”
+- Due dates trigger a 9 AM local reminder on the due date
+- The ticket detail page uses contextual save actions rather than a fixed “resolve” shortcut
+- The settings page displays the current running app version as a read-only field
 
 ## UX direction
 
 - Chinese-first branding should prefer `轻量工单` in the main interface
+- Non-Latin brand contexts should show a smaller `MiniTickets` subtitle beneath the localized product name
 - The login page should stay visually close to the GeoCompare homepage, especially in scale, spacing, and calmness
 - Mobile usage is a primary scenario, not an afterthought
 - Dense tables should generally be avoided in favor of calmer stacked rows or compact lists
 - Filters should stay available but not dominate the page when they are not in active use
+- The ticket detail page should reveal complexity progressively through collapsible sections with lightweight previews
 
 ## Notification and email expectations
 
@@ -37,6 +45,10 @@ MiniTickets is live as a bilingual, workspace-based ticketing system for persona
   - ticket assigned
   - new comment
   - ticket resolved or closed
+- Scheduled events also send:
+  - an event-created confirmation
+  - timed reminder emails
+- Browser notifications are expected for ticket and reminder notifications, but remain a secondary channel behind durable in-app notifications and email
 - In-app activity and notifications remain important even if email delivery is unavailable
 - Invite and welcome emails should stay simple, direct, and clear for non-technical users
 - Invitation emails should name the assigned workspace so the recipient understands the context immediately
@@ -47,13 +59,15 @@ MiniTickets is live as a bilingual, workspace-based ticketing system for persona
 - The first real admin account should be created deliberately during deployment/bootstrap
 - Workspaces should be created to match real contexts such as personal, household, studio, or small-business operations
 - Local file uploads are acceptable for a single-server deployment, but longer-term durability may call for external object storage
+- Daily local backups are installed and should be paired with an off-droplet copy when practical
+- Reminder processing should run from the dedicated scheduled service rather than relying on user traffic
 
 ## Near-term follow-ups
 
-- Continue softening crowded admin and settings layouts where narrow widths still feel dense
-- Consider a more guided user-creation flow if workspace role selection becomes confusing
-- Consider stronger password requirements if broader external use is expected
-- Continue validating that all ticket and workspace queries remain properly scoped by workspace membership
+- Continue softening any remaining dense admin layouts on narrow screens
+- Consider whether browser notifications should become opt-in per reminder category instead of all-or-nothing
+- Consider a calmer inline way to preview accent colors live before saving
+- Continue validating that all ticket, event, reminder, and attachment queries remain properly scoped by workspace membership
 
 ## Decision notes
 

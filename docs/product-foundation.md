@@ -2,230 +2,224 @@
 
 ## Product shape
 
-MiniTickets is a multi-workspace ticketing application for personal and small-team request tracking. The UX is intentionally calm, bilingual, and low-friction while keeping the core discipline of ownership, prioritization, and audit history.
+MiniTickets is a bilingual, multi-workspace ticketing product for personal and small-team request tracking. It is intentionally lightweight, calm, and low-friction while still behaving like a real operational system with ownership, prioritization, scheduling, and audit history.
 
-## Architecture
+## Product principles
 
-### Application layers
+- Keep the product understandable for non-technical users
+- Prefer clear ownership and visible progress over workflow complexity
+- Treat workspace boundaries as real access boundaries
+- Make mobile use a first-class scenario
+- Reveal complexity progressively instead of front-loading every option
 
-1. Presentation
-   - A responsive web application shell, focused entry points, and reusable interface patterns
-   - Locale-aware labels and theme-aware design tokens
-2. Domain
-   - Ticket lifecycle helpers
-   - Workspace access control
-   - Admin catalog management for statuses, priorities, and categories
-3. Data
-   - Structured records for users, workspaces, memberships, tickets, comments, activity, notifications, and sessions
-4. Platform
-   - Session cookies
-   - Password hashing
-   - Seed data
-   - Future-ready auth provider/account tables for SSO expansion
+## Core domain model
 
-### Deployment posture
+### People
 
-- Optimized for deployment as a single web service
-- A lightweight relational store works well for local, personal, or early production use
-- Environment variables isolate secrets and app URL
-- The auth model includes external-account mapping so SSO for other `iandorsey.com` apps can be added without redesigning user identity
+- A person has:
+  - identity
+  - profile information
+  - language preference
+  - theme and accent preferences
+  - optional stronger sign-in protection
+- A person can belong to one or many workspaces
 
-## Database schema
+### Workspaces
 
-### Core entities
+- A workspace is the primary boundary for visibility and collaboration
+- Each workspace has:
+  - a human-readable name
+  - a short identifier
+  - a ticket prefix
+  - optional descriptive context
+  - an active or archived state
 
-- `User`
-  - identity, profile, language preference, accent color, theme preference, active flag
-- `Workspace`
-  - name, slug, ticket prefix, description, archived flag
-- `WorkspaceMembership`
-  - links users to workspaces with `ADMIN` or `MEMBER` scope inside the workspace
-- `Ticket`
-  - title, description, number, due date, requester, assignee, workspace, status, priority, category, optional payment reference
-- `TicketComment`
-  - threaded chronologically under a ticket
-- `TicketActivity`
-  - immutable audit trail for creation, assignment, status change, priority change, comments, and attachments
-- `Notification`
-  - user-targeted event inbox entries for in-app alerts and future delivery expansion
+### Tickets
 
-### Support entities
-
-- `Session`
-  - secure persistent login sessions
-- `AuthAccount`
-  - optional external identity provider mapping for future SSO
-- `PasswordSetupToken`
-  - single-use invitation and password-setup tokens with expiry
-- `StatusDefinition`
-  - admin-managed status labels with seed defaults
-- `PriorityDefinition`
-  - admin-managed priorities with seed defaults
-- `CategoryDefinition`
-  - admin-managed categories with seed defaults
-
-### Key relationships
-
-- A user can belong to many workspaces
-- A workspace has many tickets
 - A ticket belongs to exactly one workspace
-- A ticket has one requester and optional assignee
-- A ticket has many comments, attachments, and activity entries
-- Definitions are global, active/inactive, and referenced by tickets
+- A ticket has:
+  - ticket number
+  - title
+  - optional description
+  - requester
+  - optional assignee
+  - status
+  - priority
+  - category
+  - optional due date
+  - optional saved payment-method references
+- A ticket may have:
+  - one parent ticket
+  - many child tickets
+- Parent/child relationships are intentionally shallow:
+  - one child level is supported
+  - status does not automatically propagate up or down
 
-## Route map
+### Comments and activity
 
-### Public
+- A ticket keeps a chronological record of:
+  - system activity
+  - comments
+  - attachments
+- The activity record should remain readable as one unified timeline
 
-- `/login`
-- `/setup-password`
+### Events and reminders
 
-### Authenticated
+- A ticket may have scheduled events
+- An event has:
+  - title
+  - scheduled time
+  - optional notes
+- An event can have multiple reminder offsets
+- Due dates remain simpler than events:
+  - they are date-based
+  - they can trigger a morning reminder
+  - they are not the same as a scheduled event
 
-- `/`
-  - redirects to tickets
-- `/tickets`
-- `/tickets/new`
-- `/tickets/[ticketId]`
-- `/dashboard`
-- `/workspaces`
-- `/workspaces/[workspaceId]`
-- `/settings`
+### Notifications
 
-### Admin only
+- Notifications support:
+  - in-product inbox behavior
+  - browser delivery
+  - email delivery
+- Notification behavior should be durable and auditable rather than purely ephemeral
 
-- `/admin`
-- `/admin/users`
-- `/admin/workspaces`
-- `/admin/catalog`
+## Access model
 
-## UI structure
+- Users can only access workspaces they belong to
+- Ticket visibility follows workspace membership
+- Attachment visibility follows ticket visibility
+- Admins can manage the product globally
+- Assignment should remain grounded in real workspace membership
+
+## Product surfaces
 
 ### Global shell
 
-- Top bar
-  - product name in Chinese-first contexts: `轻量工单`
-  - workspace switcher
-  - global search entry point
+- The shell should provide:
+  - product branding
+  - workspace context
+  - search
   - account actions
-- Left navigation
-  - Tickets
-  - Create Ticket
-  - Dashboard
-  - Workspaces
-  - Admin
-  - Settings
+  - primary navigation
+- Workspace switching belongs in the shell, not as a separate primary destination
 
-### Page structure
+### Ticket list
 
-- Dashboard
-  - assigned to me
-  - created by me
-  - recent updates
-  - status counts
-- Ticket list
+- The ticket list is the main operational workspace view
+- It should support:
   - keyword search
-  - collapsible filter bar
-  - compact, legible result list
-- Ticket detail
-  - header summary
-  - key metadata panel
-  - description
+  - filters
+  - compact readable rows
+  - clear status and ownership cues
+- When already scoped to one workspace, repeated workspace labels should be minimized
+
+### Ticket detail page
+
+- The ticket detail page is the main working surface for one ticket
+- It should present:
+  - key metadata
+  - editable ticket data
+  - chronological activity
+  - comments
   - attachments
-  - activity timeline
-  - comments composer
-- Workspace page
-  - workspace summary
-  - members
-  - status counts
-  - recent activity
-  - workspace ticket list
-- Admin
-  - user management
+  - events and reminders
+  - parent/child relationships
+- Less-frequent sections should collapse cleanly
+- Collapsed sections should still hint at their contents
+- The primary action on this page should favor saving meaningful edits over one-off shortcut actions
+
+### Dashboard
+
+- The dashboard should emphasize:
+  - assigned work
+  - created work
+  - recent movement
+  - status distribution
+
+### Admin
+
+- Admin is the structural control center
+- It should support:
+  - user lifecycle management
   - workspace management
   - catalog management
-- Settings
+  - global visibility where appropriate
+
+### Settings
+
+- Settings should combine:
+  - profile preferences
   - language
-  - accent color
-  - display name
+  - time zone
   - theme
-  - password
+  - accent
+  - password management
+  - optional additional sign-in protection
+  - visible application version
 
-## i18n strategy
+## Language and localization
 
-- All user-visible strings live in locale dictionaries
-- Locale values: `zh-CN` and `en`
-- Default locale: `zh-CN`
-- Locale resolution order:
-  1. authenticated user preference
-  2. locale cookie
-  3. default locale
-- Terminology is curated rather than literal:
-  - Workspace: 工作区
-  - Ticket: 工单
-  - Create Ticket: 新建工单
-  - Requester: 提交人
-  - Assignee: 处理人
-  - Submit Ticket: 提交工单
-  - Settings: 设置
+- The product is Simplified Chinese first and English second
+- Terminology should be curated rather than literal
+- Brand presentation in non-Latin contexts should keep a smaller `MiniTickets` subtitle visible
+- Time, reminders, and due-date notifications should respect the recipient’s own time zone
 
-## Theme and accent system
+## Visual system
 
-- System light/dark support with user override
-- Accent palette is restricted to curated tokens:
-  - blue
-  - cyan
-  - teal
-  - green
-  - lime
-  - yellow
-  - orange
-  - red
-  - pink
-  - purple
-- Tokens drive buttons, links, active states, focus rings, and highlights
-- Light and dark themes share semantic tokens so the product keeps the same calm identity in both modes
+- The interface should feel calm, intentional, and legible
+- Accent colors should influence both controls and surrounding atmosphere
+- Dense tables should generally give way to compact lists or stacks when that improves readability
+- Mobile and desktop should feel like the same product, not separate experiences
 
-## Auth model
+## Authentication and trust
 
-- Users authenticate with email and password
-- Passwords are hashed with bcrypt
-- Sessions are stored in the database
-- Cookie contains only a session token, not user profile data
-- Every authenticated request resolves the current user and allowed workspaces server-side
-- Users created by an admin must be associated with a workspace immediately
-- Admin-created users complete onboarding through an expiring password-setup link instead of receiving a fixed password
-- Future SSO path:
-  - keep local credentials as one auth method
-  - add external account mappings for OIDC/SAML later
-  - centralize provider resolution in auth services
+- Sign-in is based on email and password
+- Optional additional sign-in verification can be enabled by the user
+- Invitations should lead directly into password setup rather than distributing fixed passwords
+- Session handling should remain quiet and secure rather than performative
 
-## Current product defaults
+## Delivery expectations
+
+- Email is appropriate for:
+  - invitation and password setup
+  - first-admin onboarding
+  - ticket created
+  - ticket assigned
+  - new comment
+  - resolved or closed status changes
+  - scheduled-event confirmation
+  - scheduled reminders
+  - due-date reminders
+- Browser notifications are helpful, but should remain secondary to durable in-product and email channels
+
+## Product defaults
 
 - New tickets default to:
   - status: `New`
   - priority: `Medium`
   - category: `General Request`
-- Ticket description is optional during creation
-- Ticket numbers use a global `MT` prefix plus a workspace prefix, for example `MTSR00001`
-- Users only see tickets and workspaces they are associated with, except platform admins
-- Invite emails identify the user’s assigned workspace and link directly to password setup
+- Ticket description is optional
+- Event reminders should be intentional rather than preselected by default
+- Due-date reminders should occur at a practical daytime hour, not midnight
 
-## Delivery model
+## Security and privacy posture
 
-- Email is recommended for:
-  - account invitation and password setup
-  - first-admin welcome message
-  - ticket created
-  - ticket assigned
-  - new comment
-  - resolved or closed
-- In-app notifications should remain available even if external delivery is temporarily unavailable
+- Workspace boundaries are real privacy boundaries
+- Private attachments must never be publicly reachable by URL alone
+- The product is appropriate for routine and moderately sensitive matters, not highly sensitive financial or legal data
+- The interface should remind users not to upload highly sensitive payment information
 
-## Product evolution phases
+## Operating assumptions
 
-1. Establish the bilingual shell, navigation, and workspace-scoped access model
-2. Define the ticketing record model, default catalogs, and seed-ready sample data
-3. Add authentication, session handling, and server-side permission checks
-4. Deliver the core operational surfaces: tickets, workspaces, admin, and settings
-5. Expand onboarding, notifications, and deployment readiness for real-world use
+- The product is healthy as a single-service deployment for personal and early small-team use
+- Backups are part of normal operation, not an optional extra
+- Longer-term durability can expand beyond local file storage when needed
+
+## Evolution path
+
+1. Preserve clarity and trust in the core ticket workflow
+2. Continue improving notification quality and scheduling reliability
+3. Keep access control and attachment protection conservative
+4. Expand interoperability and export features where they help real work
+5. Add broader authentication or enterprise identity options only if the product genuinely needs them

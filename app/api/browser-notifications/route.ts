@@ -8,12 +8,13 @@ const secureHeaders = {
 } as const;
 
 export async function GET() {
-  await processDueTicketReminders();
   const user = await getCurrentUser();
 
   if (!user) {
     return Response.json({ notifications: [] }, { status: 401, headers: secureHeaders });
   }
+
+  await processDueTicketReminders();
 
   const notifications = await prisma.notification.findMany({
     where: {

@@ -487,6 +487,13 @@ textarea {
   z-index: 20;
 }
 
+.inline-floating-action {
+  position: static;
+  right: auto;
+  bottom: auto;
+  z-index: auto;
+}
+
 .floating-action-icon,
 .share-menu-icon {
   display: inline-flex;

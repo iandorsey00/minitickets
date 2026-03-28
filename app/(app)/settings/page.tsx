@@ -2,6 +2,7 @@ import { updateSettingsAction } from "@/lib/actions";
 import { accentHexMap, accentLabelMap, accentValues, localeValues, themeValues, timeZoneLabelMap, timeZoneValues } from "@/lib/constants";
 import { getViewerContext } from "@/lib/data";
 import { Badge, PageHeader, Panel } from "@/components/ui";
+import packageJson from "@/package.json";
 
 export default async function SettingsPage({
   searchParams,
@@ -31,6 +32,10 @@ export default async function SettingsPage({
           <div className="field">
             <label htmlFor="displayName">{t.common.displayName}</label>
             <input id="displayName" name="displayName" defaultValue={data.user.displayName} required />
+          </div>
+          <div className="field">
+            <label htmlFor="appVersion">{t.common.version}</label>
+            <input id="appVersion" value={`v${packageJson.version}`} readOnly aria-readonly="true" />
           </div>
           <div className="field">
             <label htmlFor="locale">{t.common.language}</label>
