@@ -6,7 +6,7 @@ import { Badge, PageHeader, Panel } from "@/components/ui";
 export default async function SettingsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string; password?: string }>;
+  searchParams: Promise<{ error?: string; password?: string; saved?: string }>;
 }) {
   const data = await getViewerContext();
   const t = data.dictionary;
@@ -19,12 +19,14 @@ export default async function SettingsPage({
         : params.password === "required"
           ? t.settings.passwordRequired
           : null;
+  const successMessage = params.saved === "1" ? t.settings.saved : null;
 
   return (
     <>
       <PageHeader title={t.settings.title} subtitle={t.settings.profile} />
       <Panel title={t.settings.appearance}>
         <form action={updateSettingsAction} className="stack">
+          {successMessage ? <Badge label={successMessage} tone="success" /> : null}
           {errorMessage ? <Badge label={errorMessage} tone="danger" /> : null}
           <div className="field">
             <label htmlFor="displayName">{t.common.displayName}</label>

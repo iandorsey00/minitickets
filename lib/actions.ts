@@ -940,6 +940,7 @@ export async function updateSettingsAction(formData: FormData) {
 
   revalidatePath("/settings");
   revalidatePath("/dashboard");
+  redirect("/settings?saved=1");
 }
 
 export async function createUserAction(formData: FormData) {

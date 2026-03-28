@@ -95,6 +95,14 @@ export function AppShell({
 
       <div className="main-column">
         <header className="topbar">
+          <form action="/tickets" className="header-search">
+            <label htmlFor="header-search" className="sr-only">
+              {dictionary.common.search}
+            </label>
+            <input id="header-search" name="q" placeholder={dictionary.common.search} />
+            {currentWorkspaceId ? <input type="hidden" name="workspaceId" value={currentWorkspaceId} /> : null}
+          </form>
+
           {hasMultipleWorkspaces ? (
             <div className="workspace-switcher-cluster">
               <form action={switchWorkspaceAction} className="workspace-switcher" id="workspace-switcher-form">
@@ -119,14 +127,6 @@ export function AppShell({
               {currentWorkspaceName}
             </div>
           )}
-
-          <form action="/tickets" className="header-search">
-            <label htmlFor="header-search" className="sr-only">
-              {dictionary.common.search}
-            </label>
-            <input id="header-search" name="q" placeholder={dictionary.common.search} />
-            {currentWorkspaceId ? <input type="hidden" name="workspaceId" value={currentWorkspaceId} /> : null}
-          </form>
 
           <div className="topbar-actions">
             <div className="user-chip">

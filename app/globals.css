@@ -368,7 +368,7 @@ textarea {
 
 .topbar {
   display: grid;
-  grid-template-columns: minmax(220px, 320px) minmax(220px, 1fr) auto;
+  grid-template-columns: minmax(280px, 1fr) auto auto;
   gap: 1rem;
   align-items: center;
   padding: 1rem 1.5rem;
@@ -390,6 +390,7 @@ textarea {
   align-items: center;
   gap: 0.45rem;
   min-width: 0;
+  justify-self: end;
 }
 
 .workspace-label {
@@ -399,6 +400,7 @@ textarea {
   padding: 0.7rem 0.1rem;
   border-bottom: 1px solid var(--color-line);
   font-weight: 600;
+  justify-self: end;
 }
 
 .workspace-switcher select {
@@ -415,12 +417,14 @@ textarea {
 
 .header-search {
   display: block;
+  min-width: 0;
 }
 
 .topbar-actions {
   display: flex;
   align-items: center;
   gap: 0.75rem;
+  justify-self: end;
 }
 
 .user-chip {
