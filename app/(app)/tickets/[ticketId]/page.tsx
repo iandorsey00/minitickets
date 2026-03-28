@@ -57,7 +57,7 @@ export default async function TicketDetailPage({
       />
 
       <div className="detail-layout">
-        <div className="stack">
+        <div className="stack ticket-page-section-stack">
           {data.ticket.description ? (
             <details className="panel detail-disclosure">
               <summary className="panel-title">{t.common.description}</summary>
@@ -105,7 +105,7 @@ export default async function TicketDetailPage({
               )}
             </div>
 
-            <form action={addCommentAction} className="stack">
+            <form action={addCommentAction} className="stack ticket-subsection">
               <input type="hidden" name="ticketId" value={data.ticket.id} />
               <div className="field">
                 <label htmlFor="body">{t.tickets.addComment}</label>
@@ -115,7 +115,7 @@ export default async function TicketDetailPage({
                 <button type="submit">{t.tickets.addComment}</button>
               </div>
             </form>
-            <form action={addAttachmentAction} className="stack" encType="multipart/form-data">
+            <form action={addAttachmentAction} className="stack ticket-subsection" encType="multipart/form-data">
               <input type="hidden" name="ticketId" value={data.ticket.id} />
               <div className="field">
                 <label htmlFor="file">{t.common.uploadFile}</label>
@@ -129,7 +129,7 @@ export default async function TicketDetailPage({
           </Panel>
         </div>
 
-        <div className="stack">
+        <div className="stack ticket-page-section-stack">
           <Panel title={t.common.status}>
             <div className="meta-grid">
               <div className="meta-item">

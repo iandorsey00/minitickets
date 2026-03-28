@@ -597,6 +597,10 @@ textarea {
   gap: 1rem;
 }
 
+.ticket-page-section-stack {
+  gap: 1.6rem;
+}
+
 .timeline {
   display: grid;
   gap: 1rem;
@@ -612,6 +616,12 @@ textarea {
 .timeline-item strong {
   display: block;
   margin-bottom: 0.2rem;
+}
+
+.ticket-subsection {
+  margin-top: 1.4rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--color-line);
 }
 
 .attachment-preview-link {
