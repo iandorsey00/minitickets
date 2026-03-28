@@ -40,6 +40,7 @@ export default async function TicketsPage({
   const data = await getTicketsData(params);
   const t = data.dictionary;
   const showFilters = hasActiveFilters(params);
+  const showWorkspaceMeta = !data.currentWorkspace;
 
   return (
     <>
@@ -146,10 +147,12 @@ export default async function TicketsPage({
                   <strong>{ticket.title}</strong>
                 </div>
                 <div className="ticket-list-meta">
-                  <div className="meta-pair">
-                    <span>{t.common.workspace}</span>
-                    <strong>{ticket.workspace.name}</strong>
-                  </div>
+                  {showWorkspaceMeta ? (
+                    <div className="meta-pair">
+                      <span>{t.common.workspace}</span>
+                      <strong>{ticket.workspace.name}</strong>
+                    </div>
+                  ) : null}
                   <div className="meta-pair">
                     <span>{t.common.status}</span>
                     <Badge label={localizeDefinition(ticket.status, data.locale)} tone="accent" />
