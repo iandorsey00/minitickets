@@ -112,6 +112,38 @@ function uniqueRecipients<T extends { id: string }>(items: T[]) {
   return Array.from(new Map(items.map((item) => [item.id, item])).values());
 }
 
+function escapeRegExp(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function getMentionedUsersFromComment<T extends { id: string; displayName: string; email: string }>(
+  body: string,
+  users: T[],
+  authorId: string,
+) {
+  const normalizedBody = body.normalize("NFKC");
+  const sortedUsers = [...users].sort((a, b) => b.displayName.length - a.displayName.length);
+  const mentioned: T[] = [];
+
+  for (const user of sortedUsers) {
+    if (user.id === authorId) {
+      continue;
+    }
+
+    const patterns = [user.displayName.trim(), user.email.trim()].filter(Boolean);
+    const matched = patterns.some((pattern) => {
+      const escaped = escapeRegExp(pattern);
+      return new RegExp(`(^|[^\\p{L}\\p{N}_])@${escaped}(?=$|[\\s.,:;!?，。；：！？）)\\]\\}])`, "iu").test(normalizedBody);
+    });
+
+    if (matched) {
+      mentioned.push(user);
+    }
+  }
+
+  return uniqueRecipients(mentioned);
+}
+
 async function getClientIp() {
   const headerStore = await headers();
   const forwarded = headerStore.get("x-forwarded-for");
@@ -1035,9 +1067,22 @@ export async function addCommentAction(formData: FormData) {
   const ticket = await prisma.ticket.findUnique({
     where: { id: parsed.data.ticketId },
     include: {
-      workspace: true,
       requester: true,
       assignee: true,
+      workspace: {
+        include: {
+          memberships: {
+            where: {
+              user: {
+                isActive: true,
+              },
+            },
+            include: {
+              user: true,
+            },
+          },
+        },
+      },
     },
   });
 
@@ -1071,8 +1116,14 @@ export async function addCommentAction(formData: FormData) {
     },
   });
 
+  const mentionedUsers = getMentionedUsersFromComment(
+    parsed.data.body,
+    ticket.workspace.memberships.map((membership) => membership.user),
+    user.id,
+  );
+  const mentionedUserIds = new Set(mentionedUsers.map((recipient) => recipient.id));
   const recipients = [ticket.requesterId, ticket.assigneeId].filter(
-    (recipientId): recipientId is string => Boolean(recipientId && recipientId !== user.id),
+    (recipientId): recipientId is string => Boolean(recipientId && recipientId !== user.id && !mentionedUserIds.has(recipientId)),
   );
 
   if (recipients.length) {
@@ -1089,8 +1140,24 @@ export async function addCommentAction(formData: FormData) {
     });
   }
 
+  if (mentionedUsers.length) {
+    await prisma.notification.createMany({
+      data: mentionedUsers.map((recipient) => ({
+        userId: recipient.id,
+        ticketId: ticket.id,
+        eventType: "ticket.mentioned",
+        titleZh: `你在工单 ${ticket.ticketNumber} 中被提到`,
+        titleEn: `You were mentioned on ${ticket.ticketNumber}`,
+        bodyZh: parsed.data.body.slice(0, 140),
+        bodyEn: parsed.data.body.slice(0, 140),
+      })),
+    });
+  }
+
   const emailRecipients = uniqueRecipients(
-    [ticket.requester, ticket.assignee].filter((recipient): recipient is typeof ticket.requester => Boolean(recipient)),
+    [ticket.requester, ticket.assignee].filter(
+      (recipient): recipient is typeof ticket.requester => Boolean(recipient && !mentionedUserIds.has(recipient.id)),
+    ),
   );
 
   for (const recipient of emailRecipients) {
@@ -1113,6 +1180,29 @@ export async function addCommentAction(formData: FormData) {
       });
     } catch (error) {
       console.error("Failed to send comment email", error);
+    }
+  }
+
+  for (const recipient of mentionedUsers) {
+    try {
+      await sendTicketEmail({
+        kind: "mentioned",
+        recipient: {
+          email: recipient.email,
+          displayName: recipient.displayName,
+          locale: recipient.locale,
+        },
+        actorName: user.displayName,
+        commentBody: parsed.data.body,
+        ticket: {
+          id: ticket.id,
+          ticketNumber: ticket.ticketNumber,
+          title: ticket.title,
+          workspaceName: ticket.workspace.name,
+        },
+      });
+    } catch (error) {
+      console.error("Failed to send mention email", error);
     }
   }
 

@@ -29,7 +29,7 @@ type LoginCodeEmailInput = {
 };
 
 type TicketEmailInput = {
-  kind: "created" | "assigned" | "comment_added" | "resolved";
+  kind: "created" | "assigned" | "comment_added" | "mentioned" | "resolved";
   recipient: MailRecipient;
   ticket: {
     id: string;
@@ -292,6 +292,22 @@ function buildTicketEmail({ actorName, commentBody, kind, recipient, ticket }: T
       };
     }
 
+    if (kind === "mentioned") {
+      return {
+        subject: `You were mentioned on ${ticket.ticketNumber}`,
+        text: [
+          `Hi ${recipient.displayName},`,
+          "",
+          `${actorName ?? "A teammate"} mentioned you on ${ticket.ticketNumber}.`,
+          `Title: ${ticket.title}`,
+          commentBody ? `Comment: ${commentBody}` : "",
+          `Open: ${ticketUrl}`,
+        ]
+          .filter(Boolean)
+          .join("\n"),
+      };
+    }
+
     return {
       subject: `${ticket.ticketNumber} marked ${statusText}`,
       text: [
@@ -340,6 +356,22 @@ function buildTicketEmail({ actorName, commentBody, kind, recipient, ticket }: T
         `${recipient.displayName}，你好：`,
         "",
         `${actorName ?? "有同事"} 在工单 ${ticket.ticketNumber} 中添加了评论。`,
+        `标题：${ticket.title}`,
+        commentBody ? `评论：${commentBody}` : "",
+        `查看工单：${ticketUrl}`,
+      ]
+        .filter(Boolean)
+        .join("\n"),
+    };
+  }
+
+  if (kind === "mentioned") {
+    return {
+      subject: `${ticket.ticketNumber} 中有人提到了你`,
+      text: [
+        `${recipient.displayName}，你好：`,
+        "",
+        `${actorName ?? "有同事"} 在工单 ${ticket.ticketNumber} 中提到了你。`,
         `标题：${ticket.title}`,
         commentBody ? `评论：${commentBody}` : "",
         `查看工单：${ticketUrl}`,
