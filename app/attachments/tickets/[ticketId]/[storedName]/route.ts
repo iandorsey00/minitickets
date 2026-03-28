@@ -4,6 +4,11 @@ import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { canRenderInline, getSafeAttachmentMimeType, getTicketAttachmentDiskPath } from "@/lib/uploads";
 
+const secureHeaders = {
+  "Cache-Control": "no-store",
+  "X-Robots-Tag": "noindex, noarchive",
+} as const;
+
 export async function GET(
   _request: Request,
   { params }: { params: Promise<{ ticketId: string; storedName: string }> },
@@ -14,10 +19,7 @@ export async function GET(
   if (!user) {
     return new Response("Unauthorized", {
       status: 401,
-      headers: {
-        "Cache-Control": "no-store",
-        "X-Robots-Tag": "noindex, noarchive",
-      },
+      headers: secureHeaders,
     });
   }
 
@@ -36,7 +38,7 @@ export async function GET(
   });
 
   if (!attachment) {
-    return new Response("Not found", { status: 404 });
+    return new Response("Not found", { status: 404, headers: secureHeaders });
   }
 
   const allowed =
@@ -50,7 +52,7 @@ export async function GET(
     }));
 
   if (!allowed) {
-    return new Response("Forbidden", { status: 403 });
+    return new Response("Forbidden", { status: 403, headers: secureHeaders });
   }
 
   const file = await readFile(getTicketAttachmentDiskPath(ticketId, storedName));

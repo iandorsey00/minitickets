@@ -83,6 +83,8 @@ MiniTickets is a bilingual, multi-workspace ticketing product for personal and s
   - browser delivery
   - email delivery
 - Notification behavior should be durable and auditable rather than purely ephemeral
+- Mentions are high-signal notification events and should notify only the mentioned recipient by default
+- Broader new-comment email delivery should remain a user preference, not a forced default
 
 ## Access model
 
@@ -186,7 +188,7 @@ MiniTickets is a bilingual, multi-workspace ticketing product for personal and s
   - first-admin onboarding
   - ticket created
   - ticket assigned
-  - new comment
+  - targeted comment delivery such as mentions
   - resolved or closed status changes
   - scheduled-event confirmation
   - scheduled reminders
@@ -199,14 +201,17 @@ MiniTickets is a bilingual, multi-workspace ticketing product for personal and s
   - status: `New`
   - priority: `Medium`
   - category: `General Request`
+- When a ticket is assigned and would otherwise still be `New`, it should move to `In Progress`
 - Ticket description is optional
 - Event reminders should be intentional rather than preselected by default
 - Due-date reminders should occur at a practical daytime hour, not midnight
+- Per-file uploads should remain bounded by a practical size limit
 
 ## Security and privacy posture
 
 - Workspace boundaries are real privacy boundaries
 - Private attachments must never be publicly reachable by URL alone
+- Even negative attachment responses should avoid cacheable or indexable behavior
 - The product is appropriate for routine and moderately sensitive matters, not highly sensitive financial or legal data
 - The interface should remind users not to upload highly sensitive payment information
 

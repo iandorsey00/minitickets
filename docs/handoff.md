@@ -23,8 +23,11 @@ MiniTickets is live as a bilingual, workspace-based ticketing system for persona
 - Tickets can have a single parent level and many child tickets
 - Ticket events support reminder offsets such as months, hours, or “at time”
 - Due dates trigger a 9 AM local reminder on the due date
+- Ticket assignment automatically moves a still-new ticket to `处理中 / In Progress`
 - The ticket detail page uses contextual save actions rather than a fixed “resolve” shortcut
 - The settings page displays the current running app version as a read-only field
+- Users can opt in to broad comment-email delivery; otherwise email is sent for targeted mentions by default
+- Per-file uploads are capped at 30 MB and should return to the ticket cleanly after upload
 
 ## UX direction
 
@@ -43,7 +46,8 @@ MiniTickets is live as a bilingual, workspace-based ticketing system for persona
   - first-admin welcome message
   - ticket created
   - ticket assigned
-  - new comment
+  - direct mention notifications
+  - new comment, but only for users who explicitly opt in
   - ticket resolved or closed
 - Scheduled events also send:
   - an event-created confirmation
@@ -61,6 +65,7 @@ MiniTickets is live as a bilingual, workspace-based ticketing system for persona
 - Local file uploads are acceptable for a single-server deployment, but longer-term durability may call for external object storage
 - Daily local backups are installed and should be paired with an off-droplet copy when practical
 - Reminder processing should run from the dedicated scheduled service rather than relying on user traffic
+- Attachment responses, including unauthorized and missing-file cases, should stay non-cacheable and non-indexable
 
 ## Near-term follow-ups
 
@@ -68,6 +73,7 @@ MiniTickets is live as a bilingual, workspace-based ticketing system for persona
 - Consider whether browser notifications should become opt-in per reminder category instead of all-or-nothing
 - Consider a calmer inline way to preview accent colors live before saving
 - Continue validating that all ticket, event, reminder, and attachment queries remain properly scoped by workspace membership
+- Consider whether additional per-notification-category settings are worthwhile beyond the current comment-email toggle
 
 ## Decision notes
 
