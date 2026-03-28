@@ -1231,6 +1231,7 @@ textarea {
   .workspace-switcher-cluster,
   .workspace-label {
     grid-column: 1 / -1;
+    grid-row: 1;
   }
 
   .workspace-switcher-cluster {
@@ -1261,23 +1262,36 @@ textarea {
 
   .header-search {
     grid-column: 1 / 2;
-    grid-row: 1;
+    grid-row: 2;
     width: 100%;
   }
 
   .topbar-actions {
     grid-column: 2 / 3;
-    grid-row: 1;
+    grid-row: 2;
     flex-direction: row;
     align-items: center;
     gap: 0.5rem;
     justify-self: end;
     align-self: center;
     justify-content: flex-end;
+    min-width: 0;
   }
 
   .user-chip {
-    display: none;
+    display: inline-flex;
+    align-items: center;
+    min-width: 0;
+    max-width: 8.5rem;
+    padding: 0;
+    font-size: 0.9rem;
+    line-height: 1.2;
+  }
+
+  .user-chip span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .topbar-actions .ghost-button {
