@@ -13,6 +13,18 @@ export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: `轻量工单 v${packageJson.version}`,
+  robots: {
+    index: false,
+    follow: false,
+    nocache: true,
+    googleBot: {
+      index: false,
+      follow: false,
+      noimageindex: true,
+      noarchive: true,
+      nosnippet: true,
+    },
+  },
 };
 
 export default async function RootLayout({
