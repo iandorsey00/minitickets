@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 import { BrowserNotificationCenter } from "@/components/browser-notification-center";
-import { AdminIcon, DashboardIcon, PencilIcon, SettingsIcon, TicketIcon, WorkspaceIcon } from "@/components/icons";
+import { AdminIcon, DashboardIcon, PencilIcon, SettingsIcon, TicketIcon } from "@/components/icons";
 import { logoutAction, switchWorkspaceAction } from "@/lib/actions";
 
 type ShellProps = {
@@ -68,7 +68,6 @@ export function AppShell({
   const navItems = [
     { href: "/tickets", label: dictionary.nav.tickets, icon: TicketIcon },
     { href: "/dashboard", label: dictionary.nav.dashboard, icon: DashboardIcon },
-    { href: "/workspaces", label: dictionary.nav.workspaces, icon: WorkspaceIcon },
     ...(user.role === "ADMIN" ? [{ href: "/admin", label: dictionary.nav.admin, icon: AdminIcon }] : []),
     { href: "/settings", label: dictionary.nav.settings, icon: SettingsIcon },
   ];

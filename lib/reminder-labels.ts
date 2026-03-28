@@ -5,6 +5,15 @@ export function formatReminderOffsetLabel(offsetMinutes: number, locale: Locale)
     return locale === "EN" ? "At time of event" : "事件开始时";
   }
 
+  const monthMinutes = 30 * 24 * 60;
+  if (offsetMinutes === monthMinutes || offsetMinutes === monthMinutes * 2) {
+    const months = offsetMinutes / monthMinutes;
+    if (locale === "EN") {
+      return months === 1 ? "1 month before" : `${months} months before`;
+    }
+    return months === 1 ? "1 个月前" : `${months} 个月前`;
+  }
+
   const hours = offsetMinutes / 60;
   if (Number.isInteger(hours) && hours >= 1) {
     if (locale === "EN") {

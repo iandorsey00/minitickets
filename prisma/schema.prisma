@@ -63,6 +63,7 @@ model User {
   createdPaymentMethods PaymentMethod[]     @relation("CreatedPaymentMethods")
   createdTicketEvents  TicketEvent[]        @relation("CreatedTicketEvents")
   notifications       Notification[]
+  dueDateReminders    TicketDueDateReminder[]
   sessions            Session[]
   authAccounts        AuthAccount[]
   passwordSetupTokens PasswordSetupToken[]
@@ -164,6 +165,7 @@ model Ticket {
   paymentMethods TicketPaymentMethod[]
   notifications Notification[]
   events      TicketEvent[]
+  dueDateReminders TicketDueDateReminder[]
 
   @@index([workspaceId, createdAt])
   @@index([parentTicketId])
@@ -258,6 +260,19 @@ model TicketEventReminder {
   event         TicketEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
 
   @@unique([eventId, offsetMinutes])
+  @@index([sentAt])
+}
+
+model TicketDueDateReminder {
+  id        String   @id @default(cuid())
+  ticketId  String
+  userId    String
+  dueDate   DateTime
+  sentAt    DateTime @default(now())
+  ticket    Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([ticketId, userId, dueDate])
   @@index([sentAt])
 }
 

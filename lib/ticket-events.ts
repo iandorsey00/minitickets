@@ -1,18 +1,20 @@
 import type { Locale, PrismaClient } from "@prisma/client";
 
 import { localeTokenMap } from "./constants.ts";
-import { sendTicketEventEmail } from "./email.ts";
+import { sendTicketDueDateReminderEmail, sendTicketEventEmail } from "./email.ts";
 import { prisma } from "./prisma.ts";
 import { formatReminderOffsetLabel } from "./reminder-labels.ts";
 
-export const defaultTicketEventReminderOffsets = [120, 30, 0] as const;
+const monthMinutes = 30 * 24 * 60;
+
+export const defaultTicketEventReminderOffsets = [monthMinutes * 2, monthMinutes, 24 * 60, 120, 60, 30, 0] as const;
 
 export function sanitizeTicketEventReminderOffsets(values: string[]) {
   const parsed = Array.from(
     new Set(
       values
         .map((value) => Number.parseInt(value, 10))
-        .filter((value) => Number.isFinite(value) && value >= 0 && value <= 7 * 24 * 60),
+        .filter((value) => Number.isFinite(value) && value >= 0 && value <= monthMinutes * 2),
     ),
   );
 
@@ -46,6 +48,30 @@ function formatScheduledFor(date: Date, locale: Locale, timeZone?: string) {
     timeStyle: "short",
     timeZone,
   }).format(date);
+}
+
+function getLocalDateParts(date: Date, timeZone?: string) {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(date);
+
+  const values = Object.fromEntries(
+    parts
+      .filter((part) => part.type !== "literal")
+      .map((part) => [part.type, part.value]),
+  );
+
+  return {
+    dateKey: `${values.year}-${values.month}-${values.day}`,
+    hour: Number.parseInt(values.hour, 10),
+    minute: Number.parseInt(values.minute, 10),
+  };
 }
 
 type EventReminderProcessorOptions = {
@@ -153,4 +179,105 @@ export async function processDueTicketEventReminders(options: EventReminderProce
   }
 
   return processedCount;
+}
+
+export async function processDueTicketDeadlineReminders(options: EventReminderProcessorOptions = {}) {
+  const prismaClient = options.prismaClient ?? prisma;
+  const now = options.now ?? new Date();
+
+  const tickets = await prismaClient.ticket.findMany({
+    where: {
+      dueDate: {
+        not: null,
+      },
+      status: {
+        key: {
+          notIn: ["RESOLVED", "CLOSED", "CANCELLED"],
+        },
+      },
+    },
+    include: {
+      workspace: true,
+      status: true,
+    },
+    orderBy: {
+      dueDate: "asc",
+    },
+  });
+
+  let processedCount = 0;
+
+  for (const ticket of tickets) {
+    if (!ticket.dueDate) {
+      continue;
+    }
+
+    const dueDateKey = ticket.dueDate.toISOString().slice(0, 10);
+    const recipients = await getWorkspaceEventRecipients(prismaClient, ticket.workspaceId);
+
+    for (const recipient of recipients) {
+      const localNow = getLocalDateParts(now, recipient.timeZone);
+
+      if (localNow.dateKey !== dueDateKey || localNow.hour < 9) {
+        continue;
+      }
+
+      try {
+        await prismaClient.ticketDueDateReminder.create({
+          data: {
+            ticketId: ticket.id,
+            userId: recipient.id,
+            dueDate: ticket.dueDate,
+          },
+        });
+      } catch {
+        continue;
+      }
+
+      await prismaClient.notification.create({
+        data: {
+          userId: recipient.id,
+          ticketId: ticket.id,
+          eventType: "ticket.due_date.reminder",
+          titleZh: `今日到期：${ticket.ticketNumber}`,
+          titleEn: `Due today: ${ticket.ticketNumber}`,
+          bodyZh: `${ticket.ticketNumber} · ${ticket.title} · 今天上午提醒`,
+          bodyEn: `${ticket.ticketNumber} · ${ticket.title} · 9 AM reminder`,
+        },
+      });
+
+      try {
+        await sendTicketDueDateReminderEmail({
+          recipient: {
+            email: recipient.email,
+            displayName: recipient.displayName,
+            locale: recipient.locale,
+            timeZone: recipient.timeZone,
+          },
+          ticket: {
+            id: ticket.id,
+            ticketNumber: ticket.ticketNumber,
+            title: ticket.title,
+            workspaceName: ticket.workspace.name,
+            dueDate: ticket.dueDate,
+          },
+        });
+      } catch (error) {
+        console.error("Failed to send due-date reminder email", error);
+      }
+
+      processedCount += 1;
+    }
+  }
+
+  return processedCount;
+}
+
+export async function processDueTicketReminders(options: EventReminderProcessorOptions = {}) {
+  const [eventCount, deadlineCount] = await Promise.all([
+    processDueTicketEventReminders(options),
+    processDueTicketDeadlineReminders(options),
+  ]);
+
+  return eventCount + deadlineCount;
 }

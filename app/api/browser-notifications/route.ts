@@ -1,6 +1,6 @@
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { processDueTicketEventReminders } from "@/lib/ticket-events";
+import { processDueTicketReminders } from "@/lib/ticket-events";
 
 const secureHeaders = {
   "Cache-Control": "no-store",
@@ -8,7 +8,7 @@ const secureHeaders = {
 } as const;
 
 export async function GET() {
-  await processDueTicketEventReminders();
+  await processDueTicketReminders();
   const user = await getCurrentUser();
 
   if (!user) {

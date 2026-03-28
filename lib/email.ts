@@ -62,6 +62,17 @@ type TicketEventEmailInput = {
   offsetMinutes?: number;
 };
 
+type TicketDueDateReminderEmailInput = {
+  recipient: MailRecipient;
+  ticket: {
+    id: string;
+    ticketNumber: string;
+    title: string;
+    workspaceName: string;
+    dueDate: Date;
+  };
+};
+
 function getBaseUrl() {
   return (process.env.APP_URL ?? "http://localhost:3000").replace(/\/+$/, "");
 }
@@ -427,6 +438,39 @@ function buildTicketEventEmail({ event, kind, offsetMinutes, recipient, ticket }
   };
 }
 
+function buildTicketDueDateReminderEmail({ recipient, ticket }: TicketDueDateReminderEmailInput) {
+  const ticketUrl = `${getBaseUrl()}/tickets/${ticket.id}`;
+  const dueDateText = formatEventDate(ticket.dueDate, recipient.locale, recipient.timeZone);
+
+  if (recipient.locale === "EN") {
+    return {
+      subject: `Due today: ${ticket.ticketNumber}`,
+      text: [
+        `Hi ${recipient.displayName},`,
+        "",
+        `${ticket.ticketNumber} is due today.`,
+        `Title: ${ticket.title}`,
+        `Due date: ${dueDateText}`,
+        `Workspace: ${ticket.workspaceName}`,
+        `Open: ${ticketUrl}`,
+      ].join("\n"),
+    };
+  }
+
+  return {
+    subject: `今日到期：${ticket.ticketNumber}`,
+    text: [
+      `${recipient.displayName}，你好：`,
+      "",
+      `工单 ${ticket.ticketNumber} 今天到期。`,
+      `标题：${ticket.title}`,
+      `截止日期：${dueDateText}`,
+      `工作区：${ticket.workspaceName}`,
+      `查看工单：${ticketUrl}`,
+    ].join("\n"),
+  };
+}
+
 async function sendViaResend(to: string, subject: string, text: string, html?: string) {
   const apiKey = getResendApiKey();
   if (!apiKey) {
@@ -478,5 +522,10 @@ export async function sendTicketEmail(input: TicketEmailInput) {
 
 export async function sendTicketEventEmail(input: TicketEventEmailInput) {
   const message = buildTicketEventEmail(input);
+  return sendViaResend(input.recipient.email, message.subject, message.text);
+}
+
+export async function sendTicketDueDateReminderEmail(input: TicketDueDateReminderEmailInput) {
+  const message = buildTicketDueDateReminderEmail(input);
   return sendViaResend(input.recipient.email, message.subject, message.text);
 }
