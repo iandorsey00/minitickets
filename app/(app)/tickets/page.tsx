@@ -2,7 +2,7 @@ import Link from "next/link";
 
 import { PencilIcon } from "@/components/icons";
 import { EmptyState, PageHeader, Panel, Badge } from "@/components/ui";
-import { formatDateTime, localizeDefinition } from "@/lib/format";
+import { formatDate, formatDateTime, localizeDefinition } from "@/lib/format";
 import { getTicketsData } from "@/lib/data";
 
 function hasActiveFilters(params: {
@@ -168,6 +168,10 @@ export default async function TicketsPage({
                   <div className="meta-pair">
                     <span>{t.common.assignee}</span>
                     <strong>{ticket.assignee?.displayName ?? t.common.none}</strong>
+                  </div>
+                  <div className="meta-pair">
+                    <span>{t.common.dueDate}</span>
+                    <strong>{ticket.dueDate ? formatDate(ticket.dueDate, data.localeCode, data.timeZone) : t.common.none}</strong>
                   </div>
                   <div className="meta-pair">
                     <span>{t.common.updatedAt}</span>

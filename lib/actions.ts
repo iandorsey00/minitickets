@@ -109,6 +109,10 @@ const verifyLoginCodeSchema = z.object({
   code: z.string().regex(/^\d{6}$/),
 });
 
+const reopenTicketSchema = z.object({
+  ticketId: z.string().min(1),
+});
+
 function uniqueRecipients<T extends { id: string }>(items: T[]) {
   return Array.from(new Map(items.map((item) => [item.id, item])).values());
 }
@@ -670,6 +674,10 @@ export async function updateTicketAction(formData: FormData) {
     redirect("/tickets");
   }
 
+  if (ticket.status.key === "CLOSED") {
+    redirect(`/tickets/${ticketId}?closed=1`);
+  }
+
   const nextValues = {
     statusId: String(formData.get("statusId") ?? ticket.statusId),
     priorityId: String(formData.get("priorityId") ?? ticket.priorityId),
@@ -920,6 +928,98 @@ export async function updateTicketAction(formData: FormData) {
   revalidatePath(`/tickets/${ticketId}`);
   revalidatePath("/tickets");
   revalidatePath("/dashboard");
+  redirect(`/tickets/${ticketId}?saved=1`);
+}
+
+export async function reopenTicketAction(formData: FormData) {
+  const user = await requireUser();
+  const parsed = reopenTicketSchema.safeParse({
+    ticketId: formData.get("ticketId"),
+  });
+
+  if (!parsed.success) {
+    redirect("/tickets");
+  }
+
+  const ticket = await prisma.ticket.findUnique({
+    where: { id: parsed.data.ticketId },
+    include: {
+      workspace: true,
+      requester: true,
+      assignee: true,
+      status: true,
+    },
+  });
+
+  if (!ticket) {
+    redirect("/tickets");
+  }
+
+  const membership = await prisma.workspaceMembership.findFirst({
+    where: { userId: user.id, workspaceId: ticket.workspaceId },
+  });
+
+  if (!membership && user.role !== UserRole.ADMIN) {
+    redirect("/tickets");
+  }
+
+  if (ticket.status.key !== "CLOSED") {
+    redirect(`/tickets/${ticket.id}`);
+  }
+
+  const inProgressStatus = await prisma.statusDefinition.findUnique({
+    where: { key: "IN_PROGRESS" },
+    select: { id: true },
+  });
+
+  if (!inProgressStatus) {
+    redirect(`/tickets/${ticket.id}`);
+  }
+
+  const updatedTicket = await prisma.ticket.update({
+    where: { id: ticket.id },
+    data: {
+      statusId: inProgressStatus.id,
+      resolvedAt: null,
+      activities: {
+        create: {
+          actorUserId: user.id,
+          eventType: "ticket.reopened",
+          messageZh: "已重新打开工单。",
+          messageEn: "Reopened the ticket.",
+        },
+      },
+    },
+    include: {
+      requester: true,
+      assignee: true,
+    },
+  });
+
+  const recipients = uniqueRecipients(
+    [updatedTicket.requester, updatedTicket.assignee].filter(
+      (recipient): recipient is typeof updatedTicket.requester => Boolean(recipient),
+    ),
+  );
+
+  if (recipients.length) {
+    await prisma.notification.createMany({
+      data: recipients.map((recipient) => ({
+        userId: recipient.id,
+        ticketId: updatedTicket.id,
+        eventType: "ticket.reopened",
+        titleZh: `${updatedTicket.ticketNumber} 已重新打开`,
+        titleEn: `${updatedTicket.ticketNumber} was reopened`,
+        bodyZh: updatedTicket.title,
+        bodyEn: updatedTicket.title,
+      })),
+    });
+  }
+
+  revalidatePath(`/tickets/${ticket.id}`);
+  revalidatePath("/tickets");
+  revalidatePath("/dashboard");
+  redirect(`/tickets/${ticket.id}?saved=1`);
 }
 
 export async function createTicketEventAction(formData: FormData) {
@@ -938,6 +1038,7 @@ export async function createTicketEventAction(formData: FormData) {
   const ticket = await prisma.ticket.findUnique({
     where: { id: parsed.data.ticketId },
     include: {
+      status: true,
       workspace: true,
       requester: true,
       assignee: true,
@@ -957,6 +1058,10 @@ export async function createTicketEventAction(formData: FormData) {
 
   if (!membership && user.role !== UserRole.ADMIN) {
     redirect("/tickets");
+  }
+
+  if (ticket.status.key === "CLOSED") {
+    redirect(`/tickets/${ticket.id}?closed=1`);
   }
 
   const reminderOffsets = sanitizeTicketEventReminderOffsets(
@@ -1046,6 +1151,7 @@ export async function createTicketEventAction(formData: FormData) {
   revalidatePath(`/tickets/${ticket.id}`);
   revalidatePath("/tickets");
   revalidatePath("/dashboard");
+  redirect(`/tickets/${ticket.id}?saved=1`);
 }
 
 export async function deleteTicketEventAction(formData: FormData) {
@@ -1064,6 +1170,7 @@ export async function deleteTicketEventAction(formData: FormData) {
     select: {
       id: true,
       workspaceId: true,
+      status: true,
     },
   });
 
@@ -1080,6 +1187,10 @@ export async function deleteTicketEventAction(formData: FormData) {
 
   if (!membership && user.role !== UserRole.ADMIN) {
     redirect("/tickets");
+  }
+
+  if (ticket.status.key === "CLOSED") {
+    redirect(`/tickets/${ticket.id}?closed=1`);
   }
 
   const event = await prisma.ticketEvent.findFirst({
@@ -1116,6 +1227,7 @@ export async function deleteTicketEventAction(formData: FormData) {
   revalidatePath(`/tickets/${ticket.id}`);
   revalidatePath("/tickets");
   revalidatePath("/dashboard");
+  redirect(`/tickets/${ticket.id}?saved=1`);
 }
 
 export async function addCommentAction(formData: FormData) {
@@ -1132,6 +1244,7 @@ export async function addCommentAction(formData: FormData) {
   const ticket = await prisma.ticket.findUnique({
     where: { id: parsed.data.ticketId },
     include: {
+      status: true,
       requester: true,
       assignee: true,
       workspace: {
@@ -1161,6 +1274,10 @@ export async function addCommentAction(formData: FormData) {
 
   if (!membership && user.role !== UserRole.ADMIN) {
     redirect("/tickets");
+  }
+
+  if (ticket.status.key === "CLOSED") {
+    redirect(`/tickets/${ticket.id}?closed=1`);
   }
 
   await prisma.ticketComment.create({
@@ -1279,7 +1396,7 @@ export async function addCommentAction(formData: FormData) {
   revalidatePath(`/tickets/${ticket.id}`);
   revalidatePath("/tickets");
   revalidatePath("/dashboard");
-  redirect(`/tickets/${ticket.id}`);
+  redirect(`/tickets/${ticket.id}?saved=1`);
 }
 
 export async function addAttachmentAction(formData: FormData) {
@@ -1303,6 +1420,9 @@ export async function addAttachmentAction(formData: FormData) {
 
   const ticket = await prisma.ticket.findUnique({
     where: { id: parsed.data.ticketId },
+    include: {
+      status: true,
+    },
   });
 
   if (!ticket) {
@@ -1315,6 +1435,10 @@ export async function addAttachmentAction(formData: FormData) {
 
   if (!membership && user.role !== UserRole.ADMIN) {
     redirect("/tickets");
+  }
+
+  if (ticket.status.key === "CLOSED") {
+    redirect(`/tickets/${ticket.id}?closed=1`);
   }
 
   const extension = path.extname(file.name).slice(0, 16);
@@ -1348,7 +1472,7 @@ export async function addAttachmentAction(formData: FormData) {
 
   revalidatePath(`/tickets/${ticket.id}`);
   revalidatePath("/dashboard");
-  redirect(`/tickets/${ticket.id}?upload=success`);
+  redirect(`/tickets/${ticket.id}?upload=success&saved=1`);
 }
 
 export async function updateSettingsAction(formData: FormData) {

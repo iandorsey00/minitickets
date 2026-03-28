@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 
-import { addAttachmentAction, addCommentAction, createTicketEventAction, deleteTicketEventAction, updateTicketAction } from "@/lib/actions";
+import { addAttachmentAction, addCommentAction, createTicketEventAction, deleteTicketEventAction, reopenTicketAction, updateTicketAction } from "@/lib/actions";
 import { getTicketDetail } from "@/lib/data";
 import { formatDate, formatDateTime, formatFileSize, localizeDefinition } from "@/lib/format";
 import { formatReminderOffsetLabel } from "@/lib/reminder-labels";
@@ -63,7 +63,7 @@ export default async function TicketDetailPage({
   searchParams,
 }: {
   params: Promise<{ ticketId: string }>;
-  searchParams: Promise<{ upload?: string }>;
+  searchParams: Promise<{ upload?: string; closed?: string; saved?: string }>;
 }) {
   const { ticketId } = await params;
   const query = await searchParams;
@@ -80,6 +80,9 @@ export default async function TicketDetailPage({
       : query.upload === "success"
         ? { tone: "success" as const, label: t.common.uploadSuccess }
         : null;
+  const savedMessage = query.saved === "1" ? { tone: "success" as const, label: t.common.savedChanges } : null;
+  const closedMessage = query.closed === "1" ? { tone: "warning" as const, label: t.tickets.closedReadOnly } : null;
+  const isClosed = data.ticket.status.key === "CLOSED";
   const ticketContext = (
     <div className="edit-context">
       <div className="edit-context-copy">
@@ -180,7 +183,8 @@ export default async function TicketDetailPage({
 
       <div className="detail-layout">
         <div className="stack ticket-page-section-stack">
-          {data.ticket.description ? (
+          {savedMessage ? <Badge label={savedMessage.label} tone={savedMessage.tone} /> : null}
+          {data.ticket.description && !isClosed ? (
             <details className="panel detail-disclosure">
               <summary className="panel-title">
                 <span className="detail-summary-main">{t.common.description}</span>
@@ -207,6 +211,7 @@ export default async function TicketDetailPage({
           ) : null}
 
           <Panel title={t.common.activity}>
+            {closedMessage ? <Badge label={closedMessage.label} tone={closedMessage.tone} /> : null}
             <div className="timeline">
               {historyItems.length ? (
                 historyItems.map((item) => (
@@ -244,58 +249,72 @@ export default async function TicketDetailPage({
               )}
             </div>
 
-            <form action={addCommentAction} className="stack ticket-subsection">
-              <input type="hidden" name="ticketId" value={data.ticket.id} />
-              {ticketContext}
-              <div className="field">
-                <label htmlFor="body" className="label-with-icon">
-                  <CommentIcon className="inline-icon" />
-                  <span>{t.tickets.addComment}</span>
-                </label>
-                <textarea id="body" name="body" placeholder={t.tickets.commentPlaceholder} required />
-                <p className="caution-text">{t.tickets.confidentialityNotice}</p>
+            {!isClosed ? (
+              <>
+                <form action={addCommentAction} className="stack ticket-subsection">
+                  <input type="hidden" name="ticketId" value={data.ticket.id} />
+                  {ticketContext}
+                  <div className="field">
+                    <label htmlFor="body" className="label-with-icon">
+                      <CommentIcon className="inline-icon" />
+                      <span>{t.tickets.addComment}</span>
+                    </label>
+                    <textarea id="body" name="body" placeholder={t.tickets.commentPlaceholder} required />
+                    <p className="caution-text">{t.tickets.confidentialityNotice}</p>
+                  </div>
+                  <div>
+                    <button type="submit">
+                      <span className="button-content">
+                        <CommentIcon className="button-icon" />
+                        <span>{t.tickets.addComment}</span>
+                      </span>
+                    </button>
+                  </div>
+                </form>
+                <form action={addAttachmentAction} className="stack ticket-subsection" encType="multipart/form-data">
+                  <input type="hidden" name="ticketId" value={data.ticket.id} />
+                  {ticketContext}
+                  {uploadMessage ? <Badge label={uploadMessage.label} tone={uploadMessage.tone} /> : null}
+                  <div className="field">
+                    <label className="label-with-icon">
+                      <UploadIcon className="inline-icon" />
+                      <span>{t.common.uploadFile}</span>
+                    </label>
+                    <FilePicker
+                      name="file"
+                      label={t.common.chooseFile}
+                      emptyLabel={t.common.noFileSelected}
+                      required
+                    />
+                    <p className="warning-text">{t.common.uploadWarning}</p>
+                    <p className="muted">{t.common.uploadMaxSize.replace("{size}", formatFileSize(MAX_ATTACHMENT_SIZE_BYTES))}</p>
+                  </div>
+                  <div>
+                    <button type="submit">
+                      <span className="button-content">
+                        <UploadIcon className="button-icon" />
+                        <span>{t.common.uploadFile}</span>
+                      </span>
+                    </button>
+                  </div>
+                </form>
+              </>
+            ) : (
+              <div className="ticket-subsection">
+                <p className="muted">{t.tickets.closedReadOnly}</p>
               </div>
-              <div>
-                <button type="submit">
-                  <span className="button-content">
-                    <CommentIcon className="button-icon" />
-                    <span>{t.tickets.addComment}</span>
-                  </span>
-                </button>
-              </div>
-            </form>
-            <form action={addAttachmentAction} className="stack ticket-subsection" encType="multipart/form-data">
-              <input type="hidden" name="ticketId" value={data.ticket.id} />
-              {ticketContext}
-              {uploadMessage ? <Badge label={uploadMessage.label} tone={uploadMessage.tone} /> : null}
-              <div className="field">
-                <label className="label-with-icon">
-                  <UploadIcon className="inline-icon" />
-                  <span>{t.common.uploadFile}</span>
-                </label>
-                <FilePicker
-                  name="file"
-                  label={t.common.chooseFile}
-                  emptyLabel={t.common.noFileSelected}
-                  required
-                />
-                <p className="warning-text">{t.common.uploadWarning}</p>
-                <p className="muted">{t.common.uploadMaxSize.replace("{size}", formatFileSize(MAX_ATTACHMENT_SIZE_BYTES))}</p>
-              </div>
-              <div>
-                <button type="submit">
-                  <span className="button-content">
-                    <UploadIcon className="button-icon" />
-                    <span>{t.common.uploadFile}</span>
-                  </span>
-                </button>
-              </div>
-            </form>
+            )}
           </Panel>
         </div>
 
         <div className="stack ticket-page-section-stack">
           <Panel title={t.common.status}>
+            {isClosed ? (
+              <form action={reopenTicketAction} className="stack">
+                <input type="hidden" name="ticketId" value={data.ticket.id} />
+                <button type="submit">{t.tickets.reopenTicket}</button>
+              </form>
+            ) : null}
             <div className="meta-grid">
               <div className="meta-item">
                 <span>{t.common.status}</span>
@@ -354,7 +373,8 @@ export default async function TicketDetailPage({
 
       <div className="detail-secondary-layout">
         <div className="stack ticket-page-section-stack">
-          <details className="panel detail-disclosure" open={false}>
+          {!isClosed ? (
+            <details className="panel detail-disclosure" open={false}>
             <summary className="panel-title">{t.common.edit}</summary>
             <form action={updateTicketAction} className="stack disclosure-body" id="ticket-edit-form">
               <input type="hidden" name="ticketId" value={data.ticket.id} />
@@ -457,7 +477,8 @@ export default async function TicketDetailPage({
                 <button type="submit">{t.common.save}</button>
               </div>
             </form>
-          </details>
+            </details>
+          ) : null}
           <details className="panel detail-disclosure" open={showEventsOpenByDefault}>
             <summary className="panel-title">
               <span className="detail-summary-main">{t.tickets.eventsTitle}</span>
@@ -500,25 +521,27 @@ export default async function TicketDetailPage({
                 <EmptyState title={t.tickets.eventsTitle} body={t.tickets.eventsEmpty} />
               )}
 
-              <div className="ticket-subsection">
-                {ticketContext}
-                <TicketEventForm
-                  action={createTicketEventAction}
-                  ticketId={data.ticket.id}
-                  labels={{
-                    title: t.common.title,
-                    notes: t.tickets.eventNotes,
-                    scheduledFor: t.tickets.eventScheduledFor,
-                    reminders: t.tickets.eventReminders,
-                    create: t.tickets.createEvent,
-                    optional: t.common.optional,
-                  }}
-                  reminderOptions={defaultTicketEventReminderOffsets.map((offset) => ({
-                    value: offset,
-                    label: formatReminderOffsetLabel(offset, data.locale),
-                  }))}
-                />
-              </div>
+              {!isClosed ? (
+                <div className="ticket-subsection">
+                  {ticketContext}
+                  <TicketEventForm
+                    action={createTicketEventAction}
+                    ticketId={data.ticket.id}
+                    labels={{
+                      title: t.common.title,
+                      notes: t.tickets.eventNotes,
+                      scheduledFor: t.tickets.eventScheduledFor,
+                      reminders: t.tickets.eventReminders,
+                      create: t.tickets.createEvent,
+                      optional: t.common.optional,
+                    }}
+                    reminderOptions={defaultTicketEventReminderOffsets.map((offset) => ({
+                      value: offset,
+                      label: formatReminderOffsetLabel(offset, data.locale),
+                    }))}
+                  />
+                </div>
+              ) : null}
             </div>
           </details>
 
@@ -528,27 +551,29 @@ export default async function TicketDetailPage({
               <span className="detail-summary-preview">{childrenPreview}</span>
             </summary>
             <div className="disclosure-body">
-              <form action={updateTicketAction} className="stack ticket-subsection">
-                <input type="hidden" name="ticketId" value={data.ticket.id} />
-                {ticketContext}
-                <div className="field">
-                  <label htmlFor="parentTicketId-inline">
-                    {t.common.parentTicket} <span className="muted">({t.common.optional})</span>
-                  </label>
-                  <select id="parentTicketId-inline" name="parentTicketId" defaultValue={data.ticket.parentTicketId ?? ""}>
-                    <option value="">{t.common.none}</option>
-                    {data.parentTicketCandidates.map((candidate) => (
-                      <option key={candidate.id} value={candidate.id}>
-                        {candidate.ticketNumber} · {candidate.title}
-                      </option>
-                    ))}
-                  </select>
-                  <p className="muted">{t.common.topLevelOnlyHint}</p>
-                </div>
-                <div>
-                  <button type="submit">{t.common.save}</button>
-                </div>
-              </form>
+              {!isClosed ? (
+                <form action={updateTicketAction} className="stack ticket-subsection">
+                  <input type="hidden" name="ticketId" value={data.ticket.id} />
+                  {ticketContext}
+                  <div className="field">
+                    <label htmlFor="parentTicketId-inline">
+                      {t.common.parentTicket} <span className="muted">({t.common.optional})</span>
+                    </label>
+                    <select id="parentTicketId-inline" name="parentTicketId" defaultValue={data.ticket.parentTicketId ?? ""}>
+                      <option value="">{t.common.none}</option>
+                      {data.parentTicketCandidates.map((candidate) => (
+                        <option key={candidate.id} value={candidate.id}>
+                          {candidate.ticketNumber} · {candidate.title}
+                        </option>
+                      ))}
+                    </select>
+                    <p className="muted">{t.common.topLevelOnlyHint}</p>
+                  </div>
+                  <div>
+                    <button type="submit">{t.common.save}</button>
+                  </div>
+                </form>
+              ) : null}
               {data.ticket.childTickets.length ? (
                 <div className="list">
                   {data.ticket.childTickets.map((child) => (
