@@ -104,6 +104,7 @@ MiniTickets is a bilingual, multi-workspace ticketing product for personal and s
   - search
   - account actions
   - primary navigation
+- a lightweight product footer for ownership and license context
 - Workspace switching belongs in the shell, not as a separate primary destination
 
 ### Ticket list
@@ -127,6 +128,7 @@ MiniTickets is a bilingual, multi-workspace ticketing product for personal and s
   - attachments
   - events and reminders
   - parent/child relationships
+- Editable sections should repeat enough ticket identity context to reduce accidental edits on the wrong record
 - Less-frequent sections should collapse cleanly
 - Collapsed sections should still hint at their contents
 - The primary action on this page should favor saving meaningful edits over one-off shortcut actions
@@ -159,6 +161,7 @@ MiniTickets is a bilingual, multi-workspace ticketing product for personal and s
   - password management
   - optional additional sign-in protection
   - visible application version
+  - open-source provenance details when relevant
 
 ## Language and localization
 
@@ -173,6 +176,7 @@ MiniTickets is a bilingual, multi-workspace ticketing product for personal and s
 - Accent colors should influence both controls and surrounding atmosphere
 - Dense tables should generally give way to compact lists or stacks when that improves readability
 - Mobile and desktop should feel like the same product, not separate experiences
+- Browser-tab titles should stay short, stable, and scannable
 
 ## Authentication and trust
 

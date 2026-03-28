@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 
 import { addAttachmentAction, addCommentAction, createTicketEventAction, deleteTicketEventAction, updateTicketAction } from "@/lib/actions";
 import { getTicketDetail } from "@/lib/data";
@@ -6,11 +7,56 @@ import { formatDate, formatDateTime, formatFileSize, localizeDefinition } from "
 import { formatReminderOffsetLabel } from "@/lib/reminder-labels";
 import { defaultTicketEventReminderOffsets } from "@/lib/ticket-events";
 import { MAX_ATTACHMENT_SIZE_BYTES, canRenderInline, getTicketAttachmentUrl } from "@/lib/uploads";
+import { getCurrentUser } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
 import { CommentIcon, UploadIcon } from "@/components/icons";
 import { FilePicker } from "@/components/file-picker";
 import { Badge, EmptyState, PageHeader, Panel } from "@/components/ui";
 import { TicketEventForm } from "@/components/ticket-event-form";
 import { TicketShareMenu } from "@/components/ticket-share-menu";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ ticketId: string }>;
+}): Promise<Metadata> {
+  const user = await getCurrentUser();
+
+  if (!user) {
+    return { title: "Ticket" };
+  }
+
+  const { ticketId } = await params;
+  const ticket = await prisma.ticket.findUnique({
+    where: { id: ticketId },
+    select: {
+      ticketNumber: true,
+      workspaceId: true,
+    },
+  });
+
+  if (!ticket) {
+    return { title: "Ticket" };
+  }
+
+  if (user.role !== "ADMIN") {
+    const membership = await prisma.workspaceMembership.findFirst({
+      where: {
+        userId: user.id,
+        workspaceId: ticket.workspaceId,
+      },
+      select: { id: true },
+    });
+
+    if (!membership) {
+      return { title: "Ticket" };
+    }
+  }
+
+  return {
+    title: ticket.ticketNumber,
+  };
+}
 
 export default async function TicketDetailPage({
   params,
@@ -34,6 +80,15 @@ export default async function TicketDetailPage({
       : query.upload === "success"
         ? { tone: "success" as const, label: t.common.uploadSuccess }
         : null;
+  const ticketContext = (
+    <div className="edit-context">
+      <div className="edit-context-copy">
+        <strong>{data.ticket.ticketNumber}</strong>
+        <span>{data.ticket.title}</span>
+      </div>
+      <Badge label={localizeDefinition(data.ticket.status, data.locale)} tone="accent" />
+    </div>
+  );
   const selectedPaymentMethodIds = new Set(data.ticket.paymentMethods.map((item) => item.paymentMethodId));
   const showEventsOpenByDefault = data.ticket.events.length > 0;
   const showChildrenOpenByDefault = data.ticket.childTickets.length > 0 || Boolean(data.ticket.parentTicket);
@@ -191,6 +246,7 @@ export default async function TicketDetailPage({
 
             <form action={addCommentAction} className="stack ticket-subsection">
               <input type="hidden" name="ticketId" value={data.ticket.id} />
+              {ticketContext}
               <div className="field">
                 <label htmlFor="body" className="label-with-icon">
                   <CommentIcon className="inline-icon" />
@@ -210,6 +266,7 @@ export default async function TicketDetailPage({
             </form>
             <form action={addAttachmentAction} className="stack ticket-subsection" encType="multipart/form-data">
               <input type="hidden" name="ticketId" value={data.ticket.id} />
+              {ticketContext}
               {uploadMessage ? <Badge label={uploadMessage.label} tone={uploadMessage.tone} /> : null}
               <div className="field">
                 <label className="label-with-icon">
@@ -301,6 +358,7 @@ export default async function TicketDetailPage({
             <summary className="panel-title">{t.common.edit}</summary>
             <form action={updateTicketAction} className="stack disclosure-body" id="ticket-edit-form">
               <input type="hidden" name="ticketId" value={data.ticket.id} />
+              {ticketContext}
               <div className="field">
                 <label htmlFor="title">{t.common.title}</label>
                 <input id="title" name="title" defaultValue={data.ticket.title} required />
@@ -308,7 +366,7 @@ export default async function TicketDetailPage({
               <div className="field">
                 <label htmlFor="statusId">{t.common.status}</label>
                 <select id="statusId" name="statusId" defaultValue={data.ticket.statusId}>
-                  {data.definitions.statuses.map((item) => (
+                  {data.definitions.statuses.filter((item) => item.isActive).map((item) => (
                     <option key={item.id} value={item.id}>
                       {localizeDefinition(item, data.locale)}
                     </option>
@@ -443,6 +501,7 @@ export default async function TicketDetailPage({
               )}
 
               <div className="ticket-subsection">
+                {ticketContext}
                 <TicketEventForm
                   action={createTicketEventAction}
                   ticketId={data.ticket.id}
@@ -471,6 +530,7 @@ export default async function TicketDetailPage({
             <div className="disclosure-body">
               <form action={updateTicketAction} className="stack ticket-subsection">
                 <input type="hidden" name="ticketId" value={data.ticket.id} />
+                {ticketContext}
                 <div className="field">
                   <label htmlFor="parentTicketId-inline">
                     {t.common.parentTicket} <span className="muted">({t.common.optional})</span>

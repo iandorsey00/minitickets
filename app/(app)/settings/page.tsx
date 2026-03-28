@@ -38,6 +38,14 @@ export default async function SettingsPage({
             <input id="appVersion" value={`v${packageJson.version}`} readOnly aria-readonly="true" />
           </div>
           <div className="field">
+            <span className="muted">
+              {t.settings.repoLabel}{" "}
+              <a href="https://github.com/iandorsey00/minitickets" target="_blank" rel="noreferrer">
+                github.com/iandorsey00/minitickets
+              </a>
+            </span>
+          </div>
+          <div className="field">
             <label htmlFor="locale">{t.common.language}</label>
             <select id="locale" name="locale" defaultValue={data.user.locale}>
               {localeValues.map((locale) => (

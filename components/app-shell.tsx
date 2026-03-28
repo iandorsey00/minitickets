@@ -24,6 +24,7 @@ type ShellProps = {
     common: {
       search: string;
       save: string;
+      footerLine: string;
     };
     settings: {
       title: string;
@@ -63,6 +64,7 @@ export function AppShell({
   children,
 }: ShellProps) {
   const pathname = usePathname();
+  const currentYear = new Date().getFullYear();
   const ticketDetailMatch = pathname.match(/^\/tickets\/([^/]+)$/);
   const isTicketDetailPage = Boolean(ticketDetailMatch);
   const isSettingsPage = pathname.startsWith("/settings");
@@ -149,6 +151,9 @@ export function AppShell({
         </header>
 
         <main className="content">{children}</main>
+        <footer className="shell-footer">
+          <span>{dictionary.common.footerLine.replace("{year}", String(currentYear))}</span>
+        </footer>
 
         {isSettingsPage ? (
           <button type="submit" className="floating-action" form="settings-form">

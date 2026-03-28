@@ -7,12 +7,14 @@ import "@/app/globals.css";
 import { accentTokenMap, themeTokenMap } from "@/lib/constants";
 import { getPreferencesForLayout } from "@/lib/data";
 import { formatLocale } from "@/lib/i18n";
-import packageJson from "@/package.json";
 
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: `轻量工单 v${packageJson.version}`,
+  title: {
+    default: "MiniTickets",
+    template: "%s · MiniTickets",
+  },
   robots: {
     index: false,
     follow: false,

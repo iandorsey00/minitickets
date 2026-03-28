@@ -26,8 +26,11 @@ MiniTickets is live as a bilingual, workspace-based ticketing system for persona
 - Ticket assignment automatically moves a still-new ticket to `处理中 / In Progress`
 - The ticket detail page uses contextual save actions rather than a fixed “resolve” shortcut
 - The settings page displays the current running app version as a read-only field
+- Settings also includes a direct link to the public GitHub repository
 - Users can opt in to broad comment-email delivery; otherwise email is sent for targeted mentions by default
 - Per-file uploads are capped at 30 MB and should return to the ticket cleanly after upload
+- Ticket detail editing surfaces now repeat the ticket number, title, and current status to reduce wrong-ticket edits
+- The global shell includes a lightweight MIT-license footer
 
 ## UX direction
 
@@ -38,6 +41,7 @@ MiniTickets is live as a bilingual, workspace-based ticketing system for persona
 - Dense tables should generally be avoided in favor of calmer stacked rows or compact lists
 - Filters should stay available but not dominate the page when they are not in active use
 - The ticket detail page should reveal complexity progressively through collapsible sections with lightweight previews
+- Browser-tab titles should stay concise; ticket detail uses the ticket number rather than verbose page text
 
 ## Notification and email expectations
 
