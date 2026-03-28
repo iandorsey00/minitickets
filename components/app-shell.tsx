@@ -14,6 +14,7 @@ type ShellProps = {
       tickets: string;
       createTicket: string;
       workspaces: string;
+      switchWorkspace: string;
       admin: string;
       settings: string;
       logout: string;
@@ -95,19 +96,24 @@ export function AppShell({
       <div className="main-column">
         <header className="topbar">
           {hasMultipleWorkspaces ? (
-            <form action={switchWorkspaceAction} className="workspace-switcher" id="workspace-switcher-form">
-              <label htmlFor="workspaceId" className="sr-only">
-                Workspace
-              </label>
-              <select id="workspaceId" name="workspaceId" defaultValue={currentWorkspaceId ?? ""}>
-                {memberships.map((membership) => (
-                  <option key={membership.workspace.id} value={membership.workspace.id}>
-                    {membership.workspace.name}
-                  </option>
-                ))}
-              </select>
-              <input type="hidden" name="nextPath" value={pathname || "/dashboard"} />
-            </form>
+            <div className="workspace-switcher-cluster">
+              <form action={switchWorkspaceAction} className="workspace-switcher" id="workspace-switcher-form">
+                <label htmlFor="workspaceId" className="sr-only">
+                  Workspace
+                </label>
+                <select id="workspaceId" name="workspaceId" defaultValue={currentWorkspaceId ?? ""}>
+                  {memberships.map((membership) => (
+                    <option key={membership.workspace.id} value={membership.workspace.id}>
+                      {membership.workspace.name}
+                    </option>
+                  ))}
+                </select>
+                <input type="hidden" name="nextPath" value={pathname || "/dashboard"} />
+              </form>
+              <button type="submit" className="ghost-button workspace-switch-button" form="workspace-switcher-form">
+                {dictionary.nav.switchWorkspace}
+              </button>
+            </div>
           ) : (
             <div className="workspace-label" aria-label={dictionary.nav.workspaces}>
               {currentWorkspaceName}
@@ -126,11 +132,6 @@ export function AppShell({
             <div className="user-chip">
               <span>{user.displayName}</span>
             </div>
-            {hasMultipleWorkspaces ? (
-              <button type="submit" className="ghost-button" form="workspace-switcher-form">
-                {dictionary.nav.workspaces}
-              </button>
-            ) : null}
             <form action={logoutAction}>
               <button type="submit" className="ghost-button">
                 {dictionary.nav.logout}

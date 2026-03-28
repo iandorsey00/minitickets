@@ -367,6 +367,13 @@ textarea {
   min-width: 0;
 }
 
+.workspace-switcher-cluster {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  min-width: 0;
+}
+
 .workspace-label {
   display: flex;
   align-items: center;
@@ -382,6 +389,10 @@ textarea {
   padding-top: 0.7rem;
   padding-bottom: 0.7rem;
   line-height: 1.2;
+}
+
+.workspace-switch-button {
+  white-space: nowrap;
 }
 
 .header-search {
@@ -777,31 +788,33 @@ textarea {
 @media (max-width: 640px) {
   .auth-page {
     padding: 0;
-    align-items: stretch;
+    align-items: center;
   }
 
   .auth-card {
-    justify-content: space-between;
-    padding: 1.25rem 1rem 1.5rem;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 2rem 1rem 2.5rem;
   }
 
   .hero-card {
-    padding-top: 4rem;
-    margin-bottom: 1.5rem;
+    padding-top: 0;
+    margin-bottom: 3rem;
   }
 
   .login-card {
     width: 100%;
-    padding-bottom: max(0.5rem, 3vh);
+    max-width: 440px;
+    padding-bottom: 0;
   }
 
   .login-card h2 {
-    font-size: clamp(2rem, 10vw, 2.9rem);
+    font-size: clamp(2.1rem, 8vw, 3rem);
   }
 
   .subtitle-only {
-    font-size: clamp(2.8rem, 16vw, 4.8rem);
-    line-height: 0.94;
+    font-size: clamp(3.2rem, 13vw, 5.1rem);
+    line-height: 0.92;
   }
 
   .content {
@@ -828,12 +841,14 @@ textarea {
 
   .list-row,
   .topbar-actions,
-  .workspace-switcher {
+  .workspace-switcher,
+  .workspace-switcher-cluster {
     flex-direction: column;
     align-items: start;
   }
 
-  .workspace-switcher {
+  .workspace-switcher,
+  .workspace-switcher-cluster {
     grid-column: 1 / 2;
     width: 100%;
   }
