@@ -17,8 +17,12 @@ OUTPUT_DIR="${OUTPUT_DIR:-deploy/rendered}"
 mkdir -p "$OUTPUT_DIR/nginx"
 
 envsubst < deploy/minitickets.service.example > "$OUTPUT_DIR/${SERVICE_NAME}.service"
+envsubst < deploy/minitickets-backup.service.example > "$OUTPUT_DIR/${BACKUP_SERVICE_NAME}.service"
+envsubst < deploy/minitickets-backup.timer.example > "$OUTPUT_DIR/${BACKUP_SERVICE_NAME}.timer"
 envsubst < deploy/nginx/site.conf.example > "$OUTPUT_DIR/nginx/${APP_DOMAIN}.conf"
 
 echo "Rendered deployment files:"
 echo "- $OUTPUT_DIR/${SERVICE_NAME}.service"
+echo "- $OUTPUT_DIR/${BACKUP_SERVICE_NAME}.service"
+echo "- $OUTPUT_DIR/${BACKUP_SERVICE_NAME}.timer"
 echo "- $OUTPUT_DIR/nginx/${APP_DOMAIN}.conf"

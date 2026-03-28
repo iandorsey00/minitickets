@@ -1,0 +1,10 @@
+[Unit]
+Description=Run MiniTickets backup daily
+
+[Timer]
+OnCalendar=${BACKUP_ON_CALENDAR}
+Persistent=true
+Unit=${BACKUP_SERVICE_NAME}.service
+
+[Install]
+WantedBy=timers.target

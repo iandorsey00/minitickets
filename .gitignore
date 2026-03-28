@@ -14,5 +14,6 @@ prisma/dev.db
 prisma/dev.db-journal
 deploy.log
 deploy/*.service
+deploy/*.timer
 deploy/nginx/*.conf
 deploy/rendered/

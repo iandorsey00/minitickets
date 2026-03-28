@@ -77,8 +77,11 @@ Included deployment helpers:
 
 - deploy script: [scripts/deploy.sh](/Users/iandorsey/dev/minitickets/scripts/deploy.sh)
 - auto-deploy wrapper: [scripts/autodeploy.sh](/Users/iandorsey/dev/minitickets/scripts/autodeploy.sh)
+- backup script: [scripts/backup.sh](/Users/iandorsey/dev/minitickets/scripts/backup.sh)
 - deploy file renderer: [scripts/render-deploy-files.sh](/Users/iandorsey/dev/minitickets/scripts/render-deploy-files.sh)
 - service template: [deploy/minitickets.service.example](/Users/iandorsey/dev/minitickets/deploy/minitickets.service.example)
+- backup service template: [deploy/minitickets-backup.service.example](/Users/iandorsey/dev/minitickets/deploy/minitickets-backup.service.example)
+- backup timer template: [deploy/minitickets-backup.timer.example](/Users/iandorsey/dev/minitickets/deploy/minitickets-backup.timer.example)
 - reverse-proxy template: [deploy/nginx/site.conf.example](/Users/iandorsey/dev/minitickets/deploy/nginx/site.conf.example)
 - deploy env example: [.env.deploy.example](/Users/iandorsey/dev/minitickets/.env.deploy.example)
 - production env example: [.env.production.example](/Users/iandorsey/dev/minitickets/.env.production.example)
@@ -99,6 +102,53 @@ Notes:
 - Current uploads are local-disk storage under the app data directory and are served only through authenticated routes, which is acceptable for a single-server deployment.
 - For stronger durability later, move attachments to object storage such as S3 or R2.
 - Welcome and ticket emails use the Resend API key from `.env` or `.env.production`.
+
+## Backups
+
+MiniTickets now includes a daily backup path for the production SQLite database and app data directory.
+
+Suggested backup env values in `.env.deploy`:
+
+- `BACKUP_SERVICE_NAME=minitickets-backup`
+- `BACKUP_USER=root`
+- `BACKUP_GROUP=root`
+- `BACKUP_ROOT=/var/backups/minitickets`
+- `RETENTION_DAYS=14`
+- `BACKUP_PREFIX=minitickets`
+- `INCLUDE_ENV_FILE=0`
+- `BACKUP_ON_CALENDAR=*-*-* 03:30:00`
+
+To install the backup automation on the droplet after rendering deploy files:
+
+1. Copy the rendered units into systemd:
+   ```bash
+   sudo cp deploy/rendered/minitickets-backup.service /etc/systemd/system/minitickets-backup.service
+   sudo cp deploy/rendered/minitickets-backup.timer /etc/systemd/system/minitickets-backup.timer
+   sudo systemctl daemon-reload
+   ```
+2. Create the backup directory with restricted access:
+   ```bash
+   sudo mkdir -p /var/backups/minitickets
+   sudo chown root:root /var/backups/minitickets
+   sudo chmod 700 /var/backups/minitickets
+   ```
+3. Enable the timer:
+   ```bash
+   sudo systemctl enable --now minitickets-backup.timer
+   ```
+4. Run one manual backup to verify:
+   ```bash
+   sudo systemctl start minitickets-backup.service
+   sudo systemctl status minitickets-backup.service --no-pager
+   ```
+
+Each backup run creates a timestamped directory containing:
+
+- a SQLite `.backup` snapshot
+- a compressed archive of the app data directory except the live database file
+- a small manifest
+
+If you also want the runtime env file copied into backups, set `INCLUDE_ENV_FILE=1`. Keeping it at `0` is safer unless you have another secret backup path.
 
 ## First production admin
 

@@ -1,0 +1,16 @@
+[Unit]
+Description=MiniTickets backup
+After=network.target
+
+[Service]
+Type=oneshot
+User=${BACKUP_USER}
+Group=${BACKUP_GROUP}
+WorkingDirectory=${APP_DIR}
+EnvironmentFile=${ENV_FILE}
+Environment=ENV_FILE=${ENV_FILE}
+Environment=BACKUP_ROOT=${BACKUP_ROOT}
+Environment=RETENTION_DAYS=${RETENTION_DAYS}
+Environment=BACKUP_PREFIX=${BACKUP_PREFIX}
+Environment=INCLUDE_ENV_FILE=${INCLUDE_ENV_FILE}
+ExecStart=/bin/bash ${APP_DIR}/scripts/backup.sh
