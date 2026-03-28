@@ -27,6 +27,7 @@ MiniTickets is live as a bilingual, workspace-based ticketing system for persona
 - The ticket detail page uses contextual save actions rather than a fixed “resolve” shortcut
 - The settings page displays the current running app version as a read-only field
 - Settings also includes a direct link to the public GitHub repository
+- Admins can see remaining disk space in Settings
 - Users can opt in to broad comment-email delivery; otherwise email is sent for targeted mentions by default
 - Per-file uploads are capped at 30 MB and should return to the ticket cleanly after upload
 - Ticket detail editing surfaces now repeat the ticket number, title, and current status to reduce wrong-ticket edits
@@ -57,6 +58,7 @@ MiniTickets is live as a bilingual, workspace-based ticketing system for persona
   - an event-created confirmation
   - timed reminder emails
 - Browser notifications are expected for ticket and reminder notifications, but remain a secondary channel behind durable in-app notifications and email
+- Low-disk-space warnings are expected for admins by both email and browser notification at threshold crossings
 - In-app activity and notifications remain important even if email delivery is unavailable
 - Invite and welcome emails should stay simple, direct, and clear for non-technical users
 - Invitation emails should name the assigned workspace so the recipient understands the context immediately
@@ -70,6 +72,7 @@ MiniTickets is live as a bilingual, workspace-based ticketing system for persona
 - Daily local backups are installed and should be paired with an off-droplet copy when practical
 - Reminder processing should run from the dedicated scheduled service rather than relying on user traffic
 - Attachment responses, including unauthorized and missing-file cases, should stay non-cacheable and non-indexable
+- Low-disk-space alerts should remain deduplicated and should reset only after free space recovers above the threshold
 
 ## Near-term follow-ups
 

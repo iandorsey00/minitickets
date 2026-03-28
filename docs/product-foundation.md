@@ -85,6 +85,7 @@ MiniTickets is a bilingual, multi-workspace ticketing product for personal and s
 - Notification behavior should be durable and auditable rather than purely ephemeral
 - Mentions are high-signal notification events and should notify only the mentioned recipient by default
 - Broader new-comment email delivery should remain a user preference, not a forced default
+- Operational alerts such as low disk space should be threshold-based, deduplicated, and aimed at admins
 
 ## Access model
 
@@ -162,6 +163,7 @@ MiniTickets is a bilingual, multi-workspace ticketing product for personal and s
   - optional additional sign-in protection
   - visible application version
   - open-source provenance details when relevant
+- Admin-only operational indicators when they directly support safe single-server operation
 
 ## Language and localization
 
@@ -224,6 +226,7 @@ MiniTickets is a bilingual, multi-workspace ticketing product for personal and s
 - The product is healthy as a single-service deployment for personal and early small-team use
 - Backups are part of normal operation, not an optional extra
 - Longer-term durability can expand beyond local file storage when needed
+- Single-server operation benefits from visible storage health and proactive admin warnings before disk exhaustion
 
 ## Evolution path
 

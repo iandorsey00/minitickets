@@ -1,7 +1,8 @@
 import type { Locale, PrismaClient } from "@prisma/client";
 
 import { localeTokenMap } from "./constants.ts";
-import { sendTicketDueDateReminderEmail, sendTicketEventEmail } from "./email.ts";
+import { sendDiskSpaceAlertEmail, sendTicketDueDateReminderEmail, sendTicketEventEmail } from "./email.ts";
+import { getDiskSpaceSummary, diskSpaceWarningThresholds } from "./disk-space.ts";
 import { prisma } from "./prisma.ts";
 import { formatReminderOffsetLabel } from "./reminder-labels.ts";
 
@@ -274,10 +275,105 @@ export async function processDueTicketDeadlineReminders(options: EventReminderPr
 }
 
 export async function processDueTicketReminders(options: EventReminderProcessorOptions = {}) {
-  const [eventCount, deadlineCount] = await Promise.all([
+  const [eventCount, deadlineCount, diskAlertCount] = await Promise.all([
     processDueTicketEventReminders(options),
     processDueTicketDeadlineReminders(options),
+    processDiskSpaceAlerts(options),
   ]);
 
-  return eventCount + deadlineCount;
+  return eventCount + deadlineCount + diskAlertCount;
+}
+
+export async function processDiskSpaceAlerts(options: EventReminderProcessorOptions = {}) {
+  const prismaClient = options.prismaClient ?? prisma;
+  const disk = await getDiskSpaceSummary();
+
+  if (!disk) {
+    return 0;
+  }
+
+  const admins = await prismaClient.user.findMany({
+    where: {
+      role: "ADMIN",
+      isActive: true,
+    },
+    orderBy: { displayName: "asc" },
+  });
+
+  if (!admins.length) {
+    return 0;
+  }
+
+  let processedCount = 0;
+
+  for (const threshold of diskSpaceWarningThresholds) {
+    const key = `disk_space_below_${threshold}`;
+    const isBelow = disk.freePercent <= threshold;
+    const existing = await prismaClient.systemAlertState.findUnique({
+      where: { key },
+    });
+
+    if (!isBelow) {
+      if (existing?.isActive) {
+        await prismaClient.systemAlertState.update({
+          where: { key },
+          data: {
+            isActive: false,
+            clearedAt: new Date(),
+          },
+        });
+      }
+      continue;
+    }
+
+    if (existing?.isActive) {
+      continue;
+    }
+
+    await prismaClient.systemAlertState.upsert({
+      where: { key },
+      update: {
+        isActive: true,
+        triggeredAt: new Date(),
+      },
+      create: {
+        key,
+        isActive: true,
+        triggeredAt: new Date(),
+      },
+    });
+
+    await prismaClient.notification.createMany({
+      data: admins.map((admin) => ({
+        userId: admin.id,
+        eventType: "system.disk_space.warning",
+        titleZh: `磁盘空间不足（剩余 ${disk.freePercent.toFixed(1)}%）`,
+        titleEn: `Low disk space (${disk.freePercent.toFixed(1)}% free)`,
+        bodyZh: `剩余 ${threshold}% 阈值已触发，请查看设置中的磁盘状态。`,
+        bodyEn: `The ${threshold}% free-space threshold has been triggered. Review disk status in Settings.`,
+      })),
+    });
+
+    for (const admin of admins) {
+      try {
+        await sendDiskSpaceAlertEmail({
+          recipient: {
+            email: admin.email,
+            displayName: admin.displayName,
+            locale: admin.locale,
+          },
+          freePercent: disk.freePercent,
+          freeBytes: disk.freeBytes,
+          totalBytes: disk.totalBytes,
+          thresholdPercent: threshold,
+        });
+      } catch (error) {
+        console.error("Failed to send disk-space alert email", error);
+      }
+    }
+
+    processedCount += 1;
+  }
+
+  return processedCount;
 }

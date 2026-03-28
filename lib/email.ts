@@ -73,6 +73,14 @@ type TicketDueDateReminderEmailInput = {
   };
 };
 
+type DiskSpaceAlertEmailInput = {
+  recipient: MailRecipient;
+  freePercent: number;
+  freeBytes: number;
+  totalBytes: number;
+  thresholdPercent: number;
+};
+
 function getBaseUrl() {
   return (process.env.APP_URL ?? "http://localhost:3000").replace(/\/+$/, "");
 }
@@ -233,6 +241,19 @@ function buildLoginCodeEmail({ recipient, code }: LoginCodeEmailInput) {
   };
 }
 
+function formatStorage(bytes: number) {
+  if (bytes < 1024) {
+    return `${bytes} B`;
+  }
+  if (bytes < 1024 * 1024) {
+    return `${(bytes / 1024).toFixed(1)} KB`;
+  }
+  if (bytes < 1024 * 1024 * 1024) {
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  }
+  return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`;
+}
+
 function buildTicketEmail({ actorName, commentBody, kind, recipient, ticket }: TicketEmailInput) {
   const ticketUrl = `${getBaseUrl()}/tickets/${ticket.id}`;
   const statusText =
@@ -389,6 +410,45 @@ function buildTicketEmail({ actorName, commentBody, kind, recipient, ticket }: T
       `${actorName ?? "有同事"} 已将工单 ${ticket.ticketNumber} 更新为「${statusText}」。`,
       `标题：${ticket.title}`,
       `查看工单：${ticketUrl}`,
+    ].join("\n"),
+  };
+}
+
+function buildDiskSpaceAlertEmail({
+  recipient,
+  freePercent,
+  freeBytes,
+  totalBytes,
+  thresholdPercent,
+}: DiskSpaceAlertEmailInput) {
+  const settingsUrl = `${getBaseUrl()}/settings`;
+  const freePercentText = `${freePercent.toFixed(1)}%`;
+  const freeText = formatStorage(freeBytes);
+  const totalText = formatStorage(totalBytes);
+
+  if (recipient.locale === "EN") {
+    return {
+      subject: `MiniTickets disk space warning (${freePercentText} free)`,
+      text: [
+        `Hi ${recipient.displayName},`,
+        "",
+        `MiniTickets storage has dropped below the ${thresholdPercent}% free-space threshold.`,
+        `Free space: ${freeText} (${freePercentText})`,
+        `Total disk size: ${totalText}`,
+        `Open Settings: ${settingsUrl}`,
+      ].join("\n"),
+    };
+  }
+
+  return {
+    subject: `轻量工单磁盘空间告警（剩余 ${freePercentText}）`,
+    text: [
+      `${recipient.displayName}，你好：`,
+      "",
+      `轻量工单所在磁盘空间已低于 ${thresholdPercent}% 的剩余阈值。`,
+      `剩余空间：${freeText}（${freePercentText}）`,
+      `磁盘总量：${totalText}`,
+      `查看设置：${settingsUrl}`,
     ].join("\n"),
   };
 }
@@ -559,5 +619,10 @@ export async function sendTicketEventEmail(input: TicketEventEmailInput) {
 
 export async function sendTicketDueDateReminderEmail(input: TicketDueDateReminderEmailInput) {
   const message = buildTicketDueDateReminderEmail(input);
+  return sendViaResend(input.recipient.email, message.subject, message.text);
+}
+
+export async function sendDiskSpaceAlertEmail(input: DiskSpaceAlertEmailInput) {
+  const message = buildDiskSpaceAlertEmail(input);
   return sendViaResend(input.recipient.email, message.subject, message.text);
 }

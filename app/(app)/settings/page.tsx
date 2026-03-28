@@ -1,6 +1,8 @@
 import { updateSettingsAction } from "@/lib/actions";
 import { accentHexMap, accentLabelMap, accentValues, localeValues, themeValues, timeZoneLabelMap, timeZoneValues } from "@/lib/constants";
 import { getViewerContext } from "@/lib/data";
+import { getDiskSpaceSummary } from "@/lib/disk-space";
+import { formatFileSize } from "@/lib/format";
 import { Badge, PageHeader, Panel } from "@/components/ui";
 import packageJson from "@/package.json";
 
@@ -11,6 +13,7 @@ export default async function SettingsPage({
 }) {
   const data = await getViewerContext();
   const t = data.dictionary;
+  const diskSpace = data.user.role === "ADMIN" ? await getDiskSpaceSummary() : null;
   const params = await searchParams;
   const errorMessage =
     params.error === "password_mismatch"
@@ -139,6 +142,37 @@ export default async function SettingsPage({
           </div>
         </form>
       </Panel>
+      {diskSpace ? (
+        <Panel title={t.settings.storageTitle}>
+          <div className="stack">
+            <Badge
+              label={
+                diskSpace.freePercent <= 5
+                  ? t.settings.storageCritical.replace("{percent}", diskSpace.freePercent.toFixed(1))
+                  : diskSpace.freePercent <= 10
+                    ? t.settings.storageWarning.replace("{percent}", diskSpace.freePercent.toFixed(1))
+                    : t.settings.storageHealthy.replace("{percent}", diskSpace.freePercent.toFixed(1))
+              }
+              tone={diskSpace.freePercent <= 5 ? "danger" : diskSpace.freePercent <= 10 ? "warning" : "success"}
+            />
+            <div className="meta-grid">
+              <div className="meta-item">
+                <span>{t.settings.storageFree}</span>
+                <span>{formatFileSize(diskSpace.freeBytes)}</span>
+              </div>
+              <div className="meta-item">
+                <span>{t.settings.storageUsed}</span>
+                <span>{formatFileSize(diskSpace.usedBytes)}</span>
+              </div>
+              <div className="meta-item">
+                <span>{t.settings.storageTotal}</span>
+                <span>{formatFileSize(diskSpace.totalBytes)}</span>
+              </div>
+            </div>
+            <p className="muted">{t.settings.storageHelp}</p>
+          </div>
+        </Panel>
+      ) : null}
     </>
   );
 }

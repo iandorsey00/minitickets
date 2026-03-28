@@ -34,7 +34,11 @@ export async function GET() {
         id: notification.id,
         title: user.locale === "EN" ? notification.titleEn : notification.titleZh,
         body: user.locale === "EN" ? notification.bodyEn : notification.bodyZh,
-        url: notification.ticketId ? `/tickets/${notification.ticketId}` : "/tickets",
+        url: notification.ticketId
+          ? `/tickets/${notification.ticketId}`
+          : notification.eventType === "system.disk_space.warning"
+            ? "/settings"
+            : "/tickets",
       })),
     },
     { headers: secureHeaders },
