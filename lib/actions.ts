@@ -691,6 +691,10 @@ export async function updateTicketAction(formData: FormData) {
     where: { id: nextValues.statusId },
     select: { key: true },
   });
+  const inProgressStatus = await prisma.statusDefinition.findUnique({
+    where: { key: "IN_PROGRESS" },
+    select: { id: true, key: true },
+  });
 
   if (!nextStatus) {
     redirect(`/tickets/${ticketId}`);
@@ -768,18 +772,41 @@ export async function updateTicketAction(formData: FormData) {
     });
   }
 
+  const finalStatusId =
+    nextValues.assigneeId &&
+    inProgressStatus &&
+    (nextStatus.key === "NEW" || nextStatus.key === "OPEN")
+      ? inProgressStatus.id
+      : nextValues.statusId;
+  const finalStatusKey =
+    nextValues.assigneeId &&
+    inProgressStatus &&
+    (nextStatus.key === "NEW" || nextStatus.key === "OPEN")
+      ? inProgressStatus.key
+      : nextStatus.key;
+
+  if (finalStatusId !== ticket.statusId && nextValues.statusId === ticket.statusId && finalStatusId !== nextValues.statusId) {
+    activities.push({
+      actorUserId: user.id,
+      eventType: "ticket.status_changed",
+      messageZh: "已更新状态。",
+      messageEn: "Status updated.",
+    });
+  }
+
   const updatedTicket = await prisma.ticket.update({
     where: { id: ticketId },
     data: {
       ...nextValues,
+      statusId: finalStatusId,
       parentTicketId: parentTicket?.id ?? null,
       dueDate: nextValues.dueDate ? new Date(nextValues.dueDate) : null,
       resolvedAt:
-        nextStatus.key === "RESOLVED"
+        finalStatusKey === "RESOLVED"
           ? ticket.status.key === "RESOLVED" && ticket.resolvedAt
             ? ticket.resolvedAt
             : new Date()
-          : nextStatus.key === "CLOSED"
+          : finalStatusKey === "CLOSED"
             ? ticket.resolvedAt ?? new Date()
             : null,
       paymentMethods: {

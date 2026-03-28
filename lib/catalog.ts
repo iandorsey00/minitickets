@@ -2,12 +2,11 @@ import { prisma } from "@/lib/prisma";
 
 const defaultStatuses = [
   { key: "NEW", labelZh: "新建", labelEn: "New", sortOrder: 0 },
-  { key: "OPEN", labelZh: "已打开", labelEn: "Open", sortOrder: 1 },
-  { key: "IN_PROGRESS", labelZh: "处理中", labelEn: "In Progress", sortOrder: 2 },
-  { key: "WAITING", labelZh: "等待中", labelEn: "Waiting", sortOrder: 3 },
-  { key: "RESOLVED", labelZh: "已解决", labelEn: "Resolved", sortOrder: 4 },
-  { key: "CLOSED", labelZh: "已关闭", labelEn: "Closed", sortOrder: 5 },
-  { key: "CANCELLED", labelZh: "已取消", labelEn: "Cancelled", sortOrder: 6 },
+  { key: "IN_PROGRESS", labelZh: "处理中", labelEn: "In Progress", sortOrder: 1 },
+  { key: "WAITING", labelZh: "等待中", labelEn: "Waiting", sortOrder: 2 },
+  { key: "RESOLVED", labelZh: "已解决", labelEn: "Resolved", sortOrder: 3 },
+  { key: "CLOSED", labelZh: "已关闭", labelEn: "Closed", sortOrder: 4 },
+  { key: "CANCELLED", labelZh: "已取消", labelEn: "Cancelled", sortOrder: 5 },
 ] as const;
 
 const defaultPriorities = [
@@ -83,4 +82,29 @@ export async function ensureCoreDefinitions() {
       }),
     ),
   ]);
+
+  const [openStatus, inProgressStatus] = await Promise.all([
+    prisma.statusDefinition.findUnique({
+      where: { key: "OPEN" },
+      select: { id: true },
+    }),
+    prisma.statusDefinition.findUnique({
+      where: { key: "IN_PROGRESS" },
+      select: { id: true },
+    }),
+  ]);
+
+  if (openStatus) {
+    await prisma.statusDefinition.update({
+      where: { id: openStatus.id },
+      data: { isActive: false },
+    });
+  }
+
+  if (openStatus && inProgressStatus) {
+    await prisma.ticket.updateMany({
+      where: { statusId: openStatus.id },
+      data: { statusId: inProgressStatus.id },
+    });
+  }
 }

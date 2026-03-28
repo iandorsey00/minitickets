@@ -14,7 +14,6 @@ const prisma = new PrismaClient({ adapter });
 
 const statuses = [
   ["NEW", "新建", "New"],
-  ["OPEN", "已打开", "Open"],
   ["IN_PROGRESS", "处理中", "In Progress"],
   ["WAITING", "等待中", "Waiting"],
   ["RESOLVED", "已解决", "Resolved"],
@@ -187,8 +186,8 @@ async function main() {
     });
   }
 
-  const [statusOpen, statusProgress, statusWaiting] = await Promise.all([
-    prisma.statusDefinition.findUniqueOrThrow({ where: { key: "OPEN" } }),
+  const [statusNew, statusProgress, statusWaiting] = await Promise.all([
+    prisma.statusDefinition.findUniqueOrThrow({ where: { key: "NEW" } }),
     prisma.statusDefinition.findUniqueOrThrow({ where: { key: "IN_PROGRESS" } }),
     prisma.statusDefinition.findUniqueOrThrow({ where: { key: "WAITING" } }),
   ]);
@@ -212,7 +211,7 @@ async function main() {
       workspaceId: personal.id,
       requesterId: admin.id,
       assigneeId: meilin.id,
-      statusId: statusOpen.id,
+      statusId: statusNew.id,
       priorityId: priorityMedium.id,
       categoryId: categoryTask.id,
     },
