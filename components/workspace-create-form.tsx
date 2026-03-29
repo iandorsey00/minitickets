@@ -19,6 +19,8 @@ export function WorkspaceCreateForm({
   slugLabel,
   prefixLabel,
   descriptionLabel,
+  paymentInfoEnabledLabel,
+  paymentInfoHelp,
   createLabel,
   slugHelp,
 }: {
@@ -26,6 +28,8 @@ export function WorkspaceCreateForm({
   slugLabel: string;
   prefixLabel: string;
   descriptionLabel: string;
+  paymentInfoEnabledLabel: string;
+  paymentInfoHelp: string;
   createLabel: string;
   slugHelp: string;
 }) {
@@ -73,6 +77,11 @@ export function WorkspaceCreateForm({
         <label htmlFor="description">{descriptionLabel}</label>
         <textarea id="description" name="description" />
       </div>
+      <label className="checkbox-row" htmlFor="paymentInfoEnabled">
+        <input id="paymentInfoEnabled" name="paymentInfoEnabled" type="checkbox" value="yes" />
+        <span>{paymentInfoEnabledLabel}</span>
+      </label>
+      <p className="muted">{paymentInfoHelp}</p>
       <button type="submit">{createLabel}</button>
     </form>
   );

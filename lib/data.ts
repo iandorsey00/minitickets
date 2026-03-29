@@ -325,7 +325,7 @@ export async function getTicketDetail(ticketId: string) {
     ticket,
     definitions,
     workspacePeople,
-    savedPaymentMethods,
+    savedPaymentMethods: ticket.workspace.paymentInfoEnabled ? savedPaymentMethods : [],
     parentTicketCandidates: ticket.childTickets.length ? [] : parentTicketCandidates,
   };
 }
@@ -405,6 +405,9 @@ export async function getAdminData() {
       include: {
         memberships: {
           include: { user: true },
+        },
+        paymentMethods: {
+          orderBy: [{ label: "asc" }, { last4: "asc" }],
         },
         tickets: true,
       },

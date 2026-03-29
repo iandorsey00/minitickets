@@ -121,6 +121,11 @@ const sendDueDateInviteSchema = z.object({
   recipientIds: z.array(z.string().min(1)).min(1),
 });
 
+const deletePaymentMethodSchema = z.object({
+  paymentMethodId: z.string().min(1),
+  workspaceId: z.string().min(1),
+});
+
 function uniqueRecipients<T extends { id: string }>(items: T[]) {
   return Array.from(new Map(items.map((item) => [item.id, item])).values());
 }
@@ -516,7 +521,7 @@ export async function createTicketAction(formData: FormData) {
   }
   const workspace = await prisma.workspace.findUniqueOrThrow({
     where: { id: parsed.data.workspaceId },
-    select: { id: true, slug: true, ticketPrefix: true },
+    select: { id: true, slug: true, ticketPrefix: true, paymentInfoEnabled: true },
   });
   const latest = await prisma.ticket.findFirst({
     where: { workspaceId: workspace.id },
@@ -549,23 +554,25 @@ export async function createTicketAction(formData: FormData) {
       priorityId: parsed.data.priorityId || defaults.priorityId!,
       categoryId: parsed.data.categoryId || defaults.categoryId!,
       dueDate: parsed.data.dueDate ? new Date(parsed.data.dueDate) : null,
-      paymentLabel: parsed.data.paymentLabel || null,
-      paymentLast4: parsed.data.paymentLast4 || null,
-      paymentMethods: {
-        create:
-          (
-            await resolveSavedPaymentMethodIds(
-              user.id,
-              parsed.data.workspaceId,
-              selectedPaymentMethodIds,
-              parsed.data.paymentLabel || null,
-              parsed.data.paymentLast4 || null,
-              formData.get("savePaymentMethod") === "yes",
-            )
-          ).map((paymentMethodId) => ({
-            paymentMethodId,
-          })),
-      },
+      paymentLabel: workspace.paymentInfoEnabled ? parsed.data.paymentLabel || null : null,
+      paymentLast4: workspace.paymentInfoEnabled ? parsed.data.paymentLast4 || null : null,
+      paymentMethods: workspace.paymentInfoEnabled
+        ? {
+            create:
+              (
+                await resolveSavedPaymentMethodIds(
+                  user.id,
+                  parsed.data.workspaceId,
+                  selectedPaymentMethodIds,
+                  parsed.data.paymentLabel || null,
+                  parsed.data.paymentLast4 || null,
+                  formData.get("savePaymentMethod") === "yes",
+                )
+              ).map((paymentMethodId) => ({
+                paymentMethodId,
+              })),
+          }
+        : undefined,
       activities: {
         create: {
           actorUserId: user.id,
@@ -657,6 +664,11 @@ export async function updateTicketAction(formData: FormData) {
   const ticket = await prisma.ticket.findUnique({
     where: { id: ticketId },
     include: {
+      workspace: {
+        select: {
+          paymentInfoEnabled: true,
+        },
+      },
       status: true,
       parentTicket: {
         select: {
@@ -781,7 +793,10 @@ export async function updateTicketAction(formData: FormData) {
       messageEn: "Parent ticket updated.",
     });
   }
-  if (nextValues.paymentLast4 !== ticket.paymentLast4 || nextValues.paymentLabel !== ticket.paymentLabel) {
+  if (
+    ticket.workspace.paymentInfoEnabled &&
+    (nextValues.paymentLast4 !== ticket.paymentLast4 || nextValues.paymentLabel !== ticket.paymentLabel)
+  ) {
     activities.push({
       actorUserId: user.id,
       eventType: "ticket.payment_updated",
@@ -815,8 +830,12 @@ export async function updateTicketAction(formData: FormData) {
   const updatedTicket = await prisma.ticket.update({
     where: { id: ticketId },
     data: {
-      ...nextValues,
       statusId: finalStatusId,
+      priorityId: nextValues.priorityId,
+      categoryId: nextValues.categoryId,
+      assigneeId: nextValues.assigneeId,
+      title: nextValues.title,
+      description: nextValues.description,
       parentTicketId: parentTicket?.id ?? null,
       dueDate: nextValues.dueDate ? new Date(nextValues.dueDate) : null,
       resolvedAt:
@@ -827,22 +846,28 @@ export async function updateTicketAction(formData: FormData) {
           : finalStatusKey === "CLOSED"
             ? ticket.resolvedAt ?? new Date()
             : null,
-      paymentMethods: {
-        deleteMany: {},
-        create:
-          (
-            await resolveSavedPaymentMethodIds(
-              user.id,
-              ticket.workspaceId,
-              selectedPaymentMethodIds,
-              nextValues.paymentLabel,
-              nextValues.paymentLast4,
-              formData.get("savePaymentMethod") === "yes",
-            )
-          ).map((paymentMethodId) => ({
-            paymentMethodId,
-          })),
-      },
+      ...(ticket.workspace.paymentInfoEnabled
+        ? {
+            paymentLabel: nextValues.paymentLabel,
+            paymentLast4: nextValues.paymentLast4,
+            paymentMethods: {
+              deleteMany: {},
+              create:
+                (
+                  await resolveSavedPaymentMethodIds(
+                    user.id,
+                    ticket.workspaceId,
+                    selectedPaymentMethodIds,
+                    nextValues.paymentLabel,
+                    nextValues.paymentLast4,
+                    formData.get("savePaymentMethod") === "yes",
+                  )
+                ).map((paymentMethodId) => ({
+                  paymentMethodId,
+                })),
+            },
+          }
+        : {}),
       activities: activities.length ? { create: activities } : undefined,
     },
     include: {
@@ -1835,6 +1860,7 @@ export async function createWorkspaceAction(formData: FormData) {
       slug,
       ticketPrefix,
       description: String(formData.get("description") ?? "").trim() || null,
+      paymentInfoEnabled: formData.get("paymentInfoEnabled") === "yes",
     },
   });
 
@@ -1856,6 +1882,7 @@ export async function updateWorkspaceAction(formData: FormData) {
     .replace(/[^a-z0-9-]+/g, "-");
   const ticketPrefix = normalizeTicketPrefix(String(formData.get("ticketPrefix") ?? ""));
   const description = String(formData.get("description") ?? "").trim() || null;
+  const paymentInfoEnabled = formData.get("paymentInfoEnabled") === "yes";
 
   if (!workspaceId || !name || !slug || !ticketPrefix) {
     redirect("/admin/workspaces");
@@ -1868,6 +1895,7 @@ export async function updateWorkspaceAction(formData: FormData) {
       slug,
       ticketPrefix,
       description,
+      paymentInfoEnabled,
     },
   });
 
@@ -1887,6 +1915,32 @@ export async function toggleWorkspaceArchiveAction(formData: FormData) {
     where: { id: workspaceId },
     data: { isArchived: !workspace.isArchived },
   });
+  revalidatePath("/admin");
+  revalidatePath("/admin/workspaces");
+}
+
+export async function deletePaymentMethodAction(formData: FormData) {
+  const user = await requireUser();
+  if (user.role !== UserRole.ADMIN) {
+    redirect("/dashboard");
+  }
+
+  const parsed = deletePaymentMethodSchema.safeParse({
+    paymentMethodId: formData.get("paymentMethodId"),
+    workspaceId: formData.get("workspaceId"),
+  });
+
+  if (!parsed.success) {
+    redirect("/admin/workspaces");
+  }
+
+  await prisma.paymentMethod.deleteMany({
+    where: {
+      id: parsed.data.paymentMethodId,
+      workspaceId: parsed.data.workspaceId,
+    },
+  });
+
   revalidatePath("/admin");
   revalidatePath("/admin/workspaces");
 }

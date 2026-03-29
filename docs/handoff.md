@@ -33,6 +33,8 @@ MiniTickets is live as a bilingual, workspace-based ticketing system for persona
   - event-created emails
   - due-date-related emails, including ticket-created emails when a due date exists
 - Ticket detail now also includes a manual “send due-date calendar invite” flow with explicit recipient selection
+- Payment information is workspace-controlled and defaults off
+- Saved workspace payment methods can be deleted from workspace management
 - Per-file uploads are capped at 30 MB and should return to the ticket cleanly after upload
 - Ticket detail editing surfaces now repeat the ticket number, title, and current status to reduce wrong-ticket edits
 - The global shell includes a lightweight MIT-license footer
@@ -74,6 +76,7 @@ MiniTickets is live as a bilingual, workspace-based ticketing system for persona
 - A fresh production environment should start without demo tickets or demo users
 - The first real admin account should be created deliberately during deployment/bootstrap
 - Workspaces should be created to match real contexts such as personal, household, studio, or small-business operations
+- Workspaces that do not need payment references should keep the payment-information setting disabled
 - Local file uploads are acceptable for a single-server deployment, but longer-term durability may call for external object storage
 - Daily local backups are installed and should be paired with an off-droplet copy when practical
 - Reminder processing should run from the dedicated scheduled service rather than relying on user traffic

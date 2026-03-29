@@ -79,6 +79,7 @@ model Workspace {
   ticketPrefix  String?               @unique
   name          String
   description   String?
+  paymentInfoEnabled Boolean          @default(false)
   isArchived    Boolean               @default(false)
   createdAt     DateTime              @default(now())
   updatedAt     DateTime              @updatedAt

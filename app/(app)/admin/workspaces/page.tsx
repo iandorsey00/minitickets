@@ -1,4 +1,4 @@
-import { toggleWorkspaceArchiveAction, updateWorkspaceAction } from "@/lib/actions";
+import { deletePaymentMethodAction, toggleWorkspaceArchiveAction, updateWorkspaceAction } from "@/lib/actions";
 import { WorkspaceCreateForm } from "@/components/workspace-create-form";
 import { getAdminData } from "@/lib/data";
 import { PageHeader, Panel } from "@/components/ui";
@@ -20,6 +20,8 @@ export default async function AdminWorkspacesPage() {
             slugLabel={t.common.slug}
             prefixLabel={t.common.ticketPrefix}
             descriptionLabel={t.common.description}
+            paymentInfoEnabledLabel={t.common.paymentInfoEnabled}
+            paymentInfoHelp={t.common.paymentInfoHelp}
             createLabel={t.common.create}
             slugHelp={t.common.slugHelp}
           />
@@ -101,11 +103,37 @@ export default async function AdminWorkspacesPage() {
                     defaultValue={workspace.description ?? ""}
                   />
                 </div>
+                <label className="checkbox-row" htmlFor={`workspace-payment-info-${workspace.id}`}>
+                  <input
+                    id={`workspace-payment-info-${workspace.id}`}
+                    name="paymentInfoEnabled"
+                    type="checkbox"
+                    value="yes"
+                    defaultChecked={workspace.paymentInfoEnabled}
+                  />
+                  <span>{t.common.paymentInfoEnabled}</span>
+                </label>
+                <p className="muted">{t.common.paymentInfoHelp}</p>
                 <div>
                   <button type="submit">{t.common.save}</button>
                 </div>
               </form>
               <div className="helper-links">
+                {workspace.paymentMethods.length ? (
+                  <div className="stack">
+                    <strong>{t.admin.savedPaymentMethods}</strong>
+                    {workspace.paymentMethods.map((method) => (
+                      <form key={method.id} action={deletePaymentMethodAction} className="inline-form">
+                        <input type="hidden" name="workspaceId" value={workspace.id} />
+                        <input type="hidden" name="paymentMethodId" value={method.id} />
+                        <span>{method.label} · {method.last4}</span>
+                        <button type="submit" className="ghost-button">
+                          {t.admin.deletePaymentMethod}
+                        </button>
+                      </form>
+                    ))}
+                  </div>
+                ) : null}
                 <form action={toggleWorkspaceArchiveAction}>
                   <input type="hidden" name="workspaceId" value={workspace.id} />
                   <button type="submit" className="ghost-button">

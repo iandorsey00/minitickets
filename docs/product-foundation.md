@@ -32,6 +32,7 @@ MiniTickets is a bilingual, multi-workspace ticketing product for personal and s
   - a short identifier
   - a ticket prefix
   - optional descriptive context
+  - an optional payment-information capability
   - an active or archived state
 
 ### Tickets
@@ -47,7 +48,7 @@ MiniTickets is a bilingual, multi-workspace ticketing product for personal and s
   - priority
   - category
   - optional due date
-  - optional saved payment-method references
+  - optional saved payment-method references when the workspace enables payment information
 - A ticket may have:
   - one parent ticket
   - many child tickets
@@ -152,6 +153,7 @@ MiniTickets is a bilingual, multi-workspace ticketing product for personal and s
   - workspace management
   - catalog management
   - global visibility where appropriate
+  - workspace-level enablement and cleanup of optional payment-method data
 
 ### Settings
 

@@ -407,22 +407,24 @@ export default async function TicketDetailPage({
                   <span>{t.common.none}</span>
                 )}
               </div>
-              <div className="meta-item">
-                <span>{t.common.paymentMethods}</span>
-                {data.ticket.paymentMethods.length ? (
-                  <div className="stack" style={{ gap: "0.4rem" }}>
-                    {data.ticket.paymentMethods.map((item) => (
-                      <span key={item.id}>{item.paymentMethod.label} · {item.paymentMethod.last4}</span>
-                    ))}
-                  </div>
-                ) : data.ticket.paymentLabel || data.ticket.paymentLast4 ? (
-                  <span>
-                    {[data.ticket.paymentLabel, data.ticket.paymentLast4].filter(Boolean).join(" · ")}
-                  </span>
-                ) : (
-                  <span>{t.common.none}</span>
-                )}
-              </div>
+              {data.ticket.workspace.paymentInfoEnabled ? (
+                <div className="meta-item">
+                  <span>{t.common.paymentMethods}</span>
+                  {data.ticket.paymentMethods.length ? (
+                    <div className="stack" style={{ gap: "0.4rem" }}>
+                      {data.ticket.paymentMethods.map((item) => (
+                        <span key={item.id}>{item.paymentMethod.label} · {item.paymentMethod.last4}</span>
+                      ))}
+                    </div>
+                  ) : data.ticket.paymentLabel || data.ticket.paymentLast4 ? (
+                    <span>
+                      {[data.ticket.paymentLabel, data.ticket.paymentLast4].filter(Boolean).join(" · ")}
+                    </span>
+                  ) : (
+                    <span>{t.common.none}</span>
+                  )}
+                </div>
+              ) : null}
             </div>
           </Panel>
         </div>
@@ -493,46 +495,50 @@ export default async function TicketDetailPage({
                   defaultValue={data.ticket.dueDate ? new Date(data.ticket.dueDate).toISOString().slice(0, 10) : ""}
                 />
               </div>
-              <div className="field">
-                <label htmlFor="savedPaymentMethodIds">
-                  {t.common.paymentMethods} <span className="muted">({t.common.optional})</span>
-                </label>
-                <select
-                  id="savedPaymentMethodIds"
-                  name="savedPaymentMethodIds"
-                  multiple
-                  size={Math.min(4, Math.max(2, data.savedPaymentMethods.length || 2))}
-                  defaultValue={Array.from(selectedPaymentMethodIds)}
-                >
-                  {data.savedPaymentMethods.map((method) => (
-                    <option key={method.id} value={method.id}>
-                      {method.label} · {method.last4}
-                    </option>
-                  ))}
-                </select>
-                {!data.savedPaymentMethods.length ? <p className="muted">{t.common.noSavedPaymentMethods}</p> : null}
-              </div>
-              <div className="field">
-                <label htmlFor="paymentLabel">{t.common.paymentLabel}</label>
-                <input id="paymentLabel" name="paymentLabel" defaultValue={data.ticket.paymentLabel ?? ""} maxLength={60} />
-              </div>
-              <div className="field">
-                <label htmlFor="paymentLast4">{t.common.paymentLast4}</label>
-                <input
-                  id="paymentLast4"
-                  name="paymentLast4"
-                  defaultValue={data.ticket.paymentLast4 ?? ""}
-                  inputMode="numeric"
-                  pattern="\d{4}"
-                  maxLength={4}
-                />
-              </div>
-              <div className="field">
-                <label>
-                  <input type="checkbox" name="savePaymentMethod" value="yes" style={{ width: "auto", marginRight: "0.55rem" }} />
-                  {t.common.savePaymentMethod}
-                </label>
-              </div>
+              {data.ticket.workspace.paymentInfoEnabled ? (
+                <>
+                  <div className="field">
+                    <label htmlFor="savedPaymentMethodIds">
+                      {t.common.paymentMethods} <span className="muted">({t.common.optional})</span>
+                    </label>
+                    <select
+                      id="savedPaymentMethodIds"
+                      name="savedPaymentMethodIds"
+                      multiple
+                      size={Math.min(4, Math.max(2, data.savedPaymentMethods.length || 2))}
+                      defaultValue={Array.from(selectedPaymentMethodIds)}
+                    >
+                      {data.savedPaymentMethods.map((method) => (
+                        <option key={method.id} value={method.id}>
+                          {method.label} · {method.last4}
+                        </option>
+                      ))}
+                    </select>
+                    {!data.savedPaymentMethods.length ? <p className="muted">{t.common.noSavedPaymentMethods}</p> : null}
+                  </div>
+                  <div className="field">
+                    <label htmlFor="paymentLabel">{t.common.paymentLabel}</label>
+                    <input id="paymentLabel" name="paymentLabel" defaultValue={data.ticket.paymentLabel ?? ""} maxLength={60} />
+                  </div>
+                  <div className="field">
+                    <label htmlFor="paymentLast4">{t.common.paymentLast4}</label>
+                    <input
+                      id="paymentLast4"
+                      name="paymentLast4"
+                      defaultValue={data.ticket.paymentLast4 ?? ""}
+                      inputMode="numeric"
+                      pattern="\d{4}"
+                      maxLength={4}
+                    />
+                  </div>
+                  <div className="field">
+                    <label>
+                      <input type="checkbox" name="savePaymentMethod" value="yes" style={{ width: "auto", marginRight: "0.55rem" }} />
+                      {t.common.savePaymentMethod}
+                    </label>
+                  </div>
+                </>
+              ) : null}
               <div>
                 <button type="submit">{t.common.save}</button>
               </div>

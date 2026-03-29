@@ -7,6 +7,7 @@ import { PencilIcon } from "@/components/icons";
 type WorkspaceOption = {
   id: string;
   name: string;
+  paymentInfoEnabled: boolean;
 };
 
 type PersonOption = {
@@ -105,6 +106,10 @@ export function TicketCreateForm({
   const workspacePaymentMethods = useMemo(
     () => paymentMethods.filter((method) => method.workspaceId === workspaceId),
     [paymentMethods, workspaceId],
+  );
+  const paymentInfoEnabled = useMemo(
+    () => workspaces.find((workspace) => workspace.id === workspaceId)?.paymentInfoEnabled ?? false,
+    [workspaces, workspaceId],
   );
   const workspaceParentTickets = useMemo(
     () => parentTickets.filter((ticket) => ticket.workspaceId === workspaceId),
@@ -260,41 +265,45 @@ export function TicketCreateForm({
           <p className="caution-text">{dictionary.tickets.confidentialityNotice}</p>
         </div>
       </details>
-      <div className="form-grid">
-        <div className="field">
-          <label htmlFor="savedPaymentMethodIds">
-            {dictionary.common.paymentMethods} <span className="muted">({dictionary.common.optional})</span>
-          </label>
-          <select id="savedPaymentMethodIds" name="savedPaymentMethodIds" multiple size={Math.min(4, Math.max(2, workspacePaymentMethods.length || 2))}>
-            {workspacePaymentMethods.map((method) => (
-              <option key={method.id} value={method.id}>
-                {method.label} · {method.last4}
-              </option>
-            ))}
-          </select>
-          {!workspacePaymentMethods.length ? <p className="muted">{dictionary.common.noSavedPaymentMethods}</p> : null}
-        </div>
-      </div>
-      <div className="form-grid">
-        <div className="field">
-          <label htmlFor="paymentLabel">
-            {dictionary.common.paymentLabel} <span className="muted">({dictionary.common.optional})</span>
-          </label>
-          <input id="paymentLabel" name="paymentLabel" maxLength={60} placeholder="Visa / Checking" />
-        </div>
-        <div className="field">
-          <label htmlFor="paymentLast4">
-            {dictionary.common.paymentLast4} <span className="muted">({dictionary.common.optional})</span>
-          </label>
-          <input id="paymentLast4" name="paymentLast4" inputMode="numeric" pattern="\d{4}" maxLength={4} />
-        </div>
-      </div>
-      <div className="field">
-        <label>
-          <input type="checkbox" name="savePaymentMethod" value="yes" style={{ width: "auto", marginRight: "0.55rem" }} />
-          {dictionary.common.savePaymentMethod}
-        </label>
-      </div>
+      {paymentInfoEnabled ? (
+        <>
+          <div className="form-grid">
+            <div className="field">
+              <label htmlFor="savedPaymentMethodIds">
+                {dictionary.common.paymentMethods} <span className="muted">({dictionary.common.optional})</span>
+              </label>
+              <select id="savedPaymentMethodIds" name="savedPaymentMethodIds" multiple size={Math.min(4, Math.max(2, workspacePaymentMethods.length || 2))}>
+                {workspacePaymentMethods.map((method) => (
+                  <option key={method.id} value={method.id}>
+                    {method.label} · {method.last4}
+                  </option>
+                ))}
+              </select>
+              {!workspacePaymentMethods.length ? <p className="muted">{dictionary.common.noSavedPaymentMethods}</p> : null}
+            </div>
+          </div>
+          <div className="form-grid">
+            <div className="field">
+              <label htmlFor="paymentLabel">
+                {dictionary.common.paymentLabel} <span className="muted">({dictionary.common.optional})</span>
+              </label>
+              <input id="paymentLabel" name="paymentLabel" maxLength={60} placeholder="Visa / Checking" />
+            </div>
+            <div className="field">
+              <label htmlFor="paymentLast4">
+                {dictionary.common.paymentLast4} <span className="muted">({dictionary.common.optional})</span>
+              </label>
+              <input id="paymentLast4" name="paymentLast4" inputMode="numeric" pattern="\d{4}" maxLength={4} />
+            </div>
+          </div>
+          <div className="field">
+            <label>
+              <input type="checkbox" name="savePaymentMethod" value="yes" style={{ width: "auto", marginRight: "0.55rem" }} />
+              {dictionary.common.savePaymentMethod}
+            </label>
+          </div>
+        </>
+      ) : null}
       <div>
         <button type="submit">
           <span className="button-content">

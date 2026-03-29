@@ -70,6 +70,7 @@ export default async function NewTicketPage() {
           workspaces={context.memberships.map((membership) => ({
             id: membership.workspace.id,
             name: membership.workspace.name,
+            paymentInfoEnabled: membership.workspace.paymentInfoEnabled,
           }))}
           people={people.map((person) => ({
             id: person.id,
