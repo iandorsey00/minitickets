@@ -1019,6 +1019,32 @@ textarea {
   display: none;
 }
 
+.create-ticket-disclosure {
+  border-top: 1px solid var(--color-line);
+  padding-top: 1rem;
+}
+
+.create-ticket-disclosure summary {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  cursor: pointer;
+  font-weight: 700;
+  list-style: none;
+}
+
+.create-ticket-disclosure summary::-webkit-details-marker {
+  display: none;
+}
+
+.create-ticket-disclosure[open] {
+  padding-bottom: 0.25rem;
+}
+
+.create-ticket-disclosure .field {
+  margin-top: 0.85rem;
+}
+
 .detail-disclosure summary::after {
   content: "展开";
   color: var(--color-muted);

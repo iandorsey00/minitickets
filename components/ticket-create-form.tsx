@@ -247,11 +247,19 @@ export function TicketCreateForm({
         <label htmlFor="title">{dictionary.common.title}</label>
         <input id="title" name="title" required minLength={3} maxLength={120} />
       </div>
-      <div className="field">
-        <label htmlFor="description">{dictionary.common.description}</label>
-        <textarea id="description" name="description" maxLength={5000} />
-        <p className="caution-text">{dictionary.tickets.confidentialityNotice}</p>
-      </div>
+      <details className="create-ticket-disclosure" open={false}>
+        <summary>
+          <span>{dictionary.common.description}</span>
+          <span className="muted">({dictionary.common.optional})</span>
+        </summary>
+        <div className="field">
+          <label htmlFor="description" className="sr-only">
+            {dictionary.common.description}
+          </label>
+          <textarea id="description" name="description" maxLength={5000} />
+          <p className="caution-text">{dictionary.tickets.confidentialityNotice}</p>
+        </div>
+      </details>
       <div className="form-grid">
         <div className="field">
           <label htmlFor="savedPaymentMethodIds">
