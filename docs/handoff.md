@@ -43,6 +43,10 @@ MiniTickets is live as a bilingual, workspace-based ticketing system for persona
 
 - Chinese-first branding should prefer `轻量工单` in the main interface
 - Non-Latin brand contexts should show a smaller `MiniTickets` subtitle beneath the localized product name
+- The current visual language should feel calmer, more modern, and more standardized across screens rather than page-by-page custom
+- Shared screens should prefer soft card surfaces, restrained shadows, and clearer visual grouping over bare divider-only layouts
+- Form controls should default to low-noise boxed fields unless a lighter treatment is clearly better for that workflow
+- Lucide is now the preferred icon system for consistency and MIT-friendly interoperability
 - The login page should stay visually close to the GeoCompare homepage, especially in scale, spacing, and calmness
 - Mobile usage is a primary scenario, not an afterthought
 - Dense tables should generally be avoided in favor of calmer stacked rows or compact lists
