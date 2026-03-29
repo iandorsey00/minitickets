@@ -103,6 +103,12 @@ type MailAttachment = {
   type?: string;
 };
 
+type BuiltEmail = {
+  subject: string;
+  text: string;
+  html?: string;
+};
+
 function getBaseUrl() {
   return (process.env.APP_URL ?? "http://localhost:3000").replace(/\/+$/, "");
 }
@@ -151,6 +157,111 @@ function escapeIcsText(value: string) {
 
 function toBase64(value: string) {
   return Buffer.from(value, "utf8").toString("base64");
+}
+
+function escapeHtml(value: string) {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function nl2br(value: string) {
+  return escapeHtml(value).replace(/\r?\n/g, "<br />");
+}
+
+function renderEmailLayout({
+  locale,
+  title,
+  intro,
+  details = [],
+  body,
+  ctaLabel,
+  ctaUrl,
+  footnote,
+}: {
+  locale: Locale;
+  title: string;
+  intro: string;
+  details?: Array<{ label: string; value: string }>;
+  body?: string;
+  ctaLabel?: string;
+  ctaUrl?: string;
+  footnote?: string;
+}) {
+  const brand = locale === "EN" ? "MiniTickets" : "轻量工单";
+  const detailsHtml = details.length
+    ? `
+      <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: 20px 0 0; border-collapse: collapse;">
+        ${details
+          .map(
+            (detail) => `
+              <tr>
+                <td style="padding: 10px 0 2px; color: #697586; font-size: 13px; vertical-align: top;">${escapeHtml(detail.label)}</td>
+              </tr>
+              <tr>
+                <td style="padding: 0 0 10px; color: #101828; font-size: 15px; line-height: 1.5; border-bottom: 1px solid #eaecf0;">${nl2br(detail.value)}</td>
+              </tr>
+            `,
+          )
+          .join("")}
+      </table>
+    `
+    : "";
+
+  const bodyHtml = body
+    ? `<div style="margin-top: 18px; padding: 14px 16px; border-radius: 16px; background: #f8fafc; color: #334155; font-size: 14px; line-height: 1.65; white-space: normal;">${body}</div>`
+    : "";
+
+  const ctaHtml =
+    ctaLabel && ctaUrl
+      ? `
+        <div style="margin-top: 24px;">
+          <a href="${escapeHtml(ctaUrl)}" style="display: inline-block; padding: 12px 18px; border-radius: 999px; background: #2563eb; color: #ffffff; text-decoration: none; font-weight: 700; font-size: 14px;">
+            ${escapeHtml(ctaLabel)}
+          </a>
+        </div>
+      `
+      : "";
+
+  const footnoteHtml = footnote
+    ? `<p style="margin: 22px 0 0; color: #697586; font-size: 12px; line-height: 1.6;">${nl2br(footnote)}</p>`
+    : "";
+
+  return `<!doctype html>
+<html lang="${locale === "EN" ? "en" : "zh-CN"}">
+  <body style="margin: 0; padding: 0; background: #f3f6fb; color: #101828;">
+    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background: #f3f6fb; padding: 24px 12px;">
+      <tr>
+        <td align="center">
+          <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="max-width: 620px; border-collapse: collapse;">
+            <tr>
+              <td style="padding: 0 0 14px; color: #2563eb; font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; font-weight: 700; letter-spacing: 0.02em;">
+                ${escapeHtml(brand)}
+              </td>
+            </tr>
+            <tr>
+              <td style="background: #ffffff; border: 1px solid #e5e7eb; border-radius: 28px; padding: 28px 28px 24px; box-shadow: 0 12px 32px rgba(15, 23, 42, 0.06);">
+                <h1 style="margin: 0; font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 28px; line-height: 1.1; letter-spacing: -0.04em; color: #101828;">
+                  ${escapeHtml(title)}
+                </h1>
+                <p style="margin: 16px 0 0; color: #475467; font-size: 15px; line-height: 1.7;">
+                  ${nl2br(intro)}
+                </p>
+                ${detailsHtml}
+                ${bodyHtml}
+                ${ctaHtml}
+                ${footnoteHtml}
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>`;
 }
 
 function buildEventInviteAttachment({
@@ -294,13 +405,18 @@ function buildWelcomeEmail({ displayName, locale, password, userEmail }: Welcome
         "",
         "Please sign in and change your password in Settings.",
       ].join("\n"),
-      html: `
-        <p>Hi ${displayName},</p>
-        <p>Your MiniTickets admin account is ready.</p>
-        <p><strong>Email:</strong> ${userEmail}<br /><strong>Temporary password:</strong> ${password}</p>
-        <p><a href="${loginUrl}">Sign in to MiniTickets</a></p>
-        <p>Please sign in and change your password in Settings.</p>
-      `,
+      html: renderEmailLayout({
+        locale,
+        title: "Welcome to MiniTickets",
+        intro: `Hi ${displayName},\n\nYour MiniTickets admin account is ready.`,
+        details: [
+          { label: "Email", value: userEmail },
+          { label: "Temporary password", value: password },
+        ],
+        ctaLabel: "Sign in to MiniTickets",
+        ctaUrl: loginUrl,
+        footnote: "Please sign in and change your password in Settings.",
+      }),
     };
   }
 
@@ -316,13 +432,18 @@ function buildWelcomeEmail({ displayName, locale, password, userEmail }: Welcome
       "",
       "请先登录，并在“设置”中修改密码。",
     ].join("\n"),
-    html: `
-      <p>${displayName}，你好：</p>
-      <p>你的轻量工单管理员账户已经创建完成。</p>
-      <p><strong>邮箱：</strong>${userEmail}<br /><strong>临时密码：</strong>${password}</p>
-      <p><a href="${loginUrl}">登录轻量工单</a></p>
-      <p>请先登录，并在“设置”中修改密码。</p>
-    `,
+    html: renderEmailLayout({
+      locale,
+      title: "欢迎使用轻量工单",
+      intro: `${displayName}，你好：\n\n你的轻量工单管理员账户已经创建完成。`,
+      details: [
+        { label: "邮箱", value: userEmail },
+        { label: "临时密码", value: password },
+      ],
+      ctaLabel: "登录轻量工单",
+      ctaUrl: loginUrl,
+      footnote: "请先登录，并在“设置”中修改密码。",
+    }),
   };
 }
 
@@ -344,13 +465,15 @@ function buildPasswordSetupEmail({ recipient, setupToken, workspaceName }: Passw
         "",
         "This link expires in 24 hours.",
       ].join("\n"),
-      html: `
-        <p>Hi ${recipient.displayName},</p>
-        <p>Your MiniTickets account has been created.</p>
-        ${workspaceName ? `<p><strong>Workspace:</strong> ${workspaceName}</p>` : ""}
-        <p><a href="${setupUrl}">Open the password setup screen</a></p>
-        <p>This link expires in 24 hours.</p>
-      `,
+      html: renderEmailLayout({
+        locale: recipient.locale,
+        title: "Set your password",
+        intro: `Hi ${recipient.displayName},\n\nYour MiniTickets account has been created.`,
+        details: workspaceName ? [{ label: "Workspace", value: workspaceName }] : [],
+        ctaLabel: "Open the password setup screen",
+        ctaUrl: setupUrl,
+        footnote: "This link expires in 24 hours.",
+      }),
     };
   }
 
@@ -366,13 +489,15 @@ function buildPasswordSetupEmail({ recipient, setupToken, workspaceName }: Passw
       "",
       "此链接将在 24 小时后失效。",
     ].join("\n"),
-    html: `
-      <p>${recipient.displayName}，你好：</p>
-      <p>你的轻量工单账户已经创建。</p>
-      ${workspaceName ? `<p><strong>工作区：</strong>${workspaceName}</p>` : ""}
-      <p><a href="${setupUrl}">打开设置密码页面</a></p>
-      <p>此链接将在 24 小时后失效。</p>
-    `,
+    html: renderEmailLayout({
+      locale: recipient.locale,
+      title: "设置你的密码",
+      intro: `${recipient.displayName}，你好：\n\n你的轻量工单账户已经创建。`,
+      details: workspaceName ? [{ label: "工作区", value: workspaceName }] : [],
+      ctaLabel: "打开设置密码页面",
+      ctaUrl: setupUrl,
+      footnote: "此链接将在 24 小时后失效。",
+    }),
   };
 }
 
@@ -389,12 +514,13 @@ function buildLoginCodeEmail({ recipient, code }: LoginCodeEmailInput) {
         "",
         "This code expires in 10 minutes.",
       ].join("\n"),
-      html: `
-        <p>Hi ${recipient.displayName},</p>
-        <p>Use this verification code to finish signing in to MiniTickets:</p>
-        <p style="font-size: 2rem; font-weight: 700; letter-spacing: 0.18em;">${code}</p>
-        <p>This code expires in 10 minutes.</p>
-      `,
+      html: renderEmailLayout({
+        locale: recipient.locale,
+        title: "Your verification code",
+        intro: `Hi ${recipient.displayName},\n\nUse this verification code to finish signing in to MiniTickets.`,
+        body: `<div style="font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 32px; font-weight: 800; letter-spacing: 0.18em; color: #101828;">${escapeHtml(code)}</div>`,
+        footnote: "This code expires in 10 minutes.",
+      }),
     };
   }
 
@@ -409,12 +535,13 @@ function buildLoginCodeEmail({ recipient, code }: LoginCodeEmailInput) {
       "",
       "此验证码将在 10 分钟后失效。",
     ].join("\n"),
-    html: `
-      <p>${recipient.displayName}，你好：</p>
-      <p>请使用以下验证码完成轻量工单登录：</p>
-      <p style="font-size: 2rem; font-weight: 700; letter-spacing: 0.18em;">${code}</p>
-      <p>此验证码将在 10 分钟后失效。</p>
-    `,
+    html: renderEmailLayout({
+      locale: recipient.locale,
+      title: "你的验证码",
+      intro: `${recipient.displayName}，你好：\n\n请使用以下验证码完成轻量工单登录。`,
+      body: `<div style="font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 32px; font-weight: 800; letter-spacing: 0.18em; color: #101828;">${escapeHtml(code)}</div>`,
+      footnote: "此验证码将在 10 分钟后失效。",
+    }),
   };
 }
 
@@ -431,7 +558,7 @@ function formatStorage(bytes: number) {
   return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`;
 }
 
-function buildTicketEmail({ actorName, commentBody, kind, recipient, ticket }: TicketEmailInput) {
+function buildTicketEmail({ actorName, commentBody, kind, recipient, ticket }: TicketEmailInput): BuiltEmail {
   const ticketUrl = `${getBaseUrl()}/tickets/${ticket.id}`;
   const statusText =
     recipient.locale === "EN" ? ticket.statusLabelEn ?? "Updated" : ticket.statusLabelZh ?? "已更新";
@@ -458,6 +585,18 @@ function buildTicketEmail({ actorName, commentBody, kind, recipient, ticket }: T
         ]
           .filter(Boolean)
           .join("\n"),
+        html: renderEmailLayout({
+          locale: recipient.locale,
+          title: `${ticket.ticketNumber} created`,
+          intro: `Hi ${recipient.displayName},\n\nYour ticket has been created in ${ticket.workspaceName}.`,
+          details: [
+            { label: "Ticket", value: ticket.ticketNumber },
+            { label: "Title", value: ticket.title },
+            ...(parentLineEn ? [{ label: "Parent", value: `${ticket.parentTicketNumber} ${ticket.parentTitle}` }] : []),
+          ],
+          ctaLabel: "Open ticket",
+          ctaUrl: ticketUrl,
+        }),
       };
     }
 
@@ -471,6 +610,17 @@ function buildTicketEmail({ actorName, commentBody, kind, recipient, ticket }: T
           `Title: ${ticket.title}`,
           `Open: ${ticketUrl}`,
         ].join("\n"),
+        html: renderEmailLayout({
+          locale: recipient.locale,
+          title: `${ticket.ticketNumber} assigned to you`,
+          intro: `Hi ${recipient.displayName},\n\n${actorName ?? "A teammate"} assigned this ticket to you.`,
+          details: [
+            { label: "Ticket", value: ticket.ticketNumber },
+            { label: "Title", value: ticket.title },
+          ],
+          ctaLabel: "Open ticket",
+          ctaUrl: ticketUrl,
+        }),
       };
     }
 
@@ -487,6 +637,18 @@ function buildTicketEmail({ actorName, commentBody, kind, recipient, ticket }: T
         ]
           .filter(Boolean)
           .join("\n"),
+        html: renderEmailLayout({
+          locale: recipient.locale,
+          title: `New comment on ${ticket.ticketNumber}`,
+          intro: `Hi ${recipient.displayName},\n\n${actorName ?? "A teammate"} added a comment.`,
+          details: [
+            { label: "Ticket", value: ticket.ticketNumber },
+            { label: "Title", value: ticket.title },
+          ],
+          body: commentBody ? nl2br(commentBody) : undefined,
+          ctaLabel: "Open ticket",
+          ctaUrl: ticketUrl,
+        }),
       };
     }
 
@@ -503,6 +665,18 @@ function buildTicketEmail({ actorName, commentBody, kind, recipient, ticket }: T
         ]
           .filter(Boolean)
           .join("\n"),
+        html: renderEmailLayout({
+          locale: recipient.locale,
+          title: `You were mentioned on ${ticket.ticketNumber}`,
+          intro: `Hi ${recipient.displayName},\n\n${actorName ?? "A teammate"} mentioned you in a comment.`,
+          details: [
+            { label: "Ticket", value: ticket.ticketNumber },
+            { label: "Title", value: ticket.title },
+          ],
+          body: commentBody ? nl2br(commentBody) : undefined,
+          ctaLabel: "Open ticket",
+          ctaUrl: ticketUrl,
+        }),
       };
     }
 
@@ -515,6 +689,18 @@ function buildTicketEmail({ actorName, commentBody, kind, recipient, ticket }: T
         `Title: ${ticket.title}`,
         `Open: ${ticketUrl}`,
       ].join("\n"),
+      html: renderEmailLayout({
+        locale: recipient.locale,
+        title: `${ticket.ticketNumber} marked ${statusText}`,
+        intro: `Hi ${recipient.displayName},\n\n${actorName ?? "A teammate"} updated this ticket.`,
+        details: [
+          { label: "Ticket", value: ticket.ticketNumber },
+          { label: "Title", value: ticket.title },
+          { label: "Status", value: statusText },
+        ],
+        ctaLabel: "Open ticket",
+        ctaUrl: ticketUrl,
+      }),
     };
   }
 
@@ -527,10 +713,22 @@ function buildTicketEmail({ actorName, commentBody, kind, recipient, ticket }: T
         `你的工单 ${ticket.ticketNumber} 已在「${ticket.workspaceName}」中创建。`,
         `标题：${ticket.title}`,
         parentLineZh,
-        `查看工单：${ticketUrl}`,
-      ]
-        .filter(Boolean)
-        .join("\n"),
+      `查看工单：${ticketUrl}`,
+    ]
+      .filter(Boolean)
+      .join("\n"),
+      html: renderEmailLayout({
+        locale: recipient.locale,
+        title: `${ticket.ticketNumber} 已创建`,
+        intro: `${recipient.displayName}，你好：\n\n你的工单已在「${ticket.workspaceName}」中创建。`,
+        details: [
+          { label: "工单", value: ticket.ticketNumber },
+          { label: "标题", value: ticket.title },
+          ...(parentLineZh ? [{ label: "父工单", value: `${ticket.parentTicketNumber} ${ticket.parentTitle}` }] : []),
+        ],
+        ctaLabel: "查看工单",
+        ctaUrl: ticketUrl,
+      }),
     };
   }
 
@@ -544,6 +742,17 @@ function buildTicketEmail({ actorName, commentBody, kind, recipient, ticket }: T
         `标题：${ticket.title}`,
         `查看工单：${ticketUrl}`,
       ].join("\n"),
+      html: renderEmailLayout({
+        locale: recipient.locale,
+        title: `${ticket.ticketNumber} 已分配给你`,
+        intro: `${recipient.displayName}，你好：\n\n${actorName ?? "有同事"} 已将这个工单分配给你。`,
+        details: [
+          { label: "工单", value: ticket.ticketNumber },
+          { label: "标题", value: ticket.title },
+        ],
+        ctaLabel: "查看工单",
+        ctaUrl: ticketUrl,
+      }),
     };
   }
 
@@ -560,6 +769,18 @@ function buildTicketEmail({ actorName, commentBody, kind, recipient, ticket }: T
       ]
         .filter(Boolean)
         .join("\n"),
+      html: renderEmailLayout({
+        locale: recipient.locale,
+        title: `${ticket.ticketNumber} 有新评论`,
+        intro: `${recipient.displayName}，你好：\n\n${actorName ?? "有同事"} 添加了评论。`,
+        details: [
+          { label: "工单", value: ticket.ticketNumber },
+          { label: "标题", value: ticket.title },
+        ],
+        body: commentBody ? nl2br(commentBody) : undefined,
+        ctaLabel: "查看工单",
+        ctaUrl: ticketUrl,
+      }),
     };
   }
 
@@ -576,6 +797,18 @@ function buildTicketEmail({ actorName, commentBody, kind, recipient, ticket }: T
       ]
         .filter(Boolean)
         .join("\n"),
+      html: renderEmailLayout({
+        locale: recipient.locale,
+        title: `${ticket.ticketNumber} 中有人提到了你`,
+        intro: `${recipient.displayName}，你好：\n\n${actorName ?? "有同事"} 在评论中提到了你。`,
+        details: [
+          { label: "工单", value: ticket.ticketNumber },
+          { label: "标题", value: ticket.title },
+        ],
+        body: commentBody ? nl2br(commentBody) : undefined,
+        ctaLabel: "查看工单",
+        ctaUrl: ticketUrl,
+      }),
     };
   }
 
@@ -588,6 +821,18 @@ function buildTicketEmail({ actorName, commentBody, kind, recipient, ticket }: T
       `标题：${ticket.title}`,
       `查看工单：${ticketUrl}`,
     ].join("\n"),
+    html: renderEmailLayout({
+      locale: recipient.locale,
+      title: `${ticket.ticketNumber} 已更新`,
+      intro: `${recipient.displayName}，你好：\n\n${actorName ?? "有同事"} 更新了工单状态。`,
+      details: [
+        { label: "工单", value: ticket.ticketNumber },
+        { label: "标题", value: ticket.title },
+        { label: "状态", value: statusText },
+      ],
+      ctaLabel: "查看工单",
+      ctaUrl: ticketUrl,
+    }),
   };
 }
 
@@ -597,7 +842,7 @@ function buildDiskSpaceAlertEmail({
   freeBytes,
   totalBytes,
   thresholdPercent,
-}: DiskSpaceAlertEmailInput) {
+}: DiskSpaceAlertEmailInput): BuiltEmail {
   const settingsUrl = `${getBaseUrl()}/settings`;
   const freePercentText = `${freePercent.toFixed(1)}%`;
   const freeText = formatStorage(freeBytes);
@@ -614,6 +859,17 @@ function buildDiskSpaceAlertEmail({
         `Total disk size: ${totalText}`,
         `Open Settings: ${settingsUrl}`,
       ].join("\n"),
+      html: renderEmailLayout({
+        locale: recipient.locale,
+        title: "Disk space warning",
+        intro: `Hi ${recipient.displayName},\n\nMiniTickets storage has dropped below the ${thresholdPercent}% free-space threshold.`,
+        details: [
+          { label: "Free space", value: `${freeText} (${freePercentText})` },
+          { label: "Total disk size", value: totalText },
+        ],
+        ctaLabel: "Open Settings",
+        ctaUrl: settingsUrl,
+      }),
     };
   }
 
@@ -627,10 +883,21 @@ function buildDiskSpaceAlertEmail({
       `磁盘总量：${totalText}`,
       `查看设置：${settingsUrl}`,
     ].join("\n"),
+    html: renderEmailLayout({
+      locale: recipient.locale,
+      title: "磁盘空间告警",
+      intro: `${recipient.displayName}，你好：\n\n轻量工单所在磁盘空间已低于 ${thresholdPercent}% 的剩余阈值。`,
+      details: [
+        { label: "剩余空间", value: `${freeText}（${freePercentText}）` },
+        { label: "磁盘总量", value: totalText },
+      ],
+      ctaLabel: "查看设置",
+      ctaUrl: settingsUrl,
+    }),
   };
 }
 
-function buildTicketEventEmail({ event, kind, offsetMinutes, recipient, ticket }: TicketEventEmailInput) {
+function buildTicketEventEmail({ event, kind, offsetMinutes, recipient, ticket }: TicketEventEmailInput): BuiltEmail {
   const ticketUrl = `${getBaseUrl()}/tickets/${ticket.id}`;
   const scheduledForText = formatEventDate(event.scheduledFor, recipient.locale, recipient.timeZone);
   const reminderText =
@@ -652,6 +919,20 @@ function buildTicketEventEmail({ event, kind, offsetMinutes, recipient, ticket }
         ]
           .filter(Boolean)
           .join("\n"),
+        html: renderEmailLayout({
+          locale: recipient.locale,
+          title: `Event scheduled for ${ticket.ticketNumber}`,
+          intro: `Hi ${recipient.displayName},\n\nA ticket event has been scheduled.`,
+          details: [
+            { label: "Ticket", value: `${ticket.ticketNumber} · ${ticket.title}` },
+            { label: "Event", value: event.title },
+            { label: "When", value: scheduledForText },
+            { label: "Workspace", value: ticket.workspaceName },
+          ],
+          body: event.notes ? nl2br(event.notes) : undefined,
+          ctaLabel: "Open ticket",
+          ctaUrl: ticketUrl,
+        }),
       };
     }
 
@@ -669,6 +950,19 @@ function buildTicketEventEmail({ event, kind, offsetMinutes, recipient, ticket }
       ]
         .filter(Boolean)
         .join("\n"),
+      html: renderEmailLayout({
+        locale: recipient.locale,
+        title: `Reminder: ${event.title}`,
+        intro: `Hi ${recipient.displayName},\n\nThis is your reminder for ${ticket.ticketNumber}.`,
+        details: [
+          { label: "Event", value: event.title },
+          ...(reminderText ? [{ label: "Reminder", value: reminderText }] : []),
+          { label: "When", value: scheduledForText },
+        ],
+        body: event.notes ? nl2br(event.notes) : undefined,
+        ctaLabel: "Open ticket",
+        ctaUrl: ticketUrl,
+      }),
     };
   }
 
@@ -687,6 +981,20 @@ function buildTicketEventEmail({ event, kind, offsetMinutes, recipient, ticket }
       ]
         .filter(Boolean)
         .join("\n"),
+      html: renderEmailLayout({
+        locale: recipient.locale,
+        title: `${ticket.ticketNumber} 已安排事件`,
+        intro: `${recipient.displayName}，你好：\n\n工单已安排新的事件。`,
+        details: [
+          { label: "工单", value: `${ticket.ticketNumber} · ${ticket.title}` },
+          { label: "事件", value: event.title },
+          { label: "时间", value: scheduledForText },
+          { label: "工作区", value: ticket.workspaceName },
+        ],
+        body: event.notes ? nl2br(event.notes) : undefined,
+        ctaLabel: "查看工单",
+        ctaUrl: ticketUrl,
+      }),
     };
   }
 
@@ -704,10 +1012,23 @@ function buildTicketEventEmail({ event, kind, offsetMinutes, recipient, ticket }
     ]
       .filter(Boolean)
       .join("\n"),
+    html: renderEmailLayout({
+      locale: recipient.locale,
+      title: `提醒：${event.title}`,
+      intro: `${recipient.displayName}，你好：\n\n这是工单 ${ticket.ticketNumber} 的提醒。`,
+      details: [
+        { label: "事件", value: event.title },
+        ...(reminderText ? [{ label: "提醒时间", value: reminderText }] : []),
+        { label: "事件时间", value: scheduledForText },
+      ],
+      body: event.notes ? nl2br(event.notes) : undefined,
+      ctaLabel: "查看工单",
+      ctaUrl: ticketUrl,
+    }),
   };
 }
 
-function buildTicketDueDateReminderEmail({ recipient, ticket }: TicketDueDateReminderEmailInput) {
+function buildTicketDueDateReminderEmail({ recipient, ticket }: TicketDueDateReminderEmailInput): BuiltEmail {
   const ticketUrl = `${getBaseUrl()}/tickets/${ticket.id}`;
   const dueDateText = formatCalendarDate(ticket.dueDate, recipient.locale);
 
@@ -723,6 +1044,18 @@ function buildTicketDueDateReminderEmail({ recipient, ticket }: TicketDueDateRem
         `Workspace: ${ticket.workspaceName}`,
         `Open: ${ticketUrl}`,
       ].join("\n"),
+      html: renderEmailLayout({
+        locale: recipient.locale,
+        title: `Due today: ${ticket.ticketNumber}`,
+        intro: `Hi ${recipient.displayName},\n\nThis ticket is due today.`,
+        details: [
+          { label: "Title", value: ticket.title },
+          { label: "Due date", value: dueDateText },
+          { label: "Workspace", value: ticket.workspaceName },
+        ],
+        ctaLabel: "Open ticket",
+        ctaUrl: ticketUrl,
+      }),
     };
   }
 
@@ -737,10 +1070,22 @@ function buildTicketDueDateReminderEmail({ recipient, ticket }: TicketDueDateRem
       `工作区：${ticket.workspaceName}`,
       `查看工单：${ticketUrl}`,
     ].join("\n"),
+    html: renderEmailLayout({
+      locale: recipient.locale,
+      title: `今日到期：${ticket.ticketNumber}`,
+      intro: `${recipient.displayName}，你好：\n\n这个工单今天到期。`,
+      details: [
+        { label: "标题", value: ticket.title },
+        { label: "截止日期", value: dueDateText },
+        { label: "工作区", value: ticket.workspaceName },
+      ],
+      ctaLabel: "查看工单",
+      ctaUrl: ticketUrl,
+    }),
   };
 }
 
-function buildTicketDueDateInviteEmail({ recipient, ticket }: TicketDueDateInviteEmailInput) {
+function buildTicketDueDateInviteEmail({ recipient, ticket }: TicketDueDateInviteEmailInput): BuiltEmail {
   const ticketUrl = `${getBaseUrl()}/tickets/${ticket.id}`;
   const dueDateText = formatCalendarDate(ticket.dueDate, recipient.locale);
 
@@ -756,6 +1101,18 @@ function buildTicketDueDateInviteEmail({ recipient, ticket }: TicketDueDateInvit
         `Workspace: ${ticket.workspaceName}`,
         `Open: ${ticketUrl}`,
       ].join("\n"),
+      html: renderEmailLayout({
+        locale: recipient.locale,
+        title: "Due-date calendar invite",
+        intro: `Hi ${recipient.displayName},\n\nHere is the calendar invite for this ticket due date.`,
+        details: [
+          { label: "Ticket", value: `${ticket.ticketNumber} · ${ticket.title}` },
+          { label: "Due date", value: dueDateText },
+          { label: "Workspace", value: ticket.workspaceName },
+        ],
+        ctaLabel: "Open ticket",
+        ctaUrl: ticketUrl,
+      }),
     };
   }
 
@@ -770,6 +1127,18 @@ function buildTicketDueDateInviteEmail({ recipient, ticket }: TicketDueDateInvit
       `工作区：${ticket.workspaceName}`,
       `查看工单：${ticketUrl}`,
     ].join("\n"),
+    html: renderEmailLayout({
+      locale: recipient.locale,
+      title: "截止日期日历邀请",
+      intro: `${recipient.displayName}，你好：\n\n这是这个工单的截止日期日历邀请。`,
+      details: [
+        { label: "工单", value: `${ticket.ticketNumber} · ${ticket.title}` },
+        { label: "截止日期", value: dueDateText },
+        { label: "工作区", value: ticket.workspaceName },
+      ],
+      ctaLabel: "查看工单",
+      ctaUrl: ticketUrl,
+    }),
   };
 }
 
@@ -833,7 +1202,7 @@ export async function sendTicketEmail(input: TicketEmailInput) {
           },
         })]
       : undefined;
-  return sendViaResend(input.recipient.email, message.subject, message.text, undefined, attachments);
+  return sendViaResend(input.recipient.email, message.subject, message.text, message.html, attachments);
 }
 
 export async function sendTicketEventEmail(input: TicketEventEmailInput) {
@@ -846,23 +1215,23 @@ export async function sendTicketEventEmail(input: TicketEventEmailInput) {
           event: input.event,
         })]
       : undefined;
-  return sendViaResend(input.recipient.email, message.subject, message.text, undefined, attachments);
+  return sendViaResend(input.recipient.email, message.subject, message.text, message.html, attachments);
 }
 
 export async function sendTicketDueDateReminderEmail(input: TicketDueDateReminderEmailInput) {
   const message = buildTicketDueDateReminderEmail(input);
   const attachments =
     input.attachCalendarInvite ? [buildDueDateInviteAttachment({ locale: input.recipient.locale, ticket: input.ticket })] : undefined;
-  return sendViaResend(input.recipient.email, message.subject, message.text, undefined, attachments);
+  return sendViaResend(input.recipient.email, message.subject, message.text, message.html, attachments);
 }
 
 export async function sendTicketDueDateInviteEmail(input: TicketDueDateInviteEmailInput) {
   const message = buildTicketDueDateInviteEmail(input);
   const attachments = [buildDueDateInviteAttachment({ locale: input.recipient.locale, ticket: input.ticket })];
-  return sendViaResend(input.recipient.email, message.subject, message.text, undefined, attachments);
+  return sendViaResend(input.recipient.email, message.subject, message.text, message.html, attachments);
 }
 
 export async function sendDiskSpaceAlertEmail(input: DiskSpaceAlertEmailInput) {
   const message = buildDiskSpaceAlertEmail(input);
-  return sendViaResend(input.recipient.email, message.subject, message.text);
+  return sendViaResend(input.recipient.email, message.subject, message.text, message.html);
 }

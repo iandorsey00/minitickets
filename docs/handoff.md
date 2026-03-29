@@ -51,6 +51,8 @@ MiniTickets is live as a bilingual, workspace-based ticketing system for persona
 - Mobile usage is a primary scenario, not an afterthought
 - On mobile, the shell should collapse cleanly from the desktop sidebar into a compact top-of-page navigation/header flow without leaving dead space before content
 - The mobile topbar should stay readable and sticky without content sliding underneath it
+- Responsive behavior should preserve the primary task first, especially on form-heavy screens such as ticket creation and event scheduling
+- Medium-width states should often reflow to two columns before collapsing all the way to one
 - Dense tables should generally be avoided in favor of calmer stacked rows or compact lists
 - Filters should stay available but not dominate the page when they are not in active use
 - The ticket detail page should reveal complexity progressively through collapsible sections with lightweight previews
@@ -75,6 +77,7 @@ MiniTickets is live as a bilingual, workspace-based ticketing system for persona
 - Low-disk-space warnings are expected for admins by both email and browser notification at threshold crossings
 - In-app activity and notifications remain important even if email delivery is unavailable
 - Invite and welcome emails should stay simple, direct, and clear for non-technical users
+- Emails should now follow the same calm, modern, restrained tone as the product UI while staying highly interoperable across common mail clients
 - Invitation emails should name the assigned workspace so the recipient understands the context immediately
 
 ## Operational guidance
