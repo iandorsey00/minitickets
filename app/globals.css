@@ -1386,7 +1386,7 @@ textarea {
   }
 
   .content {
-    padding: 1rem 1rem 5.5rem;
+    padding: 1rem 1rem calc(7.5rem + env(safe-area-inset-bottom, 0px));
   }
 
   .topbar {
@@ -1513,6 +1513,24 @@ textarea {
   .workspace-switch-button .button-content,
   .topbar-actions .button-content {
     gap: 0.45rem;
+  }
+
+  .panel {
+    padding: 1rem 1rem 1.1rem;
+  }
+
+  .ticket-events-stack {
+    gap: 0.9rem;
+  }
+
+  .event-reminder-options {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.85rem;
+  }
+
+  .event-reminder-options .checkbox-row {
+    gap: 0.65rem;
   }
 
   .admin-user-actions {
