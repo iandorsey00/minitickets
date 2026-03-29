@@ -1600,11 +1600,16 @@ textarea {
 
   .split-inputs {
     grid-template-columns: 1fr;
+    justify-items: start;
+  }
+
+  .split-inputs > input[type="date"] {
+    width: min(100%, 15rem);
   }
 
   .split-time-inputs {
     grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
-    width: 100%;
+    width: min(100%, 15rem);
   }
 }
 
