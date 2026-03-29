@@ -95,6 +95,8 @@ const settingsSchema = z.object({
   accentColor: z.nativeEnum(AccentColor),
   emailMfaEnabled: z.boolean(),
   commentEmailsEnabled: z.boolean(),
+  eventCalendarInvitesEnabled: z.boolean(),
+  dueDateCalendarInvitesEnabled: z.boolean(),
   password: z.string().optional(),
   passwordConfirm: z.string().optional(),
 });
@@ -604,7 +606,9 @@ export async function createTicketAction(formData: FormData) {
         workspaceName: ticket.workspace.name,
         parentTicketNumber: parentTicket?.ticketNumber,
         parentTitle: parentTicket?.title,
+        dueDate: ticket.dueDate ?? undefined,
       },
+      attachDueDateInvite: ticket.requester.dueDateCalendarInvitesEnabled,
     });
   } catch (error) {
     console.error("Failed to send created-ticket email", error);
@@ -1137,7 +1141,9 @@ export async function createTicketEventAction(formData: FormData) {
           title: ticket.title,
           workspaceName: ticket.workspace.name,
         },
+        attachCalendarInvite: recipient.eventCalendarInvitesEnabled,
         event: {
+          id: event.id,
           title: event.title,
           notes: event.notes ?? undefined,
           scheduledFor: event.scheduledFor,
@@ -1485,6 +1491,8 @@ export async function updateSettingsAction(formData: FormData) {
     accentColor: formData.get("accentColor"),
     emailMfaEnabled: formData.get("emailMfaEnabled") === "on",
     commentEmailsEnabled: formData.get("commentEmailsEnabled") === "on",
+    eventCalendarInvitesEnabled: formData.get("eventCalendarInvitesEnabled") === "on",
+    dueDateCalendarInvitesEnabled: formData.get("dueDateCalendarInvitesEnabled") === "on",
     password: formData.get("password") || undefined,
     passwordConfirm: formData.get("passwordConfirm") || undefined,
   });
@@ -1505,6 +1513,8 @@ export async function updateSettingsAction(formData: FormData) {
     accentColor: AccentColor;
     emailMfaEnabled: boolean;
     commentEmailsEnabled: boolean;
+    eventCalendarInvitesEnabled: boolean;
+    dueDateCalendarInvitesEnabled: boolean;
     passwordHash?: string;
   } = {
     displayName: parsed.data.displayName,
@@ -1514,6 +1524,8 @@ export async function updateSettingsAction(formData: FormData) {
     accentColor: parsed.data.accentColor,
     emailMfaEnabled: parsed.data.emailMfaEnabled,
     commentEmailsEnabled: parsed.data.commentEmailsEnabled,
+    eventCalendarInvitesEnabled: parsed.data.eventCalendarInvitesEnabled,
+    dueDateCalendarInvitesEnabled: parsed.data.dueDateCalendarInvitesEnabled,
   };
 
   if (parsed.data.password) {

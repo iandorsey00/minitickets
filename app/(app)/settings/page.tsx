@@ -128,6 +128,30 @@ export default async function SettingsPage({
             </label>
           </div>
           <div className="field">
+            <label htmlFor="eventCalendarInvitesEnabled">{t.settings.eventCalendarInvites}</label>
+            <label className="checkbox-row" htmlFor="eventCalendarInvitesEnabled">
+              <input
+                id="eventCalendarInvitesEnabled"
+                name="eventCalendarInvitesEnabled"
+                type="checkbox"
+                defaultChecked={data.user.eventCalendarInvitesEnabled}
+              />
+              <span>{t.settings.eventCalendarInvitesHelp}</span>
+            </label>
+          </div>
+          <div className="field">
+            <label htmlFor="dueDateCalendarInvitesEnabled">{t.settings.dueDateCalendarInvites}</label>
+            <label className="checkbox-row" htmlFor="dueDateCalendarInvitesEnabled">
+              <input
+                id="dueDateCalendarInvitesEnabled"
+                name="dueDateCalendarInvitesEnabled"
+                type="checkbox"
+                defaultChecked={data.user.dueDateCalendarInvitesEnabled}
+              />
+              <span>{t.settings.dueDateCalendarInvitesHelp}</span>
+            </label>
+          </div>
+          <div className="field">
             <label htmlFor="password">{t.common.password}</label>
             <input id="password" name="password" type="password" />
             <p className="muted">{t.settings.passwordHelp}</p>

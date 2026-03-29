@@ -40,9 +40,11 @@ type TicketEmailInput = {
     statusLabelEn?: string;
     parentTicketNumber?: string;
     parentTitle?: string;
+    dueDate?: Date;
   };
   actorName?: string;
   commentBody?: string;
+  attachDueDateInvite?: boolean;
 };
 
 type TicketEventEmailInput = {
@@ -55,11 +57,13 @@ type TicketEventEmailInput = {
     workspaceName: string;
   };
   event: {
+    id?: string;
     title: string;
     notes?: string;
     scheduledFor: Date;
   };
   offsetMinutes?: number;
+  attachCalendarInvite?: boolean;
 };
 
 type TicketDueDateReminderEmailInput = {
@@ -71,6 +75,7 @@ type TicketDueDateReminderEmailInput = {
     workspaceName: string;
     dueDate: Date;
   };
+  attachCalendarInvite?: boolean;
 };
 
 type DiskSpaceAlertEmailInput = {
@@ -79,6 +84,12 @@ type DiskSpaceAlertEmailInput = {
   freeBytes: number;
   totalBytes: number;
   thresholdPercent: number;
+};
+
+type MailAttachment = {
+  filename: string;
+  content: string;
+  type?: string;
 };
 
 function getBaseUrl() {
@@ -106,6 +117,117 @@ function formatCalendarDate(date: Date, locale: Locale) {
     dateStyle: "medium",
     timeZone: "UTC",
   }).format(date);
+}
+
+function formatIcsDateTime(date: Date) {
+  return date
+    .toISOString()
+    .replace(/[-:]/g, "")
+    .replace(/\.\d{3}Z$/, "Z");
+}
+
+function formatIcsDateOnly(date: Date) {
+  return date.toISOString().slice(0, 10).replace(/-/g, "");
+}
+
+function escapeIcsText(value: string) {
+  return value
+    .replace(/\\/g, "\\\\")
+    .replace(/\r?\n/g, "\\n")
+    .replace(/;/g, "\\;")
+    .replace(/,/g, "\\,");
+}
+
+function toBase64(value: string) {
+  return Buffer.from(value, "utf8").toString("base64");
+}
+
+function buildEventInviteAttachment({
+  ticket,
+  event,
+}: {
+  ticket: TicketEventEmailInput["ticket"];
+  event: TicketEventEmailInput["event"];
+}): MailAttachment {
+  const url = `${getBaseUrl()}/tickets/${ticket.id}`;
+  const uid = `${event.id ?? `event-${ticket.id}-${formatIcsDateTime(event.scheduledFor)}`}@minitickets`;
+  const nowStamp = formatIcsDateTime(new Date());
+  const startStamp = formatIcsDateTime(event.scheduledFor);
+  const endStamp = formatIcsDateTime(new Date(event.scheduledFor.getTime() + 60 * 60 * 1000));
+  const description = [
+    `${ticket.ticketNumber} · ${ticket.title}`,
+    `Workspace: ${ticket.workspaceName}`,
+    event.notes ? `Notes: ${event.notes}` : "",
+    `Open: ${url}`,
+  ]
+    .filter(Boolean)
+    .join("\n");
+
+  const ics = [
+    "BEGIN:VCALENDAR",
+    "VERSION:2.0",
+    "PRODID:-//MiniTickets//EN",
+    "CALSCALE:GREGORIAN",
+    "METHOD:PUBLISH",
+    "BEGIN:VEVENT",
+    `UID:${uid}`,
+    `DTSTAMP:${nowStamp}`,
+    `DTSTART:${startStamp}`,
+    `DTEND:${endStamp}`,
+    `SUMMARY:${escapeIcsText(`${ticket.ticketNumber} ${event.title}`)}`,
+    `DESCRIPTION:${escapeIcsText(description)}`,
+    `URL:${escapeIcsText(url)}`,
+    "END:VEVENT",
+    "END:VCALENDAR",
+  ].join("\r\n");
+
+  return {
+    filename: `${ticket.ticketNumber}-${event.title}`.replace(/[^a-zA-Z0-9._-]+/g, "-").replace(/-+/g, "-") + ".ics",
+    content: toBase64(ics),
+    type: "text/calendar; charset=utf-8",
+  };
+}
+
+function buildDueDateInviteAttachment({
+  ticket,
+}: {
+  ticket: { id: string; ticketNumber: string; title: string; workspaceName: string; dueDate: Date };
+}): MailAttachment {
+  const url = `${getBaseUrl()}/tickets/${ticket.id}`;
+  const uid = `due-${ticket.id}-${formatIcsDateOnly(ticket.dueDate)}@minitickets`;
+  const nowStamp = formatIcsDateTime(new Date());
+  const startDate = formatIcsDateOnly(ticket.dueDate);
+  const nextDay = new Date(ticket.dueDate.getTime() + 24 * 60 * 60 * 1000);
+  const endDate = formatIcsDateOnly(nextDay);
+  const description = [
+    `${ticket.ticketNumber} · ${ticket.title}`,
+    `Workspace: ${ticket.workspaceName}`,
+    `Open: ${url}`,
+  ].join("\n");
+
+  const ics = [
+    "BEGIN:VCALENDAR",
+    "VERSION:2.0",
+    "PRODID:-//MiniTickets//EN",
+    "CALSCALE:GREGORIAN",
+    "METHOD:PUBLISH",
+    "BEGIN:VEVENT",
+    `UID:${uid}`,
+    `DTSTAMP:${nowStamp}`,
+    `DTSTART;VALUE=DATE:${startDate}`,
+    `DTEND;VALUE=DATE:${endDate}`,
+    `SUMMARY:${escapeIcsText(`${ticket.ticketNumber} due date`)}`,
+    `DESCRIPTION:${escapeIcsText(description)}`,
+    `URL:${escapeIcsText(url)}`,
+    "END:VEVENT",
+    "END:VCALENDAR",
+  ].join("\r\n");
+
+  return {
+    filename: `${ticket.ticketNumber}-due-date.ics`,
+    content: toBase64(ics),
+    type: "text/calendar; charset=utf-8",
+  };
 }
 
 function buildWelcomeEmail({ displayName, locale, password, userEmail }: WelcomeEmailInput) {
@@ -570,7 +692,7 @@ function buildTicketDueDateReminderEmail({ recipient, ticket }: TicketDueDateRem
   };
 }
 
-async function sendViaResend(to: string, subject: string, text: string, html?: string) {
+async function sendViaResend(to: string, subject: string, text: string, html?: string, attachments?: MailAttachment[]) {
   const apiKey = getResendApiKey();
   if (!apiKey) {
     return false;
@@ -588,6 +710,7 @@ async function sendViaResend(to: string, subject: string, text: string, html?: s
       subject,
       text,
       html,
+      attachments,
     }),
   });
 
@@ -616,17 +739,37 @@ export async function sendLoginCodeEmail(input: LoginCodeEmailInput) {
 
 export async function sendTicketEmail(input: TicketEmailInput) {
   const message = buildTicketEmail(input);
-  return sendViaResend(input.recipient.email, message.subject, message.text);
+  const attachments =
+    input.kind === "created" && input.attachDueDateInvite && input.ticket.dueDate
+      ? [buildDueDateInviteAttachment({
+          ticket: {
+            id: input.ticket.id,
+            ticketNumber: input.ticket.ticketNumber,
+            title: input.ticket.title,
+            workspaceName: input.ticket.workspaceName,
+            dueDate: input.ticket.dueDate,
+          },
+        })]
+      : undefined;
+  return sendViaResend(input.recipient.email, message.subject, message.text, undefined, attachments);
 }
 
 export async function sendTicketEventEmail(input: TicketEventEmailInput) {
   const message = buildTicketEventEmail(input);
-  return sendViaResend(input.recipient.email, message.subject, message.text);
+  const attachments =
+    input.kind === "created" && input.attachCalendarInvite
+      ? [buildEventInviteAttachment({
+          ticket: input.ticket,
+          event: input.event,
+        })]
+      : undefined;
+  return sendViaResend(input.recipient.email, message.subject, message.text, undefined, attachments);
 }
 
 export async function sendTicketDueDateReminderEmail(input: TicketDueDateReminderEmailInput) {
   const message = buildTicketDueDateReminderEmail(input);
-  return sendViaResend(input.recipient.email, message.subject, message.text);
+  const attachments = input.attachCalendarInvite ? [buildDueDateInviteAttachment({ ticket: input.ticket })] : undefined;
+  return sendViaResend(input.recipient.email, message.subject, message.text, undefined, attachments);
 }
 
 export async function sendDiskSpaceAlertEmail(input: DiskSpaceAlertEmailInput) {

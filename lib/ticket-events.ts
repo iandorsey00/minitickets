@@ -262,6 +262,7 @@ export async function processDueTicketDeadlineReminders(options: EventReminderPr
             workspaceName: ticket.workspace.name,
             dueDate: ticket.dueDate,
           },
+          attachCalendarInvite: recipient.dueDateCalendarInvitesEnabled,
         });
       } catch (error) {
         console.error("Failed to send due-date reminder email", error);

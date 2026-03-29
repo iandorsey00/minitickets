@@ -82,6 +82,7 @@ MiniTickets is a bilingual, multi-workspace ticketing product for personal and s
   - in-product inbox behavior
   - browser delivery
   - email delivery
+  - optional calendar invite attachments for suitable email types
 - Notification behavior should be durable and auditable rather than purely ephemeral
 - Mentions are high-signal notification events and should notify only the mentioned recipient by default
 - Broader new-comment email delivery should remain a user preference, not a forced default
@@ -161,6 +162,7 @@ MiniTickets is a bilingual, multi-workspace ticketing product for personal and s
   - accent
   - password management
   - optional additional sign-in protection
+  - optional notification and interoperability preferences
   - visible application version
   - open-source provenance details when relevant
 - Admin-only operational indicators when they directly support safe single-server operation
@@ -199,6 +201,10 @@ MiniTickets is a bilingual, multi-workspace ticketing product for personal and s
   - scheduled-event confirmation
   - scheduled reminders
   - due-date reminders
+- Calendar invites should remain opt-in and targeted:
+  - timed event emails may include a standard calendar attachment
+  - due-date-related emails may include an all-day calendar attachment
+  - reminder emails should stay lighter than creation/confirmation emails unless the user explicitly opts in
 - Browser notifications are helpful, but should remain secondary to durable in-product and email channels
 
 ## Product defaults

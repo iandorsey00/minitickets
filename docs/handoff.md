@@ -29,6 +29,9 @@ MiniTickets is live as a bilingual, workspace-based ticketing system for persona
 - Settings also includes a direct link to the public GitHub repository
 - Admins can see remaining disk space in Settings
 - Users can opt in to broad comment-email delivery; otherwise email is sent for targeted mentions by default
+- Users can also opt in to receive `.ics` calendar attachments on:
+  - event-created emails
+  - due-date-related emails, including ticket-created emails when a due date exists
 - Per-file uploads are capped at 30 MB and should return to the ticket cleanly after upload
 - Ticket detail editing surfaces now repeat the ticket number, title, and current status to reduce wrong-ticket edits
 - The global shell includes a lightweight MIT-license footer
@@ -57,6 +60,7 @@ MiniTickets is live as a bilingual, workspace-based ticketing system for persona
 - Scheduled events also send:
   - an event-created confirmation
   - timed reminder emails
+- Calendar attachments are optional and user-controlled rather than always-on
 - Browser notifications are expected for ticket and reminder notifications, but remain a secondary channel behind durable in-app notifications and email
 - Low-disk-space warnings are expected for admins by both email and browser notification at threshold crossings
 - In-app activity and notifications remain important even if email delivery is unavailable

@@ -52,6 +52,8 @@ model User {
   accentColor         AccentColor           @default(BLUE)
   emailMfaEnabled     Boolean               @default(false)
   commentEmailsEnabled Boolean              @default(false)
+  eventCalendarInvitesEnabled Boolean       @default(false)
+  dueDateCalendarInvitesEnabled Boolean     @default(false)
   isActive            Boolean               @default(true)
   createdAt           DateTime              @default(now())
   updatedAt           DateTime              @updatedAt
