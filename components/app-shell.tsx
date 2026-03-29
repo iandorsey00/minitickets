@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 import { BrowserNotificationCenter } from "@/components/browser-notification-center";
-import { AdminIcon, DashboardIcon, PencilIcon, SaveIcon, SettingsIcon, TicketIcon } from "@/components/icons";
+import { AdminIcon, DashboardIcon, LogoutIcon, PencilIcon, SaveIcon, SettingsIcon, SwitchIcon, TicketIcon } from "@/components/icons";
 import { logoutAction, switchWorkspaceAction } from "@/lib/actions";
 
 type ShellProps = {
@@ -129,7 +129,10 @@ export function AppShell({
                 </select>
               </form>
               <button type="submit" className="ghost-button workspace-switch-button" form="workspace-switcher-form">
-                {dictionary.nav.switchWorkspace}
+                <span className="button-content">
+                  <SwitchIcon className="button-icon" />
+                  <span>{dictionary.nav.switchWorkspace}</span>
+                </span>
               </button>
             </div>
           ) : (
@@ -144,7 +147,10 @@ export function AppShell({
             </div>
             <form action={logoutAction}>
               <button type="submit" className="ghost-button">
-                {dictionary.nav.logout}
+                <span className="button-content">
+                  <LogoutIcon className="button-icon" />
+                  <span>{dictionary.nav.logout}</span>
+                </span>
               </button>
             </form>
           </div>

@@ -1,9 +1,11 @@
 import type { LucideProps } from "lucide-react";
 import {
   Archive,
+  ArrowRightLeft,
   Building2,
   FileText,
   LayoutDashboard,
+  LogOut,
   Mail,
   MessageSquare,
   Plus,
@@ -89,4 +91,12 @@ export function PowerIcon({ className }: IconProps) {
 
 export function PlusIcon({ className }: IconProps) {
   return <IconBase className={className} icon={Plus} />;
+}
+
+export function SwitchIcon({ className }: IconProps) {
+  return <IconBase className={className} icon={ArrowRightLeft} />;
+}
+
+export function LogoutIcon({ className }: IconProps) {
+  return <IconBase className={className} icon={LogOut} />;
 }

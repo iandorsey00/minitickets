@@ -49,6 +49,8 @@ MiniTickets is live as a bilingual, workspace-based ticketing system for persona
 - Lucide is now the preferred icon system for consistency and MIT-friendly interoperability
 - The login page should stay visually close to the GeoCompare homepage, especially in scale, spacing, and calmness
 - Mobile usage is a primary scenario, not an afterthought
+- On mobile, the shell should collapse cleanly from the desktop sidebar into a compact top-of-page navigation/header flow without leaving dead space before content
+- The mobile topbar should stay readable and sticky without content sliding underneath it
 - Dense tables should generally be avoided in favor of calmer stacked rows or compact lists
 - Filters should stay available but not dominate the page when they are not in active use
 - The ticket detail page should reveal complexity progressively through collapsible sections with lightweight previews

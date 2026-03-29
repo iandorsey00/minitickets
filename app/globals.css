@@ -1319,6 +1319,9 @@ textarea {
   }
 
   .sidebar {
+    position: static;
+    top: auto;
+    height: auto;
     border-right: 0;
     border-bottom: 1px solid var(--color-line);
     padding-bottom: 1rem;
@@ -1334,7 +1337,8 @@ textarea {
   }
 
   .nav-link {
-    padding: 0.5rem 0;
+    min-height: 2.7rem;
+    padding: 0.5rem 0.7rem;
   }
 
   .topbar,
@@ -1384,12 +1388,15 @@ textarea {
   }
 
   .topbar {
-    position: static;
-    top: auto;
-    padding: 0.75rem 1rem;
+    position: sticky;
+    top: 0;
+    padding: 0.82rem 1rem;
     gap: 0.7rem 0.85rem;
     grid-template-columns: minmax(0, 1fr) auto;
     align-items: start;
+    background: color-mix(in srgb, var(--color-panel-soft) 92%, transparent);
+    border-bottom: 1px solid var(--color-line);
+    z-index: 15;
   }
 
   .page-header {
@@ -1474,8 +1481,13 @@ textarea {
   }
 
   .topbar-actions .ghost-button {
-    min-inline-size: 5.7rem;
+    min-inline-size: 6.4rem;
     justify-content: center;
+  }
+
+  .workspace-switch-button .button-content,
+  .topbar-actions .button-content {
+    gap: 0.45rem;
   }
 
   .admin-user-actions {
