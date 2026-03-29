@@ -1866,6 +1866,7 @@ export async function createWorkspaceAction(formData: FormData) {
 
   revalidatePath("/admin");
   revalidatePath("/admin/workspaces");
+  redirect("/admin/workspaces?saved=1");
 }
 
 export async function updateWorkspaceAction(formData: FormData) {
@@ -1901,6 +1902,7 @@ export async function updateWorkspaceAction(formData: FormData) {
 
   revalidatePath("/admin");
   revalidatePath("/admin/workspaces");
+  redirect("/admin/workspaces?saved=1");
 }
 
 export async function toggleWorkspaceArchiveAction(formData: FormData) {
@@ -1917,6 +1919,7 @@ export async function toggleWorkspaceArchiveAction(formData: FormData) {
   });
   revalidatePath("/admin");
   revalidatePath("/admin/workspaces");
+  redirect("/admin/workspaces?saved=1");
 }
 
 export async function deletePaymentMethodAction(formData: FormData) {
@@ -1943,6 +1946,7 @@ export async function deletePaymentMethodAction(formData: FormData) {
 
   revalidatePath("/admin");
   revalidatePath("/admin/workspaces");
+  redirect("/admin/workspaces?saved=1");
 }
 
 export async function assignMembershipAction(formData: FormData) {

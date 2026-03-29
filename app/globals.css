@@ -36,6 +36,19 @@ html:lang(en) textarea {
   font-family: "Inter", sans-serif;
 }
 
+html:lang(zh) body,
+html:lang(zh) button,
+html:lang(zh) input,
+html:lang(zh) select,
+html:lang(zh) textarea,
+html:lang(zh-CN) body,
+html:lang(zh-CN) button,
+html:lang(zh-CN) input,
+html:lang(zh-CN) select,
+html:lang(zh-CN) textarea {
+  font-family: "PingFang SC", "Hiragino Sans GB", "Noto Sans SC Variable", "Noto Sans SC", "Inter", sans-serif;
+}
+
 :lang(zh) .ticket-number,
 :lang(zh-CN) .ticket-number,
 :lang(zh) .brand-title,
@@ -279,9 +292,10 @@ textarea {
 
 .login-brand-subtitle {
   color: var(--accent);
-  font-size: clamp(1rem, 2.2vw, 1.25rem);
+  font-family: "Inter", sans-serif;
+  font-size: clamp(1.15rem, 2.5vw, 1.45rem);
   font-weight: 600;
-  letter-spacing: 0.01em;
+  letter-spacing: 0.02em;
 }
 
 .login-card form,
