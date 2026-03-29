@@ -154,9 +154,11 @@ function toBase64(value: string) {
 }
 
 function buildEventInviteAttachment({
+  locale,
   ticket,
   event,
 }: {
+  locale: Locale;
   ticket: TicketEventEmailInput["ticket"];
   event: TicketEventEmailInput["event"];
 }): MailAttachment {
@@ -165,14 +167,32 @@ function buildEventInviteAttachment({
   const nowStamp = formatIcsDateTime(new Date());
   const startStamp = formatIcsDateTime(event.scheduledFor);
   const endStamp = formatIcsDateTime(new Date(event.scheduledFor.getTime() + 60 * 60 * 1000));
-  const description = [
-    `${ticket.ticketNumber} · ${ticket.title}`,
-    `Workspace: ${ticket.workspaceName}`,
-    event.notes ? `Notes: ${event.notes}` : "",
-    `Open: ${url}`,
-  ]
-    .filter(Boolean)
-    .join("\n");
+  const description =
+    locale === "EN"
+      ? [
+          `Ticket: ${ticket.ticketNumber}`,
+          `Title: ${ticket.title}`,
+          `Event: ${event.title}`,
+          `Workspace: ${ticket.workspaceName}`,
+          event.notes ? `Notes: ${event.notes}` : "",
+          `Open: ${url}`,
+        ]
+          .filter(Boolean)
+          .join("\n")
+      : [
+          `工单：${ticket.ticketNumber}`,
+          `标题：${ticket.title}`,
+          `事件：${event.title}`,
+          `工作区：${ticket.workspaceName}`,
+          event.notes ? `备注：${event.notes}` : "",
+          `查看工单：${url}`,
+        ]
+          .filter(Boolean)
+          .join("\n");
+  const summary =
+    locale === "EN"
+      ? `${ticket.ticketNumber} · ${ticket.title} · ${event.title}`
+      : `${ticket.ticketNumber} · ${ticket.title} · ${event.title}`;
 
   const ics = [
     "BEGIN:VCALENDAR",
@@ -185,7 +205,7 @@ function buildEventInviteAttachment({
     `DTSTAMP:${nowStamp}`,
     `DTSTART:${startStamp}`,
     `DTEND:${endStamp}`,
-    `SUMMARY:${escapeIcsText(`${ticket.ticketNumber} ${event.title}`)}`,
+    `SUMMARY:${escapeIcsText(summary)}`,
     `DESCRIPTION:${escapeIcsText(description)}`,
     `URL:${escapeIcsText(url)}`,
     "END:VEVENT",
@@ -200,8 +220,10 @@ function buildEventInviteAttachment({
 }
 
 function buildDueDateInviteAttachment({
+  locale,
   ticket,
 }: {
+  locale: Locale;
   ticket: { id: string; ticketNumber: string; title: string; workspaceName: string; dueDate: Date };
 }): MailAttachment {
   const url = `${getBaseUrl()}/tickets/${ticket.id}`;
@@ -210,11 +232,26 @@ function buildDueDateInviteAttachment({
   const startDate = formatIcsDateOnly(ticket.dueDate);
   const nextDay = new Date(ticket.dueDate.getTime() + 24 * 60 * 60 * 1000);
   const endDate = formatIcsDateOnly(nextDay);
-  const description = [
-    `${ticket.ticketNumber} · ${ticket.title}`,
-    `Workspace: ${ticket.workspaceName}`,
-    `Open: ${url}`,
-  ].join("\n");
+  const description =
+    locale === "EN"
+      ? [
+          `Ticket: ${ticket.ticketNumber}`,
+          `Title: ${ticket.title}`,
+          `Due date: ${formatCalendarDate(ticket.dueDate, locale)}`,
+          `Workspace: ${ticket.workspaceName}`,
+          `Open: ${url}`,
+        ].join("\n")
+      : [
+          `工单：${ticket.ticketNumber}`,
+          `标题：${ticket.title}`,
+          `截止日期：${formatCalendarDate(ticket.dueDate, locale)}`,
+          `工作区：${ticket.workspaceName}`,
+          `查看工单：${url}`,
+        ].join("\n");
+  const summary =
+    locale === "EN"
+      ? `${ticket.ticketNumber} · ${ticket.title} · Due date`
+      : `${ticket.ticketNumber} · ${ticket.title} · 截止日期`;
 
   const ics = [
     "BEGIN:VCALENDAR",
@@ -227,7 +264,7 @@ function buildDueDateInviteAttachment({
     `DTSTAMP:${nowStamp}`,
     `DTSTART;VALUE=DATE:${startDate}`,
     `DTEND;VALUE=DATE:${endDate}`,
-    `SUMMARY:${escapeIcsText(`${ticket.ticketNumber} due date`)}`,
+    `SUMMARY:${escapeIcsText(summary)}`,
     `DESCRIPTION:${escapeIcsText(description)}`,
     `URL:${escapeIcsText(url)}`,
     "END:VEVENT",
@@ -786,6 +823,7 @@ export async function sendTicketEmail(input: TicketEmailInput) {
   const attachments =
     input.kind === "created" && input.attachDueDateInvite && input.ticket.dueDate
       ? [buildDueDateInviteAttachment({
+          locale: input.recipient.locale,
           ticket: {
             id: input.ticket.id,
             ticketNumber: input.ticket.ticketNumber,
@@ -803,6 +841,7 @@ export async function sendTicketEventEmail(input: TicketEventEmailInput) {
   const attachments =
     input.kind === "created" && input.attachCalendarInvite
       ? [buildEventInviteAttachment({
+          locale: input.recipient.locale,
           ticket: input.ticket,
           event: input.event,
         })]
@@ -812,13 +851,14 @@ export async function sendTicketEventEmail(input: TicketEventEmailInput) {
 
 export async function sendTicketDueDateReminderEmail(input: TicketDueDateReminderEmailInput) {
   const message = buildTicketDueDateReminderEmail(input);
-  const attachments = input.attachCalendarInvite ? [buildDueDateInviteAttachment({ ticket: input.ticket })] : undefined;
+  const attachments =
+    input.attachCalendarInvite ? [buildDueDateInviteAttachment({ locale: input.recipient.locale, ticket: input.ticket })] : undefined;
   return sendViaResend(input.recipient.email, message.subject, message.text, undefined, attachments);
 }
 
 export async function sendTicketDueDateInviteEmail(input: TicketDueDateInviteEmailInput) {
   const message = buildTicketDueDateInviteEmail(input);
-  const attachments = [buildDueDateInviteAttachment({ ticket: input.ticket })];
+  const attachments = [buildDueDateInviteAttachment({ locale: input.recipient.locale, ticket: input.ticket })];
   return sendViaResend(input.recipient.email, message.subject, message.text, undefined, attachments);
 }
 

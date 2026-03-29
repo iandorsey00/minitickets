@@ -1136,6 +1136,17 @@ textarea {
   gap: 0.5rem;
 }
 
+.recipient-checklist {
+  display: grid;
+  gap: 0.5rem;
+  padding: 0.4rem 0;
+}
+
+.recipient-checklist-row {
+  align-items: center;
+  gap: 0.65rem;
+}
+
 .due-date-value {
   transition: color 160ms ease;
 }

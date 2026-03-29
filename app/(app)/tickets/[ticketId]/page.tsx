@@ -367,22 +367,23 @@ export default async function TicketDetailPage({
                 {data.ticket.dueDate && !isClosed ? (
                   <form action={sendDueDateInviteAction} className="stack due-date-invite-form">
                     <input type="hidden" name="ticketId" value={data.ticket.id} />
-                    <label htmlFor="recipientIds-due-date" className="muted">
+                    <span className="muted">
                       {data.locale === "ZH_CN" ? "发送截止日期日历邀请给" : "Send due-date invite to"}
-                    </label>
-                    <select
-                      id="recipientIds-due-date"
-                      name="recipientIds"
-                      multiple
-                      size={Math.min(4, Math.max(2, data.workspacePeople.length || 2))}
-                      defaultValue={defaultDueDateInviteRecipientIds}
-                    >
+                    </span>
+                    <div className="recipient-checklist">
                       {data.workspacePeople.map((person) => (
-                        <option key={person.id} value={person.id}>
-                          {person.displayName}
-                        </option>
+                        <label key={person.id} htmlFor={`recipientIds-due-date-${person.id}`} className="checkbox-row recipient-checklist-row">
+                          <input
+                            id={`recipientIds-due-date-${person.id}`}
+                            type="checkbox"
+                            name="recipientIds"
+                            value={person.id}
+                            defaultChecked={defaultDueDateInviteRecipientIds.includes(person.id)}
+                          />
+                          <span>{person.displayName}</span>
+                        </label>
                       ))}
-                    </select>
+                    </div>
                     <div>
                       <button type="submit" className="ghost-button">
                         {data.locale === "ZH_CN" ? "发送截止日期日历邀请" : "Send due-date calendar invite"}
