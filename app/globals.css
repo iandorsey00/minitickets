@@ -36,11 +36,6 @@ html:lang(en) textarea {
   font-family: "Inter", sans-serif;
 }
 
-:lang(zh),
-:lang(zh-CN) {
-  font-variant-east-asian: proportional-width;
-}
-
 :lang(zh) .ticket-number,
 :lang(zh-CN) .ticket-number,
 :lang(zh) .brand-title,
@@ -273,6 +268,20 @@ textarea {
   font-weight: 800;
   letter-spacing: -0.09em;
   line-height: 0.9;
+}
+
+.login-brand {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+.login-brand-subtitle {
+  color: var(--accent);
+  font-size: clamp(1rem, 2.2vw, 1.25rem);
+  font-weight: 600;
+  letter-spacing: 0.01em;
 }
 
 .login-card form,
