@@ -5,6 +5,7 @@ import {
   resendUserInviteAction,
   toggleUserActiveAction,
 } from "@/lib/actions";
+import { MailIcon, PlusIcon, PowerIcon, SaveIcon, TrashIcon } from "@/components/icons";
 import { accentLabelMap, accentValues, localeValues } from "@/lib/constants";
 import { getAdminData } from "@/lib/data";
 import { Badge, PageHeader, Panel } from "@/components/ui";
@@ -78,7 +79,12 @@ export default async function AdminUsersPage() {
               </select>
             </div>
             <p className="muted">{t.admin.inviteHelp}</p>
-            <button type="submit">{t.common.create}</button>
+            <button type="submit">
+              <span className="button-content">
+                <PlusIcon className="button-icon" />
+                <span>{t.common.create}</span>
+              </span>
+            </button>
           </form>
         </Panel>
 
@@ -97,13 +103,19 @@ export default async function AdminUsersPage() {
                   <form action={resendUserInviteAction}>
                     <input type="hidden" name="userId" value={user.id} />
                     <button type="submit" className="ghost-button">
-                      {t.admin.inviteUser}
+                      <span className="button-content">
+                        <MailIcon className="button-icon" />
+                        <span>{t.admin.inviteUser}</span>
+                      </span>
                     </button>
                   </form>
                   <form action={toggleUserActiveAction}>
                     <input type="hidden" name="userId" value={user.id} />
                     <button type="submit" className="ghost-button">
-                      {user.isActive ? t.common.inactive : t.common.active}
+                      <span className="button-content">
+                        <PowerIcon className="button-icon" />
+                        <span>{user.isActive ? t.common.inactive : t.common.active}</span>
+                      </span>
                     </button>
                   </form>
                 </div>
@@ -138,7 +150,10 @@ export default async function AdminUsersPage() {
                             tone="neutral"
                           />
                           <button type="submit" className="ghost-button">
-                            {t.admin.removeMembership}
+                            <span className="button-content">
+                              <TrashIcon className="button-icon" />
+                              <span>{t.admin.removeMembership}</span>
+                            </span>
                           </button>
                         </form>
                       ))}
@@ -177,7 +192,10 @@ export default async function AdminUsersPage() {
                       user.memberships.some((membership) => membership.workspaceId === workspace.id),
                     )}
                   >
-                    {t.common.save}
+                    <span className="button-content">
+                      <SaveIcon className="button-icon" />
+                      <span>{t.common.save}</span>
+                    </span>
                   </button>
                 </form>
               </div>

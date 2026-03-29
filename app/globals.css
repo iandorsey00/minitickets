@@ -507,6 +507,7 @@ textarea {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: 0.55rem;
   min-height: 3.5rem;
   padding: 0.95rem 1.15rem;
   border-radius: 999px;
@@ -645,7 +646,7 @@ textarea {
 
 .panel-title {
   margin-bottom: 0.9rem;
-  font-size: 1.28rem;
+  font-size: 1.42rem;
   font-weight: 750;
 }
 
@@ -1023,12 +1024,26 @@ textarea {
   align-items: center;
   justify-content: space-between;
   gap: 0.9rem;
-  font-size: 1.08rem;
+  font-size: 1.18rem;
 }
 
 .detail-summary-main {
   flex: 0 0 auto;
   font-weight: 750;
+}
+
+.ticket-subsection-header {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.ticket-section-heading {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 1.42rem;
+  font-weight: 750;
+  letter-spacing: -0.04em;
 }
 
 .detail-summary-preview {

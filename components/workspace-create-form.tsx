@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 
+import { PlusIcon } from "@/components/icons";
 import { createWorkspaceAction } from "@/lib/actions";
 
 function slugifyWorkspaceName(value: string) {
@@ -82,7 +83,12 @@ export function WorkspaceCreateForm({
         <span>{paymentInfoEnabledLabel}</span>
       </label>
       <p className="muted">{paymentInfoHelp}</p>
-      <button type="submit">{createLabel}</button>
+      <button type="submit">
+        <span className="button-content">
+          <PlusIcon className="button-icon" />
+          <span>{createLabel}</span>
+        </span>
+      </button>
     </form>
   );
 }

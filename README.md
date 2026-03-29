@@ -97,6 +97,17 @@ Basic deployment flow:
 7. Run `bash scripts/deploy.sh`
 8. Enable TLS with your existing reverse-proxy flow
 
+What `bash scripts/deploy.sh` does:
+
+- reads `.env.deploy` if present for deploy-specific values such as service names and Node path
+- sources the production env file
+- restores any server-local `package-lock.json` drift before pulling
+- fast-forwards `main`
+- runs `npm ci`
+- runs `npm run db:push`
+- runs `npm run build`
+- restarts both the main app service and the reminders service
+
 Notes:
 
 - Current uploads are local-disk storage under the app data directory and are served only through authenticated routes, which is acceptable for a single-server deployment.

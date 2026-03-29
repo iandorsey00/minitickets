@@ -1,4 +1,5 @@
 import { deletePaymentMethodAction, toggleWorkspaceArchiveAction, updateWorkspaceAction } from "@/lib/actions";
+import { ArchiveIcon, SaveIcon, TrashIcon } from "@/components/icons";
 import { WorkspaceCreateForm } from "@/components/workspace-create-form";
 import { getAdminData } from "@/lib/data";
 import { Badge, PageHeader, Panel } from "@/components/ui";
@@ -56,7 +57,10 @@ export default async function AdminWorkspacesPage({
                     <form action={toggleWorkspaceArchiveAction}>
                       <input type="hidden" name="workspaceId" value={workspace.id} />
                       <button type="submit" className="ghost-button">
-                        {workspace.isArchived ? t.common.active : t.common.archived}
+                        <span className="button-content">
+                          <ArchiveIcon className="button-icon" />
+                          <span>{workspace.isArchived ? t.common.active : t.common.archived}</span>
+                        </span>
                       </button>
                     </form>
                   </td>
@@ -122,7 +126,12 @@ export default async function AdminWorkspacesPage({
                 </label>
                 <p className="muted">{t.common.paymentInfoHelp}</p>
                 <div>
-                  <button type="submit">{t.common.save}</button>
+                  <button type="submit">
+                    <span className="button-content">
+                      <SaveIcon className="button-icon" />
+                      <span>{t.common.save}</span>
+                    </span>
+                  </button>
                 </div>
               </form>
               <div className="helper-links">
@@ -135,7 +144,10 @@ export default async function AdminWorkspacesPage({
                         <input type="hidden" name="paymentMethodId" value={method.id} />
                         <span>{method.label} · {method.last4}</span>
                         <button type="submit" className="ghost-button">
-                          {t.admin.deletePaymentMethod}
+                          <span className="button-content">
+                            <TrashIcon className="button-icon" />
+                            <span>{t.admin.deletePaymentMethod}</span>
+                          </span>
                         </button>
                       </form>
                     ))}
@@ -144,7 +156,10 @@ export default async function AdminWorkspacesPage({
                 <form action={toggleWorkspaceArchiveAction}>
                   <input type="hidden" name="workspaceId" value={workspace.id} />
                   <button type="submit" className="ghost-button">
-                    {workspace.isArchived ? t.common.active : t.common.archived}
+                    <span className="button-content">
+                      <ArchiveIcon className="button-icon" />
+                      <span>{workspace.isArchived ? t.common.active : t.common.archived}</span>
+                    </span>
                   </button>
                 </form>
               </div>

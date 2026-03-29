@@ -80,6 +80,8 @@ MiniTickets is live as a bilingual, workspace-based ticketing system for persona
 - Local file uploads are acceptable for a single-server deployment, but longer-term durability may call for external object storage
 - Daily local backups are installed and should be paired with an off-droplet copy when practical
 - Reminder processing should run from the dedicated scheduled service rather than relying on user traffic
+- The standard droplet deploy path should be `bash scripts/deploy.sh` rather than a long manual command sequence
+- The deploy script now reads `.env.deploy`, restores server-local `package-lock.json` drift, and restarts both the app and reminders services
 - Attachment responses, including unauthorized and missing-file cases, should stay non-cacheable and non-indexable
 - Low-disk-space alerts should remain deduplicated and should reset only after free space recovers above the threshold
 

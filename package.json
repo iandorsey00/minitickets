@@ -1,6 +1,6 @@
 {
   "name": "minitickets",
-  "version": "1.9.7",
+  "version": "1.9.8",
   "description": "MiniTickets - lightweight bilingual workspace ticketing",
   "scripts": {
     "dev": "prisma generate && next dev",
@@ -38,6 +38,7 @@
     "bcryptjs": "^3.0.3",
     "better-sqlite3": "^12.8.0",
     "dotenv": "^17.3.1",
+    "lucide-react": "^1.7.0",
     "next": "^16.2.1",
     "nodemailer": "^7.0.6",
     "prisma": "^7.5.0",
@@ -46,8 +47,8 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@types/nodemailer": "^7.0.3",
     "@types/node": "^25.5.0",
+    "@types/nodemailer": "^7.0.3",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "eslint": "^9.39.4",

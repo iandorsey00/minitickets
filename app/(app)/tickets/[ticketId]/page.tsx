@@ -278,11 +278,16 @@ export default async function TicketDetailPage({
               <>
                 <form action={addCommentAction} className="stack ticket-subsection">
                   <input type="hidden" name="ticketId" value={data.ticket.id} />
-                  {ticketContext}
-                  <div className="field">
-                    <label htmlFor="body" className="label-with-icon">
+                  <div className="ticket-subsection-header">
+                    <div className="ticket-section-heading">
                       <CommentIcon className="inline-icon" />
                       <span>{t.tickets.addComment}</span>
+                    </div>
+                    {ticketContext}
+                  </div>
+                  <div className="field">
+                    <label htmlFor="body" className="sr-only">
+                      {t.tickets.addComment}
                     </label>
                     <textarea id="body" name="body" placeholder={t.tickets.commentPlaceholder} required />
                     <p className="caution-text">{t.tickets.confidentialityNotice}</p>
@@ -298,12 +303,17 @@ export default async function TicketDetailPage({
                 </form>
                 <form action={addAttachmentAction} className="stack ticket-subsection" encType="multipart/form-data">
                   <input type="hidden" name="ticketId" value={data.ticket.id} />
-                  {ticketContext}
-                  {uploadMessage ? <Badge label={uploadMessage.label} tone={uploadMessage.tone} /> : null}
-                  <div className="field">
-                    <label className="label-with-icon">
+                  <div className="ticket-subsection-header">
+                    <div className="ticket-section-heading">
                       <UploadIcon className="inline-icon" />
                       <span>{t.common.uploadFile}</span>
+                    </div>
+                    {ticketContext}
+                  </div>
+                  {uploadMessage ? <Badge label={uploadMessage.label} tone={uploadMessage.tone} /> : null}
+                  <div className="field">
+                    <label htmlFor="file" className="sr-only">
+                      {t.common.uploadFile}
                     </label>
                     <FilePicker
                       name="file"

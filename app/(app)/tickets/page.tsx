@@ -71,10 +71,8 @@ export default async function TicketsPage({
         subtitle={data.currentWorkspace?.name ?? t.common.workspace}
         action={
           <Link href="/tickets/new" className="floating-action inline-floating-action">
-            <span className="button-content">
-              <PencilIcon className="floating-action-icon" />
-              <span>{t.nav.createTicket}</span>
-            </span>
+            <PencilIcon className="floating-action-icon" />
+            <span>{t.nav.createTicket}</span>
           </Link>
         }
       />
