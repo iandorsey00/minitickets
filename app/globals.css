@@ -1158,19 +1158,41 @@ textarea {
 }
 
 .due-date-invite-form {
-  margin-top: 0.55rem;
+  margin-top: 0.65rem;
   gap: 0.5rem;
+}
+
+.due-date-invite-disclosure {
+  margin-top: 0.55rem;
+}
+
+.due-date-invite-summary {
+  cursor: pointer;
+  list-style: none;
+  font-size: 0.92rem;
+}
+
+.due-date-invite-summary::-webkit-details-marker {
+  display: none;
+}
+
+.due-date-invite-disclosure[open] .due-date-invite-summary {
+  color: var(--color-text);
 }
 
 .recipient-checklist {
   display: grid;
-  gap: 0.5rem;
-  padding: 0.4rem 0;
+  gap: 0.42rem;
+  padding: 0.15rem 0 0.25rem;
 }
 
 .recipient-checklist-row {
   align-items: center;
   gap: 0.65rem;
+}
+
+.due-date-invite-button {
+  width: 100%;
 }
 
 .due-date-value {

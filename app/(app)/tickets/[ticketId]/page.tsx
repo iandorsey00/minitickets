@@ -365,31 +365,36 @@ export default async function TicketDetailPage({
                 <span>{t.common.dueDate}</span>
                 <span>{formatDate(data.ticket.dueDate, data.localeCode, data.timeZone)}</span>
                 {data.ticket.dueDate && !isClosed ? (
-                  <form action={sendDueDateInviteAction} className="stack due-date-invite-form">
-                    <input type="hidden" name="ticketId" value={data.ticket.id} />
-                    <span className="muted">
-                      {data.locale === "ZH_CN" ? "发送截止日期日历邀请给" : "Send due-date invite to"}
-                    </span>
-                    <div className="recipient-checklist">
-                      {data.workspacePeople.map((person) => (
-                        <label key={person.id} htmlFor={`recipientIds-due-date-${person.id}`} className="checkbox-row recipient-checklist-row">
-                          <input
-                            id={`recipientIds-due-date-${person.id}`}
-                            type="checkbox"
-                            name="recipientIds"
-                            value={person.id}
-                            defaultChecked={defaultDueDateInviteRecipientIds.includes(person.id)}
-                          />
-                          <span>{person.displayName}</span>
-                        </label>
-                      ))}
-                    </div>
-                    <div>
-                      <button type="submit" className="ghost-button">
-                        {data.locale === "ZH_CN" ? "发送截止日期日历邀请" : "Send due-date calendar invite"}
-                      </button>
-                    </div>
-                  </form>
+                  <details className="due-date-invite-disclosure">
+                    <summary className="muted due-date-invite-summary">
+                      {data.locale === "ZH_CN" ? "发送截止日期日历邀请" : "Send due-date calendar invite"}
+                    </summary>
+                    <form action={sendDueDateInviteAction} className="stack due-date-invite-form">
+                      <input type="hidden" name="ticketId" value={data.ticket.id} />
+                      <span className="muted">
+                        {data.locale === "ZH_CN" ? "收件人" : "Recipients"}
+                      </span>
+                      <div className="recipient-checklist">
+                        {data.workspacePeople.map((person) => (
+                          <label key={person.id} htmlFor={`recipientIds-due-date-${person.id}`} className="checkbox-row recipient-checklist-row">
+                            <input
+                              id={`recipientIds-due-date-${person.id}`}
+                              type="checkbox"
+                              name="recipientIds"
+                              value={person.id}
+                              defaultChecked={defaultDueDateInviteRecipientIds.includes(person.id)}
+                            />
+                            <span>{person.displayName}</span>
+                          </label>
+                        ))}
+                      </div>
+                      <div>
+                        <button type="submit" className="ghost-button due-date-invite-button">
+                          {data.locale === "ZH_CN" ? "发送邀请" : "Send invite"}
+                        </button>
+                      </div>
+                    </form>
+                  </details>
                 ) : null}
               </div>
               <div className="meta-item">
