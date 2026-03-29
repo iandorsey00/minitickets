@@ -32,6 +32,7 @@ import {
   sendLoginCodeEmail,
   sendPasswordSetupEmail,
   sendTicketEmail,
+  sendTicketDueDateInviteEmail,
   sendTicketEventEmail,
   sendWelcomeEmail,
 } from "@/lib/email";
@@ -113,6 +114,11 @@ const verifyLoginCodeSchema = z.object({
 
 const reopenTicketSchema = z.object({
   ticketId: z.string().min(1),
+});
+
+const sendDueDateInviteSchema = z.object({
+  ticketId: z.string().min(1),
+  recipientIds: z.array(z.string().min(1)).min(1),
 });
 
 function uniqueRecipients<T extends { id: string }>(items: T[]) {
@@ -1479,6 +1485,102 @@ export async function addAttachmentAction(formData: FormData) {
   revalidatePath(`/tickets/${ticket.id}`);
   revalidatePath("/dashboard");
   redirect(`/tickets/${ticket.id}?upload=success&saved=1`);
+}
+
+export async function sendDueDateInviteAction(formData: FormData) {
+  const user = await requireUser();
+  const parsed = sendDueDateInviteSchema.safeParse({
+    ticketId: formData.get("ticketId"),
+    recipientIds: formData.getAll("recipientIds").map((value) => String(value)),
+  });
+
+  if (!parsed.success) {
+    redirect(`/tickets/${String(formData.get("ticketId") ?? "")}`);
+  }
+
+  const ticket = await prisma.ticket.findUnique({
+    where: { id: parsed.data.ticketId },
+    include: {
+      workspace: true,
+      status: true,
+    },
+  });
+
+  if (!ticket) {
+    redirect("/tickets");
+  }
+
+  const membership = await prisma.workspaceMembership.findFirst({
+    where: { userId: user.id, workspaceId: ticket.workspaceId },
+  });
+
+  if (!membership && user.role !== UserRole.ADMIN) {
+    redirect("/tickets");
+  }
+
+  if (!ticket.dueDate) {
+    redirect(`/tickets/${ticket.id}`);
+  }
+
+  const recipients = await prisma.user.findMany({
+    where: {
+      id: { in: parsed.data.recipientIds },
+      isActive: true,
+      OR: [
+        {
+          memberships: {
+            some: {
+              workspaceId: ticket.workspaceId,
+            },
+          },
+        },
+        {
+          role: UserRole.ADMIN,
+        },
+      ],
+    },
+    orderBy: { displayName: "asc" },
+  });
+
+  for (const recipient of recipients) {
+    try {
+      await sendTicketDueDateInviteEmail({
+        recipient: {
+          email: recipient.email,
+          displayName: recipient.displayName,
+          locale: recipient.locale,
+          timeZone: recipient.timeZone,
+        },
+        ticket: {
+          id: ticket.id,
+          ticketNumber: ticket.ticketNumber,
+          title: ticket.title,
+          workspaceName: ticket.workspace.name,
+          dueDate: ticket.dueDate,
+        },
+      });
+    } catch (error) {
+      console.error("Failed to send due-date invite email", error);
+    }
+  }
+
+  await prisma.ticketActivity.create({
+    data: {
+      ticketId: ticket.id,
+      actorUserId: user.id,
+      eventType: "ticket.due_date_invite_sent",
+      messageZh: "已发送截止日期日历邀请。",
+      messageEn: "Sent due-date calendar invite.",
+      metadata: {
+        recipientIds: recipients.map((recipient) => recipient.id),
+      },
+    },
+  });
+
+  revalidatePath(`/tickets/${ticket.id}`);
+  revalidatePath("/tickets");
+  revalidatePath("/dashboard");
+  redirect(`/tickets/${ticket.id}?saved=1`);
 }
 
 export async function updateSettingsAction(formData: FormData) {

@@ -130,6 +130,7 @@ MiniTickets is a bilingual, multi-workspace ticketing product for personal and s
   - attachments
   - events and reminders
   - parent/child relationships
+  - deliberate due-date calendar-invite actions when a due date exists
 - Editable sections should repeat enough ticket identity context to reduce accidental edits on the wrong record
 - Less-frequent sections should collapse cleanly
 - Collapsed sections should still hint at their contents
@@ -205,6 +206,7 @@ MiniTickets is a bilingual, multi-workspace ticketing product for personal and s
   - timed event emails may include a standard calendar attachment
   - due-date-related emails may include an all-day calendar attachment
   - reminder emails should stay lighter than creation/confirmation emails unless the user explicitly opts in
+  - manual due-date invite actions should let the sender choose recipients instead of broadcasting by default
 - Browser notifications are helpful, but should remain secondary to durable in-product and email channels
 
 ## Product defaults

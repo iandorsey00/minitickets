@@ -78,6 +78,17 @@ type TicketDueDateReminderEmailInput = {
   attachCalendarInvite?: boolean;
 };
 
+type TicketDueDateInviteEmailInput = {
+  recipient: MailRecipient;
+  ticket: {
+    id: string;
+    ticketNumber: string;
+    title: string;
+    workspaceName: string;
+    dueDate: Date;
+  };
+};
+
 type DiskSpaceAlertEmailInput = {
   recipient: MailRecipient;
   freePercent: number;
@@ -692,6 +703,39 @@ function buildTicketDueDateReminderEmail({ recipient, ticket }: TicketDueDateRem
   };
 }
 
+function buildTicketDueDateInviteEmail({ recipient, ticket }: TicketDueDateInviteEmailInput) {
+  const ticketUrl = `${getBaseUrl()}/tickets/${ticket.id}`;
+  const dueDateText = formatCalendarDate(ticket.dueDate, recipient.locale);
+
+  if (recipient.locale === "EN") {
+    return {
+      subject: `Calendar invite: ${ticket.ticketNumber} due date`,
+      text: [
+        `Hi ${recipient.displayName},`,
+        "",
+        `Here is the calendar invite for the due date on ${ticket.ticketNumber}.`,
+        `Title: ${ticket.title}`,
+        `Due date: ${dueDateText}`,
+        `Workspace: ${ticket.workspaceName}`,
+        `Open: ${ticketUrl}`,
+      ].join("\n"),
+    };
+  }
+
+  return {
+    subject: `日历邀请：${ticket.ticketNumber} 截止日期`,
+    text: [
+      `${recipient.displayName}，你好：`,
+      "",
+      `这是工单 ${ticket.ticketNumber} 的截止日期日历邀请。`,
+      `标题：${ticket.title}`,
+      `截止日期：${dueDateText}`,
+      `工作区：${ticket.workspaceName}`,
+      `查看工单：${ticketUrl}`,
+    ].join("\n"),
+  };
+}
+
 async function sendViaResend(to: string, subject: string, text: string, html?: string, attachments?: MailAttachment[]) {
   const apiKey = getResendApiKey();
   if (!apiKey) {
@@ -769,6 +813,12 @@ export async function sendTicketEventEmail(input: TicketEventEmailInput) {
 export async function sendTicketDueDateReminderEmail(input: TicketDueDateReminderEmailInput) {
   const message = buildTicketDueDateReminderEmail(input);
   const attachments = input.attachCalendarInvite ? [buildDueDateInviteAttachment({ ticket: input.ticket })] : undefined;
+  return sendViaResend(input.recipient.email, message.subject, message.text, undefined, attachments);
+}
+
+export async function sendTicketDueDateInviteEmail(input: TicketDueDateInviteEmailInput) {
+  const message = buildTicketDueDateInviteEmail(input);
+  const attachments = [buildDueDateInviteAttachment({ ticket: input.ticket })];
   return sendViaResend(input.recipient.email, message.subject, message.text, undefined, attachments);
 }
 

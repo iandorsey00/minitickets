@@ -2,7 +2,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 
-import { addAttachmentAction, addCommentAction, createTicketEventAction, deleteTicketEventAction, reopenTicketAction, updateTicketAction } from "@/lib/actions";
+import { addAttachmentAction, addCommentAction, createTicketEventAction, deleteTicketEventAction, reopenTicketAction, sendDueDateInviteAction, updateTicketAction } from "@/lib/actions";
 import { getTicketDetail } from "@/lib/data";
 import { formatDate, formatDateTime, formatFileSize, localizeDefinition } from "@/lib/format";
 import { formatReminderOffsetLabel } from "@/lib/reminder-labels";
@@ -110,6 +110,9 @@ export default async function TicketDetailPage({
     </div>
   );
   const selectedPaymentMethodIds = new Set(data.ticket.paymentMethods.map((item) => item.paymentMethodId));
+  const defaultDueDateInviteRecipientIds = Array.from(
+    new Set([data.ticket.requester.id, data.ticket.assignee?.id].filter((value): value is string => Boolean(value))),
+  );
   const showEventsOpenByDefault = data.ticket.events.length > 0;
   const showChildrenOpenByDefault = data.ticket.childTickets.length > 0 || Boolean(data.ticket.parentTicket);
   const descriptionPreview = data.ticket.description ? data.ticket.description.replace(/\s+/g, " ").slice(0, 80) : "";
@@ -361,6 +364,32 @@ export default async function TicketDetailPage({
               <div className="meta-item">
                 <span>{t.common.dueDate}</span>
                 <span>{formatDate(data.ticket.dueDate, data.localeCode, data.timeZone)}</span>
+                {data.ticket.dueDate && !isClosed ? (
+                  <form action={sendDueDateInviteAction} className="stack due-date-invite-form">
+                    <input type="hidden" name="ticketId" value={data.ticket.id} />
+                    <label htmlFor="recipientIds-due-date" className="muted">
+                      {data.locale === "ZH_CN" ? "发送截止日期日历邀请给" : "Send due-date invite to"}
+                    </label>
+                    <select
+                      id="recipientIds-due-date"
+                      name="recipientIds"
+                      multiple
+                      size={Math.min(4, Math.max(2, data.workspacePeople.length || 2))}
+                      defaultValue={defaultDueDateInviteRecipientIds}
+                    >
+                      {data.workspacePeople.map((person) => (
+                        <option key={person.id} value={person.id}>
+                          {person.displayName}
+                        </option>
+                      ))}
+                    </select>
+                    <div>
+                      <button type="submit" className="ghost-button">
+                        {data.locale === "ZH_CN" ? "发送截止日期日历邀请" : "Send due-date calendar invite"}
+                      </button>
+                    </div>
+                  </form>
+                ) : null}
               </div>
               <div className="meta-item">
                 <span>{t.common.parentTicket}</span>

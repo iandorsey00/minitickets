@@ -1131,6 +1131,11 @@ textarea {
   color: var(--color-accent);
 }
 
+.due-date-invite-form {
+  margin-top: 0.55rem;
+  gap: 0.5rem;
+}
+
 .due-date-value {
   transition: color 160ms ease;
 }
