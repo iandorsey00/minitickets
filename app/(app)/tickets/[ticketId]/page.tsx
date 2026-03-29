@@ -103,8 +103,8 @@ export default async function TicketDetailPage({
   const ticketContext = (
     <div className="edit-context">
       <div className="edit-context-copy">
-        <strong>{data.ticket.ticketNumber}</strong>
-        <span>{data.ticket.title}</span>
+        <strong>{data.ticket.title}</strong>
+        <span>{data.ticket.ticketNumber}</span>
       </div>
       <Badge label={localizeDefinition(data.ticket.status, data.locale)} tone="accent" />
     </div>
@@ -617,10 +617,40 @@ export default async function TicketDetailPage({
               <span className="detail-summary-preview">{childrenPreview}</span>
             </summary>
             <div className="disclosure-body">
+              {data.ticket.parentTicket ? (
+                <div className="ticket-subsection">
+                  <div className="relationship-section-label">{t.common.parentTicket}</div>
+                  <div className="meta-pair">
+                    <Link href={`/tickets/${data.ticket.parentTicket.id}`} className="ticket-parent-link">
+                      <span className="ticket-number">{data.ticket.parentTicket.ticketNumber}</span>
+                      <strong>{data.ticket.parentTicket.title}</strong>
+                    </Link>
+                  </div>
+                </div>
+              ) : null}
+              {data.ticket.childTickets.length ? (
+                <div className="ticket-subsection">
+                  <div className="relationship-section-label">{t.common.childTickets}</div>
+                  <div className="list">
+                    {data.ticket.childTickets.map((child) => (
+                      <Link key={child.id} href={`/tickets/${child.id}`} className="list-row">
+                        <div>
+                          <div className="ticket-number">{child.ticketNumber}</div>
+                          <strong>{child.title}</strong>
+                        </div>
+                        <Badge label={localizeDefinition(child.status, data.locale)} tone="accent" />
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <EmptyState title={t.common.childTickets} body={t.tickets.childrenEmpty} />
+              )}
               {!isClosed ? (
                 <form action={updateTicketAction} className="stack ticket-subsection">
                   <input type="hidden" name="ticketId" value={data.ticket.id} />
                   {ticketContext}
+                  <div className="relationship-section-label">{t.common.parentTicket}</div>
                   <div className="field">
                     <label htmlFor="parentTicketId-inline">
                       {t.common.parentTicket} <span className="muted">({t.common.optional})</span>
@@ -640,32 +670,6 @@ export default async function TicketDetailPage({
                   </div>
                 </form>
               ) : null}
-              {data.ticket.parentTicket ? (
-                <div className="ticket-subsection">
-                  <div className="meta-pair">
-                    <span>{t.common.parentTicket}</span>
-                    <Link href={`/tickets/${data.ticket.parentTicket.id}`} className="ticket-parent-link">
-                      <span className="ticket-number">{data.ticket.parentTicket.ticketNumber}</span>
-                      <strong>{data.ticket.parentTicket.title}</strong>
-                    </Link>
-                  </div>
-                </div>
-              ) : null}
-              {data.ticket.childTickets.length ? (
-                <div className="list">
-                  {data.ticket.childTickets.map((child) => (
-                    <Link key={child.id} href={`/tickets/${child.id}`} className="list-row">
-                      <div>
-                        <div className="ticket-number">{child.ticketNumber}</div>
-                        <strong>{child.title}</strong>
-                      </div>
-                      <Badge label={localizeDefinition(child.status, data.locale)} tone="accent" />
-                    </Link>
-                  ))}
-                </div>
-              ) : (
-                <EmptyState title={t.common.childTickets} body={t.tickets.childrenEmpty} />
-              )}
             </div>
           </details>
         </div>

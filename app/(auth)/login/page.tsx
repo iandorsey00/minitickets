@@ -33,7 +33,7 @@ export default async function LoginPage({
         <section className="hero-card">
           <span className="login-brand">
             <span className="subtitle-only">{dictionary.appName}</span>
-            {preferences.locale === "ZH_CN" ? <span className="login-brand-subtitle">{dictionary.appSubtitle}</span> : null}
+            {preferences.locale === "ZH_CN" ? <span className="login-brand-subtitle" lang="en">{dictionary.appSubtitle}</span> : null}
           </span>
         </section>
 

@@ -292,7 +292,8 @@ textarea {
 
 .login-brand-subtitle {
   color: var(--accent);
-  font-family: "Inter", sans-serif;
+  font-family: "Inter", sans-serif !important;
+  font-variant-east-asian: normal;
   font-size: clamp(1.15rem, 2.5vw, 1.45rem);
   font-weight: 600;
   letter-spacing: 0.02em;
@@ -644,8 +645,8 @@ textarea {
 
 .panel-title {
   margin-bottom: 0.9rem;
-  font-size: 1.16rem;
-  font-weight: 700;
+  font-size: 1.28rem;
+  font-weight: 750;
 }
 
 .filter-panel {
@@ -1000,14 +1001,15 @@ textarea {
 }
 
 .edit-context-copy strong {
-  font-size: 0.95rem;
+  font-size: 1.15rem;
+  line-height: 1.25;
 }
 
 .edit-context-copy span {
   color: var(--color-muted);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  font-size: 0.92rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
 }
 
 .detail-disclosure {
@@ -1021,10 +1023,12 @@ textarea {
   align-items: center;
   justify-content: space-between;
   gap: 0.9rem;
+  font-size: 1.08rem;
 }
 
 .detail-summary-main {
   flex: 0 0 auto;
+  font-weight: 750;
 }
 
 .detail-summary-preview {
@@ -1094,6 +1098,13 @@ textarea {
   display: flex;
   gap: 1rem;
   margin-top: 1rem;
+}
+
+.relationship-section-label {
+  color: var(--color-muted);
+  font-size: 0.9rem;
+  font-weight: 700;
+  margin-bottom: 0.75rem;
 }
 
 .admin-user-row {

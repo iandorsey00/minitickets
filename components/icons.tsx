@@ -9,7 +9,7 @@ function IconBase({
 }: IconProps & { children: React.ReactNode; viewBox?: string }) {
   return (
     <span className={className} aria-hidden="true">
-      <svg viewBox={viewBox} focusable="false">
+      <svg viewBox={viewBox} focusable="false" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
         {children}
       </svg>
     </span>
@@ -19,10 +19,9 @@ function IconBase({
 export function TicketIcon({ className }: IconProps) {
   return (
     <IconBase className={className}>
-      <path
-        d="M4 6.5A2.5 2.5 0 0 1 6.5 4h11A2.5 2.5 0 0 1 20 6.5v3a1.5 1.5 0 1 0 0 3v3a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 15.5v-3a1.5 1.5 0 1 0 0-3v-3Zm4 1a.75.75 0 0 0 0 1.5h5a.75.75 0 0 0 0-1.5H8Zm0 4a.75.75 0 0 0 0 1.5h8a.75.75 0 0 0 0-1.5H8Z"
-        fill="currentColor"
-      />
+      <path d="M5 8.25a2.25 2.25 0 0 1 2.25-2.25h9.5A2.25 2.25 0 0 1 19 8.25V10a1.75 1.75 0 1 0 0 3.5v1.75A2.25 2.25 0 0 1 16.75 17.5h-9.5A2.25 2.25 0 0 1 5 15.25V13.5a1.75 1.75 0 1 0 0-3.5V8.25Z" />
+      <path d="M9 9.5h5" />
+      <path d="M9 13h6" />
     </IconBase>
   );
 }
@@ -30,10 +29,9 @@ export function TicketIcon({ className }: IconProps) {
 export function DashboardIcon({ className }: IconProps) {
   return (
     <IconBase className={className}>
-      <path
-        d="M12 5a9 9 0 1 0 9 9h-2a7 7 0 1 1-2.05-4.95l-4.42 4.42a2.5 2.5 0 1 0 1.41 1.41l4.77-4.77A8.95 8.95 0 0 0 12 5Z"
-        fill="currentColor"
-      />
+      <path d="M4.5 16a7.5 7.5 0 1 1 15 0" />
+      <path d="m12 12 4-4" />
+      <circle cx="12" cy="12" r="1.25" />
     </IconBase>
   );
 }
@@ -41,10 +39,10 @@ export function DashboardIcon({ className }: IconProps) {
 export function WorkspaceIcon({ className }: IconProps) {
   return (
     <IconBase className={className}>
-      <path
-        d="M4 5.5A1.5 1.5 0 0 1 5.5 4h5A1.5 1.5 0 0 1 12 5.5v5A1.5 1.5 0 0 1 10.5 12h-5A1.5 1.5 0 0 1 4 10.5v-5Zm8 0A1.5 1.5 0 0 1 13.5 4h5A1.5 1.5 0 0 1 20 5.5v5a1.5 1.5 0 0 1-1.5 1.5h-5A1.5 1.5 0 0 1 12 10.5v-5Zm-8 8A1.5 1.5 0 0 1 5.5 12h5A1.5 1.5 0 0 1 12 13.5v5a1.5 1.5 0 0 1-1.5 1.5h-5A1.5 1.5 0 0 1 4 18.5v-5Zm8 0A1.5 1.5 0 0 1 13.5 12h5a1.5 1.5 0 0 1 1.5 1.5v5a1.5 1.5 0 0 1-1.5 1.5h-5a1.5 1.5 0 0 1-1.5-1.5v-5Z"
-        fill="currentColor"
-      />
+      <rect x="4.5" y="4.5" width="6.5" height="6.5" rx="1.25" />
+      <rect x="13" y="4.5" width="6.5" height="6.5" rx="1.25" />
+      <rect x="4.5" y="13" width="6.5" height="6.5" rx="1.25" />
+      <rect x="13" y="13" width="6.5" height="6.5" rx="1.25" />
     </IconBase>
   );
 }
@@ -52,10 +50,15 @@ export function WorkspaceIcon({ className }: IconProps) {
 export function AdminIcon({ className }: IconProps) {
   return (
     <IconBase className={className}>
-      <path
-        d="m13.93 3.5 1.14 2.3 2.54.37a1 1 0 0 1 .56 1.7l-1.84 1.79.43 2.53a1 1 0 0 1-1.45 1.05L13 12.05l-2.27 1.19a1 1 0 0 1-1.45-1.05l.43-2.53L7.87 7.87a1 1 0 0 1 .56-1.7l2.54-.37 1.14-2.3a1 1 0 0 1 1.82 0ZM6 14.5h12l1.4 4.2a1 1 0 0 1-.95 1.3H5.55a1 1 0 0 1-.95-1.3L6 14.5Z"
-        fill="currentColor"
-      />
+      <circle cx="12" cy="12" r="3" />
+      <path d="M12 4.5v2.25" />
+      <path d="M12 17.25v2.25" />
+      <path d="m6.7 6.7 1.6 1.6" />
+      <path d="m15.7 15.7 1.6 1.6" />
+      <path d="M4.5 12h2.25" />
+      <path d="M17.25 12h2.25" />
+      <path d="m6.7 17.3 1.6-1.6" />
+      <path d="m15.7 8.3 1.6-1.6" />
     </IconBase>
   );
 }
@@ -63,10 +66,16 @@ export function AdminIcon({ className }: IconProps) {
 export function SettingsIcon({ className }: IconProps) {
   return (
     <IconBase className={className}>
-      <path
-        d="m10.88 3.26.35 1.5a7.7 7.7 0 0 1 1.54 0l.35-1.5a1 1 0 0 1 1.2-.74l1.5.37a1 1 0 0 1 .72 1.23l-.43 1.46c.4.3.78.64 1.12 1.02l1.4-.54a1 1 0 0 1 1.3.56l.63 1.42a1 1 0 0 1-.5 1.31l-1.35.63c.06.5.06 1.01 0 1.52l1.35.63a1 1 0 0 1 .5 1.31l-.63 1.42a1 1 0 0 1-1.3.56l-1.4-.54c-.34.38-.72.72-1.12 1.02l.43 1.46a1 1 0 0 1-.72 1.23l-1.5.37a1 1 0 0 1-1.2-.74l-.35-1.5a7.7 7.7 0 0 1-1.54 0l-.35 1.5a1 1 0 0 1-1.2.74l-1.5-.37a1 1 0 0 1-.72-1.23l.43-1.46c-.4-.3-.78-.64-1.12-1.02l-1.4.54a1 1 0 0 1-1.3-.56l-.63-1.42a1 1 0 0 1 .5-1.31l1.35-.63a7.2 7.2 0 0 1 0-1.52L2.9 9.15a1 1 0 0 1-.5-1.31l.63-1.42a1 1 0 0 1 1.3-.56l1.4.54c.34-.38.72-.72 1.12-1.02l-.43-1.46a1 1 0 0 1 .72-1.23l1.5-.37a1 1 0 0 1 1.2.74ZM12 9.25A2.75 2.75 0 1 0 12 14.75 2.75 2.75 0 0 0 12 9.25Z"
-        fill="currentColor"
-      />
+      <circle cx="12" cy="12" r="2.5" />
+      <path d="M12 4.5v2" />
+      <path d="M12 17.5v2" />
+      <path d="m6.7 6.7 1.4 1.4" />
+      <path d="m15.9 15.9 1.4 1.4" />
+      <path d="M4.5 12h2" />
+      <path d="M17.5 12h2" />
+      <path d="m6.7 17.3 1.4-1.4" />
+      <path d="m15.9 8.1 1.4-1.4" />
+      <circle cx="12" cy="12" r="6" />
     </IconBase>
   );
 }
@@ -74,10 +83,7 @@ export function SettingsIcon({ className }: IconProps) {
 export function CommentIcon({ className }: IconProps) {
   return (
     <IconBase className={className}>
-      <path
-        d="M6.5 5A3.5 3.5 0 0 0 3 8.5v5A3.5 3.5 0 0 0 6.5 17H8l3.25 2.44a1 1 0 0 0 1.6-.8V17h4.65A3.5 3.5 0 0 0 21 13.5v-5A3.5 3.5 0 0 0 17.5 5h-11Z"
-        fill="currentColor"
-      />
+      <path d="M6.75 6.5h10.5A2.75 2.75 0 0 1 20 9.25v5.5a2.75 2.75 0 0 1-2.75 2.75H11l-3.75 2.75v-2.75H6.75A2.75 2.75 0 0 1 4 14.75v-5.5A2.75 2.75 0 0 1 6.75 6.5Z" />
     </IconBase>
   );
 }
@@ -85,10 +91,9 @@ export function CommentIcon({ className }: IconProps) {
 export function UploadIcon({ className }: IconProps) {
   return (
     <IconBase className={className}>
-      <path
-        d="M12 3.5a1 1 0 0 1 1 1V12l2.3-2.3a1 1 0 1 1 1.4 1.42l-4 3.96a1 1 0 0 1-1.4 0l-4-3.96A1 1 0 1 1 8.7 9.7L11 12V4.5a1 1 0 0 1 1-1ZM5 18a1 1 0 0 1 1-1h12a1 1 0 1 1 0 2H6a1 1 0 0 1-1-1Z"
-        fill="currentColor"
-      />
+      <path d="M12 15V5.75" />
+      <path d="m8.75 9 3.25-3.25L15.25 9" />
+      <path d="M5.5 18.25h13" />
     </IconBase>
   );
 }
@@ -96,10 +101,10 @@ export function UploadIcon({ className }: IconProps) {
 export function DocumentIcon({ className }: IconProps) {
   return (
     <IconBase className={className}>
-      <path
-        d="M7 3.75A1.75 1.75 0 0 1 8.75 2h5.9c.46 0 .9.18 1.23.51l3.61 3.61c.33.33.51.77.51 1.23v12.9A1.75 1.75 0 0 1 18.25 22h-9.5A1.75 1.75 0 0 1 7 20.25V3.75Zm8 .25v2.75c0 .69.56 1.25 1.25 1.25H19L15 4Zm-4.25 8a.75.75 0 0 0 0 1.5h5.5a.75.75 0 0 0 0-1.5h-5.5Zm0 3.5a.75.75 0 0 0 0 1.5h5.5a.75.75 0 0 0 0-1.5h-5.5Z"
-        fill="currentColor"
-      />
+      <path d="M8.5 3.75h6l4 4v12a1.75 1.75 0 0 1-1.75 1.75h-8.5A1.75 1.75 0 0 1 6.5 19.75v-14A2 2 0 0 1 8.5 3.75Z" />
+      <path d="M14.5 3.75v4h4" />
+      <path d="M9.5 12h5" />
+      <path d="M9.5 15h5" />
     </IconBase>
   );
 }
@@ -107,10 +112,8 @@ export function DocumentIcon({ className }: IconProps) {
 export function PencilIcon({ className }: IconProps) {
   return (
     <IconBase className={className}>
-      <path
-        d="m3 17.25 9.9-9.9 3.75 3.75-9.9 9.9H3v-3.75Zm14.71-10.04a1.003 1.003 0 0 0 0-1.42l-1.5-1.5a1.003 1.003 0 0 0-1.42 0l-1.17 1.17 3.75 3.75 1.34-1.34Z"
-        fill="currentColor"
-      />
+      <path d="m4.75 16.75 8.9-8.9 3.5 3.5-8.9 8.9-3.75.25.25-3.75Z" />
+      <path d="m12.9 8.6 2.5-2.5a1.75 1.75 0 0 1 2.47 0l.03.03a1.75 1.75 0 0 1 0 2.47l-2.5 2.5" />
     </IconBase>
   );
 }
@@ -118,10 +121,32 @@ export function PencilIcon({ className }: IconProps) {
 export function SaveIcon({ className }: IconProps) {
   return (
     <IconBase className={className}>
-      <path
-        d="M5.5 3h10.79a2 2 0 0 1 1.42.59l2.7 2.7A2 2 0 0 1 21 7.7V18.5A2.5 2.5 0 0 1 18.5 21h-13A2.5 2.5 0 0 1 3 18.5v-13A2.5 2.5 0 0 1 5.5 3Zm1 2A1.5 1.5 0 0 0 5 6.5v12A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5V8.33a1 1 0 0 0-.29-.7L16.37 5.3a1 1 0 0 0-.7-.29h-.17v3.74A1.25 1.25 0 0 1 14.25 10h-6.5A1.25 1.25 0 0 1 6.5 8.75V5Zm2 0v3h5V5h-5Zm-1 8.75A1.25 1.25 0 0 1 8.75 12.5h6.5a1.25 1.25 0 0 1 1.25 1.25v3.5a1.25 1.25 0 0 1-1.25 1.25h-6.5a1.25 1.25 0 0 1-1.25-1.25v-3.5Z"
-        fill="currentColor"
-      />
+      <path d="M5.75 4.5h10.5l2.25 2.25v11A1.75 1.75 0 0 1 16.75 19.5h-9.5A1.75 1.75 0 0 1 5.5 17.75V5.25A.75.75 0 0 1 6.25 4.5Z" />
+      <path d="M8 4.5v4h7v-4" />
+      <path d="M8.5 14.25h7" />
+    </IconBase>
+  );
+}
+
+export function ArchiveIcon({ className }: IconProps) {
+  return (
+    <IconBase className={className}>
+      <path d="M4.5 7.25h15" />
+      <path d="M6.25 5.25h11.5A1.25 1.25 0 0 1 19 6.5v1.25H5V6.5a1.25 1.25 0 0 1 1.25-1.25Z" />
+      <path d="M6.5 8.5v9a1.5 1.5 0 0 0 1.5 1.5h8a1.5 1.5 0 0 0 1.5-1.5v-9" />
+      <path d="M10 12h4" />
+    </IconBase>
+  );
+}
+
+export function TrashIcon({ className }: IconProps) {
+  return (
+    <IconBase className={className}>
+      <path d="M5.5 7.25h13" />
+      <path d="M9 7.25V5.5h6v1.75" />
+      <path d="M7.5 7.25 8.25 18A1.5 1.5 0 0 0 9.75 19.5h4.5A1.5 1.5 0 0 0 15.75 18l.75-10.75" />
+      <path d="M10 10.5v5.5" />
+      <path d="M14 10.5v5.5" />
     </IconBase>
   );
 }
