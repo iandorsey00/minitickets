@@ -38,11 +38,37 @@ function getDefaultEventSchedule() {
   };
 }
 
+function getDaysInMonth(year: number, month: number) {
+  return new Date(year, month, 0).getDate();
+}
+
 export function TicketEventForm({ action, ticketId, labels, reminderOptions }: TicketEventFormProps) {
   const [defaultSchedule] = useState(getDefaultEventSchedule);
-  const [scheduledDate, setScheduledDate] = useState(defaultSchedule.date);
+  const [scheduledYear, setScheduledYear] = useState(Number(defaultSchedule.date.slice(0, 4)));
+  const [scheduledMonth, setScheduledMonth] = useState(Number(defaultSchedule.date.slice(5, 7)));
+  const [scheduledDay, setScheduledDay] = useState(Number(defaultSchedule.date.slice(8, 10)));
   const [scheduledHour, setScheduledHour] = useState(defaultSchedule.hour);
   const [scheduledMinute, setScheduledMinute] = useState(defaultSchedule.minute);
+
+  const yearOptions = useMemo(() => {
+    const baseYear = Number(defaultSchedule.date.slice(0, 4));
+    return Array.from({ length: 6 }, (_, index) => baseYear - 1 + index);
+  }, [defaultSchedule.date]);
+
+  const dayOptions = useMemo(() => {
+    const totalDays = getDaysInMonth(scheduledYear, scheduledMonth);
+    return Array.from({ length: totalDays }, (_, index) => index + 1);
+  }, [scheduledYear, scheduledMonth]);
+
+  const safeScheduledDay = Math.min(scheduledDay, getDaysInMonth(scheduledYear, scheduledMonth));
+
+  const scheduledDate = useMemo(
+    () =>
+      `${String(scheduledYear).padStart(4, "0")}-${String(scheduledMonth).padStart(2, "0")}-${String(
+        safeScheduledDay,
+      ).padStart(2, "0")}`,
+    [safeScheduledDay, scheduledMonth, scheduledYear],
+  );
 
   const scheduledForValue = useMemo(
     () => {
@@ -68,15 +94,47 @@ export function TicketEventForm({ action, ticketId, labels, reminderOptions }: T
       <div className="field">
         <label htmlFor="event-scheduled-local">{labels.scheduledFor}</label>
         <div className="split-inputs">
-          <input
-            id="event-scheduled-local"
-            type="date"
-            value={scheduledDate}
-            onChange={(event) => {
-              setScheduledDate(event.target.value);
-            }}
-            required
-          />
+          <div className="split-date-inputs" id="event-scheduled-local">
+            <select
+              aria-label={`${labels.scheduledFor} year`}
+              value={String(scheduledYear)}
+              onChange={(event) => {
+                setScheduledYear(Number(event.target.value));
+              }}
+            >
+              {yearOptions.map((year) => (
+                <option key={year} value={String(year)}>
+                  {year}
+                </option>
+              ))}
+            </select>
+            <select
+              aria-label={`${labels.scheduledFor} month`}
+              value={String(scheduledMonth)}
+              onChange={(event) => {
+                setScheduledMonth(Number(event.target.value));
+              }}
+            >
+              {Array.from({ length: 12 }, (_, index) => index + 1).map((month) => (
+                <option key={month} value={String(month)}>
+                  {String(month).padStart(2, "0")}
+                </option>
+              ))}
+            </select>
+            <select
+              aria-label={`${labels.scheduledFor} day`}
+              value={String(safeScheduledDay)}
+              onChange={(event) => {
+                setScheduledDay(Number(event.target.value));
+              }}
+            >
+              {dayOptions.map((day) => (
+                <option key={day} value={String(day)}>
+                  {String(day).padStart(2, "0")}
+                </option>
+              ))}
+            </select>
+          </div>
           <div className="split-time-inputs">
             <select
               aria-label={`${labels.scheduledFor} hour`}

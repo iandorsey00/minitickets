@@ -845,6 +845,13 @@ textarea {
   gap: 0.85rem;
 }
 
+.split-date-inputs {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) repeat(2, minmax(0, 0.85fr));
+  gap: 0.55rem;
+  width: 100%;
+}
+
 .split-time-inputs {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
@@ -1603,13 +1610,14 @@ textarea {
     justify-items: start;
   }
 
-  .split-inputs > input[type="date"] {
-    width: min(100%, 15rem);
+  .split-date-inputs {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    width: min(100%, 18rem);
   }
 
   .split-time-inputs {
     grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
-    width: min(100%, 15rem);
+    width: min(100%, 18rem);
   }
 }
 
