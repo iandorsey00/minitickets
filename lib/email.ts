@@ -232,8 +232,8 @@ function renderEmailLayout({
 
   return `<!doctype html>
 <html lang="${locale === "EN" ? "en" : "zh-CN"}">
-  <body style="margin: 0; padding: 0; background: #f3f6fb; color: #101828;">
-    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background: #f3f6fb; padding: 24px 12px;">
+  <body style="margin: 0; padding: 0; background: transparent; color: #101828;">
+    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="padding: 24px 12px;">
       <tr>
         <td align="center">
           <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="max-width: 620px; border-collapse: collapse;">
