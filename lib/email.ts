@@ -243,7 +243,7 @@ function renderEmailLayout({
               </td>
             </tr>
             <tr>
-              <td style="background: #ffffff; border: 1px solid #e5e7eb; border-radius: 28px; padding: 28px 28px 24px; box-shadow: 0 12px 32px rgba(15, 23, 42, 0.06);">
+              <td style="background: #ffffff; border-radius: 28px; padding: 28px 28px 24px;">
                 <h1 style="margin: 0; font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 28px; line-height: 1.1; letter-spacing: -0.04em; color: #101828;">
                   ${escapeHtml(title)}
                 </h1>
