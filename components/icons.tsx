@@ -12,6 +12,7 @@ import {
   Plus,
   Save,
   Settings,
+  Share2,
   Shield,
   SquarePen,
   Ticket,
@@ -104,4 +105,8 @@ export function LogoutIcon({ className }: IconProps) {
 
 export function ChildTicketIcon({ className }: IconProps) {
   return <IconBase className={className} icon={FolderTree} />;
+}
+
+export function ShareIcon({ className }: IconProps) {
+  return <IconBase className={className} icon={Share2} />;
 }

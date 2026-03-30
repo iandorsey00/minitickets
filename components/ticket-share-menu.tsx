@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 
+import { ShareIcon } from "@/components/icons";
+
 type TicketShareMenuProps = {
   label: string;
   copiedLabel: string;
@@ -34,14 +36,7 @@ export function TicketShareMenu({
   return (
     <details className="share-menu">
       <summary className="ghost-button share-menu-trigger">
-        <span className="share-menu-icon" aria-hidden="true">
-          <svg viewBox="0 0 24 24" focusable="false">
-            <path
-              d="M15 8a3 3 0 1 0-2.82-4H12a3 3 0 0 0 .18 1.02l-5.4 3.15a3 3 0 0 0-1.96-.72 3 3 0 1 0 1.97 5.26l5.4 3.14A3 3 0 0 0 12 16a3 3 0 1 0 .18 1.02l-5.4-3.15c.14-.27.24-.56.29-.87h.01a3 3 0 0 0-.3-.87l5.4-3.15A3 3 0 0 0 15 8Z"
-              fill="currentColor"
-            />
-          </svg>
-        </span>
+        <ShareIcon className="share-menu-icon" />
         <span>{label}</span>
       </summary>
       <div className="share-menu-popover">
