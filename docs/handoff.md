@@ -37,6 +37,7 @@ MiniTickets is live as a bilingual, workspace-based ticketing system for persona
 - Payment information is workspace-controlled and defaults off
 - Saved workspace payment methods can be deleted from workspace management
 - Per-file uploads are capped at 30 MB and should return to the ticket cleanly after upload
+- Ticket-detail uploads support both click-to-choose and drag-and-drop
 - Ticket detail editing surfaces now repeat the ticket number, title, and current status to reduce wrong-ticket edits
 - The global shell includes a lightweight MIT-license footer
 

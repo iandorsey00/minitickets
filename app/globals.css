@@ -874,6 +874,19 @@ textarea {
   align-items: center;
   flex-wrap: wrap;
   gap: 0.75rem;
+  padding: 0.9rem 1rem;
+  border: 1px dashed color-mix(in srgb, var(--color-line) 88%, var(--accent) 12%);
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--color-panel-strong) 82%, transparent);
+  transition:
+    border-color 180ms ease,
+    background 180ms ease,
+    transform 180ms ease;
+}
+
+.file-picker.is-drag-active {
+  border-color: color-mix(in srgb, var(--accent) 56%, var(--color-line));
+  background: color-mix(in srgb, var(--accent-soft) 36%, var(--color-panel-strong) 64%);
 }
 
 .file-picker-button {
@@ -882,12 +895,23 @@ textarea {
   justify-content: center;
 }
 
+.file-picker-copy {
+  display: grid;
+  gap: 0.16rem;
+  min-width: 0;
+}
+
 .file-picker-name {
   color: var(--color-text);
 }
 
 .file-picker-name.is-empty {
   color: var(--color-muted);
+}
+
+.file-picker-hint {
+  color: var(--color-muted);
+  font-size: 0.88rem;
 }
 
 .accent-swatch-list {

@@ -138,6 +138,7 @@ MiniTickets is a bilingual, multi-workspace ticketing product for personal and s
 - Less-frequent sections should collapse cleanly
 - Collapsed sections should still hint at their contents
 - The primary action on this page should favor saving meaningful edits over one-off shortcut actions
+- Attachment upload on ticket detail should support both conventional file picking and direct drag-and-drop when the environment supports it
 
 ### Dashboard
 

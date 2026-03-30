@@ -320,6 +320,7 @@ export default async function TicketDetailPage({
                       name="file"
                       label={t.common.chooseFile}
                       emptyLabel={t.common.noFileSelected}
+                      dropLabel={t.common.dragAndDropFile}
                       required
                     />
                     <p className="warning-text">{t.common.uploadWarning}</p>
