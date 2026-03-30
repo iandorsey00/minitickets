@@ -10,7 +10,7 @@ import { defaultTicketEventReminderOffsets } from "@/lib/ticket-events";
 import { MAX_ATTACHMENT_SIZE_BYTES, canRenderInline, getTicketAttachmentUrl } from "@/lib/uploads";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { CommentIcon, DocumentIcon, UploadIcon } from "@/components/icons";
+import { ChildTicketIcon, CommentIcon, DocumentIcon, UploadIcon } from "@/components/icons";
 import { FilePicker } from "@/components/file-picker";
 import { Badge, EmptyState, PageHeader, Panel } from "@/components/ui";
 import { TicketEventForm } from "@/components/ticket-event-form";
@@ -100,6 +100,7 @@ export default async function TicketDetailPage({
   const savedMessage = query.saved === "1" ? { tone: "success" as const, label: t.common.savedChanges } : null;
   const closedMessage = query.closed === "1" ? { tone: "warning" as const, label: t.tickets.closedReadOnly } : null;
   const isClosed = data.ticket.status.key === "CLOSED";
+  const canCreateChildTicket = !isClosed && !data.ticket.parentTicketId;
   const ticketContext = (
     <div className="edit-context">
       <div className="edit-context-copy">
@@ -640,7 +641,20 @@ export default async function TicketDetailPage({
               ) : null}
               {data.ticket.childTickets.length ? (
                 <div className="ticket-subsection">
-                  <div className="relationship-section-label">{t.common.childTickets}</div>
+                  <div className="relationship-section-header">
+                    <div className="relationship-section-label">{t.common.childTickets}</div>
+                    {canCreateChildTicket ? (
+                      <Link
+                        href={`/tickets/new?workspaceId=${data.ticket.workspaceId}&parentTicketId=${data.ticket.id}`}
+                        className="ghost-button relationship-action-link"
+                      >
+                        <span className="button-content">
+                          <ChildTicketIcon className="button-icon" />
+                          <span>{t.tickets.createChildTicket}</span>
+                        </span>
+                      </Link>
+                    ) : null}
+                  </div>
                   <div className="list">
                     {data.ticket.childTickets.map((child) => (
                       <Link key={child.id} href={`/tickets/${child.id}`} className="list-row">
@@ -654,7 +668,23 @@ export default async function TicketDetailPage({
                   </div>
                 </div>
               ) : (
-                <EmptyState title={t.common.childTickets} body={t.tickets.childrenEmpty} />
+                <div className="ticket-subsection">
+                  {canCreateChildTicket ? (
+                    <div className="relationship-section-header">
+                      <div className="relationship-section-label">{t.common.childTickets}</div>
+                      <Link
+                        href={`/tickets/new?workspaceId=${data.ticket.workspaceId}&parentTicketId=${data.ticket.id}`}
+                        className="ghost-button relationship-action-link"
+                      >
+                        <span className="button-content">
+                          <ChildTicketIcon className="button-icon" />
+                          <span>{t.tickets.createChildTicket}</span>
+                        </span>
+                      </Link>
+                    </div>
+                  ) : null}
+                  <EmptyState title={t.common.childTickets} body={t.tickets.childrenEmpty} />
+                </div>
               )}
               {!isClosed ? (
                 <form action={updateTicketAction} className="stack ticket-subsection">

@@ -55,6 +55,7 @@ MiniTickets is a bilingual, multi-workspace ticketing product for personal and s
 - Parent/child relationships are intentionally shallow:
   - one child level is supported
   - status does not automatically propagate up or down
+  - child-ticket creation should be available from a top-level ticket detail page without forcing the user to reselect the parent manually
 
 ### Comments and activity
 
@@ -108,6 +109,7 @@ MiniTickets is a bilingual, multi-workspace ticketing product for personal and s
   - account actions
   - primary navigation
 - a lightweight product footer for ownership and license context
+- a minimal, high-contrast app/browser icon that reads clearly at small sizes
 - Workspace switching belongs in the shell, not as a separate primary destination
 
 ### Ticket list

@@ -21,6 +21,7 @@ MiniTickets is live as a bilingual, workspace-based ticketing system for persona
 - Ticket numbers use a global MiniTickets prefix plus a workspace prefix, for example `MTSR00001`
 - The create-ticket action label in Chinese is `提交工单`
 - Tickets can have a single parent level and many child tickets
+- Top-level tickets can start a child-ticket flow directly from ticket detail, with workspace and parent preselected
 - Ticket events support reminder offsets such as months, hours, or “at time”
 - Due dates trigger a 9 AM local reminder on the due date
 - Ticket assignment automatically moves a still-new ticket to `处理中 / In Progress`
@@ -43,6 +44,7 @@ MiniTickets is live as a bilingual, workspace-based ticketing system for persona
 
 - Chinese-first branding should prefer `轻量工单` in the main interface
 - Non-Latin brand contexts should show a smaller `MiniTickets` subtitle beneath the localized product name
+- The browser/app icon should remain a minimal black-square monogram with high-contrast white lettering rather than a decorative illustration
 - The current visual language should feel calmer, more modern, and more standardized across screens rather than page-by-page custom
 - Shared screens should prefer soft card surfaces, restrained shadows, and clearer visual grouping over bare divider-only layouts
 - Form controls should default to low-noise boxed fields unless a lighter treatment is clearly better for that workflow

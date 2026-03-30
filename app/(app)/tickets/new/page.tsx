@@ -5,7 +5,15 @@ import { PageHeader, Panel } from "@/components/ui";
 import { localizeDefinition } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
 
-export default async function NewTicketPage() {
+type NewTicketPageProps = {
+  searchParams?: Promise<{
+    workspaceId?: string;
+    parentTicketId?: string;
+  }>;
+};
+
+export default async function NewTicketPage({ searchParams }: NewTicketPageProps) {
+  const query = (await searchParams) ?? {};
   const [context, definitions, defaults] = await Promise.all([
     getViewerContext(),
     getDefinitions(),
@@ -59,6 +67,18 @@ export default async function NewTicketPage() {
     orderBy: { updatedAt: "desc" },
   });
   const inProgressStatus = definitions.statuses.find((item) => item.key === "IN_PROGRESS");
+  const requestedParentTicket = parentTickets.find((ticket) => ticket.id === query.parentTicketId) ?? null;
+  const defaultWorkspaceId =
+    (requestedParentTicket?.workspaceId &&
+    context.memberships.some((membership) => membership.workspace.id === requestedParentTicket.workspaceId)
+      ? requestedParentTicket.workspaceId
+      : null) ??
+    (query.workspaceId && context.memberships.some((membership) => membership.workspace.id === query.workspaceId)
+      ? query.workspaceId
+      : null) ??
+    context.currentWorkspace?.id ??
+    context.memberships[0]?.workspace.id ??
+    "";
 
   return (
     <>
@@ -97,8 +117,8 @@ export default async function NewTicketPage() {
           }))}
           parentTickets={parentTickets}
           defaults={{
-            workspaceId: context.currentWorkspace?.id ?? context.memberships[0]?.workspace.id ?? "",
-            parentTicketId: null,
+            workspaceId: defaultWorkspaceId,
+            parentTicketId: requestedParentTicket?.id ?? null,
             categoryId: defaults.categoryId,
             priorityId: defaults.priorityId,
             statusId: defaults.statusId,

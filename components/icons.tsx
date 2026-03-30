@@ -4,6 +4,7 @@ import {
   ArrowRightLeft,
   Building2,
   FileText,
+  FolderTree,
   LayoutDashboard,
   LogOut,
   Mail,
@@ -99,4 +100,8 @@ export function SwitchIcon({ className }: IconProps) {
 
 export function LogoutIcon({ className }: IconProps) {
   return <IconBase className={className} icon={LogOut} />;
+}
+
+export function ChildTicketIcon({ className }: IconProps) {
+  return <IconBase className={className} icon={FolderTree} />;
 }
