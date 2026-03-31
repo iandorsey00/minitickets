@@ -51,6 +51,7 @@ MiniTickets is live as a bilingual, workspace-based ticketing system for persona
 - Form controls should default to low-noise boxed fields unless a lighter treatment is clearly better for that workflow
 - Lucide is now the preferred icon system for consistency and MIT-friendly interoperability
 - The login page should stay visually close to the GeoCompare homepage, especially in scale, spacing, and calmness
+- On mobile Safari, the login card should preserve comfortable bottom padding beneath the primary `登入 / Sign in` button, including around browser bottom chrome and safe-area insets
 - Mobile usage is a primary scenario, not an afterthought
 - On mobile, the shell should collapse cleanly from the desktop sidebar into a compact top-of-page navigation/header flow without leaving dead space before content
 - The mobile topbar should stay readable and sticky without content sliding underneath it

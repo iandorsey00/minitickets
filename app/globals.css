@@ -1409,7 +1409,7 @@ textarea {
   .auth-card {
     justify-content: center;
     min-height: 100vh;
-    padding: 2rem 1rem 2.5rem;
+    padding: 2rem 1rem calc(3.25rem + env(safe-area-inset-bottom, 0px));
   }
 
   .hero-card {
@@ -1420,7 +1420,7 @@ textarea {
   .login-card {
     width: 100%;
     max-width: 440px;
-    padding-bottom: 0;
+    padding-bottom: calc(1.35rem + env(safe-area-inset-bottom, 0px));
   }
 
   .login-card h2 {
