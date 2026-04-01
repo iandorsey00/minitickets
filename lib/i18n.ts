@@ -148,7 +148,7 @@ const dictionaries = {
       createIntro: "快速记录一个请求，后续可以继续补充评论和状态。",
       confidentialityNotice: "轻量工单适合日常或中等敏感度事项；高度敏感的个人、财务或法律信息请改用更安全的渠道。",
       commentPlaceholder: "补充说明、处理进展或备注。",
-      commentLimitHint: "评论支持较长内容，但单条最多 10000 个字符。",
+      commentLimitHint: "单条最多 10000 个字符。",
       commentTooLong: "评论太长了。请缩短到 10000 个字符以内。",
       commentInvalid: "评论提交失败。请检查内容后重试。",
       addComment: "添加评论",
