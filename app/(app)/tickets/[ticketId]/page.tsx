@@ -298,8 +298,9 @@ export default async function TicketDetailPage({
                       {t.tickets.addComment}
                     </label>
                     <textarea id="body" name="body" placeholder={t.tickets.commentPlaceholder} required maxLength={10000} />
-                    <p className="caution-text">{t.tickets.confidentialityNotice}</p>
-                    <p className="muted">{t.tickets.commentLimitHint}</p>
+                    <p className="caution-text">
+                      {t.tickets.confidentialityNotice} <span className="muted">{t.tickets.commentLimitHint}</span>
+                    </p>
                   </div>
                   <div>
                     <button type="submit">

@@ -32,6 +32,7 @@ MiniTickets is live as a bilingual, workspace-based ticketing system for persona
 - Users can opt in to broad comment-email delivery; otherwise email is sent for targeted mentions by default
 - Ticket comments now support long-form notes up to 10000 characters and should return a clear validation message instead of silently failing when that limit is exceeded
 - The comment form should present the cautionary sensitivity note before the quieter character-limit note, preserving the existing yellow-over-gray visual hierarchy
+- The comment form guidance should stay compact when possible, including an inline yellow sensitivity warning followed by a quieter gray character-limit note in the same paragraph
 - Users can also opt in to receive `.ics` calendar attachments on:
   - event-created emails
   - due-date-related emails, including ticket-created emails when a due date exists
