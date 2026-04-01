@@ -45,6 +45,8 @@ import { fallbackTicketPrefixFromSlug, formatTicketNumber, normalizeTicketPrefix
 import { autoCloseResolvedTickets } from "@/lib/ticket-status";
 import { MAX_ATTACHMENT_SIZE_BYTES, getTicketAttachmentDiskPath, getTicketAttachmentUrl, getUploadsRoot } from "@/lib/uploads";
 
+const MAX_COMMENT_LENGTH = 10000;
+
 const loginSchema = z.object({
   email: z.email(),
   password: z.string().min(8),
@@ -69,7 +71,7 @@ const ticketSchema = z.object({
 
 const commentSchema = z.object({
   ticketId: z.string().min(1),
-  body: z.string().min(2).max(2000),
+  body: z.string().trim().min(2).max(MAX_COMMENT_LENGTH),
 });
 
 const attachmentSchema = z.object({
@@ -1269,13 +1271,20 @@ export async function deleteTicketEventAction(formData: FormData) {
 
 export async function addCommentAction(formData: FormData) {
   const user = await requireUser();
+  const rawTicketId = String(formData.get("ticketId") ?? "");
   const parsed = commentSchema.safeParse({
-    ticketId: formData.get("ticketId"),
+    ticketId: rawTicketId,
     body: formData.get("body"),
   });
 
   if (!parsed.success) {
-    redirect(`/tickets/${formData.get("ticketId")}`);
+    const bodyIssue = parsed.error.issues.find((issue) => issue.path[0] === "body");
+
+    if (bodyIssue?.code === "too_big") {
+      redirect(`/tickets/${rawTicketId}?comment=too_long`);
+    }
+
+    redirect(`/tickets/${rawTicketId}?comment=invalid`);
   }
 
   const ticket = await prisma.ticket.findUnique({

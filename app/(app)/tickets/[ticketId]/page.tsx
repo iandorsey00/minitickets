@@ -80,7 +80,7 @@ export default async function TicketDetailPage({
   searchParams,
 }: {
   params: Promise<{ ticketId: string }>;
-  searchParams: Promise<{ upload?: string; closed?: string; saved?: string }>;
+  searchParams: Promise<{ upload?: string; closed?: string; saved?: string; comment?: string }>;
 }) {
   const { ticketId } = await params;
   const query = await searchParams;
@@ -99,6 +99,12 @@ export default async function TicketDetailPage({
         : null;
   const savedMessage = query.saved === "1" ? { tone: "success" as const, label: t.common.savedChanges } : null;
   const closedMessage = query.closed === "1" ? { tone: "warning" as const, label: t.tickets.closedReadOnly } : null;
+  const commentMessage =
+    query.comment === "too_long"
+      ? { tone: "danger" as const, label: t.tickets.commentTooLong }
+      : query.comment === "invalid"
+        ? { tone: "danger" as const, label: t.tickets.commentInvalid }
+        : null;
   const isClosed = data.ticket.status.key === "CLOSED";
   const canCreateChildTicket = !isClosed && !data.ticket.parentTicketId;
   const ticketContext = (
@@ -286,11 +292,13 @@ export default async function TicketDetailPage({
                     </div>
                     {ticketContext}
                   </div>
+                  {commentMessage ? <Badge label={commentMessage.label} tone={commentMessage.tone} /> : null}
                   <div className="field">
                     <label htmlFor="body" className="sr-only">
                       {t.tickets.addComment}
                     </label>
-                    <textarea id="body" name="body" placeholder={t.tickets.commentPlaceholder} required />
+                    <textarea id="body" name="body" placeholder={t.tickets.commentPlaceholder} required maxLength={10000} />
+                    <p className="muted">{t.tickets.commentLimitHint}</p>
                     <p className="caution-text">{t.tickets.confidentialityNotice}</p>
                   </div>
                   <div>
