@@ -182,6 +182,7 @@ export type TicketFilters = {
   assigneeId?: string;
   requesterId?: string;
   q?: string;
+  openOnly?: string;
 };
 
 export async function getTicketsData(filters: TicketFilters) {
@@ -195,6 +196,14 @@ export async function getTicketsData(filters: TicketFilters) {
   const where: Prisma.TicketWhereInput = {
     workspaceId: { in: workspaceIds },
     statusId: filters.statusId || undefined,
+    status:
+      filters.statusId || filters.openOnly === "0"
+        ? undefined
+        : {
+            key: {
+              notIn: ["CLOSED", "CANCELLED"],
+            },
+          },
     priorityId: filters.priorityId || undefined,
     categoryId: filters.categoryId || undefined,
     assigneeId: filters.assigneeId || undefined,

@@ -85,6 +85,14 @@ const ticketEventSchema = z.object({
   notes: z.string().max(2000).optional(),
 });
 
+const updateTicketEventSchema = z.object({
+  ticketId: z.string().min(1),
+  eventId: z.string().min(1),
+  title: z.string().min(2).max(120),
+  scheduledFor: z.string().datetime(),
+  notes: z.string().max(2000).optional(),
+});
+
 const deleteTicketEventSchema = z.object({
   ticketId: z.string().min(1),
   eventId: z.string().min(1),
@@ -1260,6 +1268,108 @@ export async function deleteTicketEventAction(formData: FormData) {
       eventType: "ticket.event_deleted",
       messageZh: `已删除事件：${event.title}`,
       messageEn: `Deleted event: ${event.title}`,
+    },
+  });
+
+  revalidatePath(`/tickets/${ticket.id}`);
+  revalidatePath("/tickets");
+  revalidatePath("/dashboard");
+  redirect(`/tickets/${ticket.id}?saved=1`);
+}
+
+export async function updateTicketEventAction(formData: FormData) {
+  const user = await requireUser();
+  const parsed = updateTicketEventSchema.safeParse({
+    ticketId: formData.get("ticketId"),
+    eventId: formData.get("eventId"),
+    title: formData.get("title"),
+    scheduledFor: formData.get("scheduledFor"),
+    notes: formData.get("notes") || undefined,
+  });
+
+  if (!parsed.success) {
+    redirect(`/tickets/${String(formData.get("ticketId") ?? "")}`);
+  }
+
+  const ticket = await prisma.ticket.findUnique({
+    where: { id: parsed.data.ticketId },
+    select: {
+      id: true,
+      workspaceId: true,
+      status: true,
+    },
+  });
+
+  if (!ticket) {
+    redirect("/tickets");
+  }
+
+  const membership = await prisma.workspaceMembership.findFirst({
+    where: {
+      userId: user.id,
+      workspaceId: ticket.workspaceId,
+    },
+  });
+
+  if (!membership && user.role !== UserRole.ADMIN) {
+    redirect("/tickets");
+  }
+
+  if (ticket.status.key === "CLOSED") {
+    redirect(`/tickets/${ticket.id}?closed=1`);
+  }
+
+  const event = await prisma.ticketEvent.findFirst({
+    where: {
+      id: parsed.data.eventId,
+      ticketId: ticket.id,
+    },
+    select: {
+      id: true,
+    },
+  });
+
+  if (!event) {
+    redirect(`/tickets/${ticket.id}`);
+  }
+
+  const reminderOffsets = sanitizeTicketEventReminderOffsets(
+    formData.getAll("reminderOffsets").map((value) => String(value)),
+  );
+  const scheduledFor = new Date(parsed.data.scheduledFor);
+
+  if (Number.isNaN(scheduledFor.getTime()) || scheduledFor.getTime() < Date.now() - 60_000) {
+    redirect(`/tickets/${ticket.id}`);
+  }
+
+  await prisma.ticketEvent.update({
+    where: {
+      id: event.id,
+    },
+    data: {
+      title: parsed.data.title,
+      notes: parsed.data.notes?.trim() || null,
+      scheduledFor,
+      reminders: reminderOffsets.length
+        ? {
+            deleteMany: {},
+            create: reminderOffsets.map((offsetMinutes) => ({
+              offsetMinutes,
+            })),
+          }
+        : {
+            deleteMany: {},
+          },
+    },
+  });
+
+  await prisma.ticketActivity.create({
+    data: {
+      ticketId: ticket.id,
+      actorUserId: user.id,
+      eventType: "ticket.event_updated",
+      messageZh: `已更新事件：${parsed.data.title}`,
+      messageEn: `Updated event: ${parsed.data.title}`,
     },
   });
 

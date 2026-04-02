@@ -23,6 +23,7 @@ MiniTickets is live as a bilingual, workspace-based ticketing system for persona
 - Tickets can have a single parent level and many child tickets
 - Top-level tickets can start a child-ticket flow directly from ticket detail, with workspace and parent preselected
 - Ticket events support reminder offsets such as months, hours, or “at time”
+- Ticket events now support 2-week and 1-week reminder offsets, grouped reminder choices, and inline editing in addition to deletion
 - Due dates trigger a 9 AM local reminder on the due date
 - Ticket assignment automatically moves a still-new ticket to `处理中 / In Progress`
 - The ticket detail page uses contextual save actions rather than a fixed “resolve” shortcut
@@ -56,12 +57,14 @@ MiniTickets is live as a bilingual, workspace-based ticketing system for persona
 - The login page should stay visually close to the GeoCompare homepage, especially in scale, spacing, and calmness
 - On mobile Safari, the login card should preserve comfortable bottom padding beneath the primary `登入 / Sign in` button, including around browser bottom chrome and safe-area insets
 - Mobile usage is a primary scenario, not an afterthought
+- Mobile Safari should not force dash-typing workarounds for due dates, and long event titles should wrap without stretching the layout horizontally
 - On mobile, the shell should collapse cleanly from the desktop sidebar into a compact top-of-page navigation/header flow without leaving dead space before content
 - The mobile topbar should stay readable and sticky without content sliding underneath it
 - Responsive behavior should preserve the primary task first, especially on form-heavy screens such as ticket creation and event scheduling
 - Medium-width states should often reflow to two columns before collapsing all the way to one
 - Dense tables should generally be avoided in favor of calmer stacked rows or compact lists
 - Filters should stay available but not dominate the page when they are not in active use
+- The ticket list should default to an open-only view that still includes resolved tickets while hiding closed and cancelled ones unless the user opts into seeing all tickets
 - The ticket detail page should reveal complexity progressively through collapsible sections with lightweight previews
 - Browser-tab titles should stay concise; ticket detail uses the ticket number rather than verbose page text
 

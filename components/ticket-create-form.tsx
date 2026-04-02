@@ -240,10 +240,7 @@ export function TicketCreateForm({
           <input
             id="dueDate"
             name="dueDate"
-            type="text"
-            inputMode="numeric"
-            placeholder="YYYY-MM-DD"
-            pattern="\d{4}-\d{2}-\d{2}"
+            type="date"
           />
         </div>
       </div>

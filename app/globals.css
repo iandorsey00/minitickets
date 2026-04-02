@@ -999,6 +999,21 @@ textarea {
   align-items: start;
   justify-content: space-between;
   gap: 0.8rem;
+  min-width: 0;
+}
+
+.event-card-title {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.event-card-actions {
+  display: flex;
+  align-items: start;
+  justify-content: flex-end;
+  gap: 0.55rem;
+  flex: 0 0 auto;
+  flex-wrap: wrap;
 }
 
 .event-delete-button {
@@ -1007,7 +1022,25 @@ textarea {
 }
 
 .event-card-time {
-  white-space: nowrap;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.event-reminder-groups {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.event-reminder-group {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.event-reminder-group-label {
+  color: var(--color-muted);
+  font-size: 0.88rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
 }
 
 .event-reminder-options,
@@ -1015,6 +1048,23 @@ textarea {
   display: flex;
   flex-wrap: wrap;
   gap: 0.6rem;
+}
+
+.event-edit-disclosure {
+  margin: 0;
+}
+
+.event-edit-summary {
+  list-style: none;
+}
+
+.event-edit-summary::-webkit-details-marker {
+  display: none;
+}
+
+.event-edit-body {
+  margin-top: 0.85rem;
+  min-width: min(100%, 26rem);
 }
 
 .ticket-subsection {
@@ -1578,6 +1628,14 @@ textarea {
 
   .event-reminder-options .checkbox-row {
     gap: 0.65rem;
+  }
+
+  .event-card-actions {
+    width: 100%;
+  }
+
+  .event-edit-body {
+    min-width: 0;
   }
 
   .admin-user-actions {

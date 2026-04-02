@@ -14,6 +14,24 @@ export function formatReminderOffsetLabel(offsetMinutes: number, locale: Locale)
     return months === 1 ? "1 个月前" : `${months} 个月前`;
   }
 
+  const weekMinutes = 7 * 24 * 60;
+  if (Number.isInteger(offsetMinutes / weekMinutes) && offsetMinutes >= weekMinutes) {
+    const weeks = offsetMinutes / weekMinutes;
+    if (locale === "EN") {
+      return weeks === 1 ? "1 week before" : `${weeks} weeks before`;
+    }
+    return weeks === 1 ? "1 周前" : `${weeks} 周前`;
+  }
+
+  const dayMinutes = 24 * 60;
+  if (Number.isInteger(offsetMinutes / dayMinutes) && offsetMinutes >= dayMinutes) {
+    const days = offsetMinutes / dayMinutes;
+    if (locale === "EN") {
+      return days === 1 ? "1 day before" : `${days} days before`;
+    }
+    return days === 1 ? "1 天前" : `${days} 天前`;
+  }
+
   const hours = offsetMinutes / 60;
   if (Number.isInteger(hours) && hours >= 1) {
     if (locale === "EN") {

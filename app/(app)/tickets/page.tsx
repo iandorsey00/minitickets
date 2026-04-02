@@ -34,6 +34,7 @@ function hasActiveFilters(params: {
   assigneeId?: string;
   requesterId?: string;
   q?: string;
+  openOnly?: string;
 }) {
   return Boolean(
     params.q ||
@@ -41,7 +42,8 @@ function hasActiveFilters(params: {
       params.priorityId ||
       params.categoryId ||
       params.assigneeId ||
-      params.requesterId,
+      params.requesterId ||
+      params.openOnly === "0",
   );
 }
 
@@ -56,6 +58,7 @@ export default async function TicketsPage({
     assigneeId?: string;
     requesterId?: string;
     q?: string;
+    openOnly?: string;
   }>;
 }) {
   const params = await searchParams;
@@ -84,6 +87,13 @@ export default async function TicketsPage({
             <div className="field">
               <label htmlFor="q">{t.common.keyword}</label>
               <input id="q" name="q" defaultValue={params.q ?? ""} />
+            </div>
+            <div className="field">
+              <label htmlFor="openOnly">{t.tickets.openOnlyFilter}</label>
+              <select id="openOnly" name="openOnly" defaultValue={params.openOnly ?? "1"}>
+                <option value="1">{t.tickets.openOnlyFilter}</option>
+                <option value="0">{t.tickets.allTicketsFilter}</option>
+              </select>
             </div>
             <div className="field">
               <label htmlFor="statusId">{t.common.status}</label>

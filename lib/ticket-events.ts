@@ -7,8 +7,9 @@ import { prisma } from "./prisma.ts";
 import { formatReminderOffsetLabel } from "./reminder-labels.ts";
 
 const monthMinutes = 30 * 24 * 60;
+const weekMinutes = 7 * 24 * 60;
 
-export const defaultTicketEventReminderOffsets = [monthMinutes * 2, monthMinutes, 24 * 60, 120, 60, 30, 0] as const;
+export const defaultTicketEventReminderOffsets = [monthMinutes * 2, monthMinutes, weekMinutes * 2, weekMinutes, 24 * 60, 120, 60, 30, 0] as const;
 
 export function sanitizeTicketEventReminderOffsets(values: string[]) {
   const parsed = Array.from(

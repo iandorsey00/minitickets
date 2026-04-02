@@ -2,7 +2,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 
-import { addAttachmentAction, addCommentAction, createTicketEventAction, deleteTicketEventAction, reopenTicketAction, sendDueDateInviteAction, updateTicketAction } from "@/lib/actions";
+import { addAttachmentAction, addCommentAction, createTicketEventAction, deleteTicketEventAction, reopenTicketAction, sendDueDateInviteAction, updateTicketAction, updateTicketEventAction } from "@/lib/actions";
 import { getTicketDetail } from "@/lib/data";
 import { formatDate, formatDateTime, formatFileSize, localizeDefinition } from "@/lib/format";
 import { formatReminderOffsetLabel } from "@/lib/reminder-labels";
@@ -509,10 +509,7 @@ export default async function TicketDetailPage({
                 <input
                   id="dueDate"
                   name="dueDate"
-                  type="text"
-                  inputMode="numeric"
-                  placeholder="YYYY-MM-DD"
-                  pattern="\d{4}-\d{2}-\d{2}"
+                  type="date"
                   defaultValue={data.ticket.dueDate ? new Date(data.ticket.dueDate).toISOString().slice(0, 10) : ""}
                 />
               </div>
@@ -576,14 +573,50 @@ export default async function TicketDetailPage({
                 data.ticket.events.map((event) => (
                   <div key={event.id} className="event-card">
                     <div className="event-card-header">
-                      <strong>{event.title}</strong>
-                      <form action={deleteTicketEventAction}>
-                        <input type="hidden" name="ticketId" value={data.ticket.id} />
-                        <input type="hidden" name="eventId" value={event.id} />
-                        <button type="submit" className="ghost-button event-delete-button">
-                          {t.tickets.deleteEvent}
-                        </button>
-                      </form>
+                      <strong className="event-card-title">{event.title}</strong>
+                      <div className="event-card-actions">
+                        <details className="event-edit-disclosure">
+                          <summary className="ghost-button event-edit-summary">{t.common.edit}</summary>
+                          <div className="event-edit-body">
+                            <TicketEventForm
+                              action={updateTicketEventAction}
+                              ticketId={data.ticket.id}
+                              eventId={event.id}
+                              labels={{
+                                title: t.common.title,
+                                notes: t.tickets.eventNotes,
+                                scheduledFor: t.tickets.eventScheduledFor,
+                                reminders: t.tickets.eventReminders,
+                                submit: t.common.update,
+                                optional: t.common.optional,
+                                reminderMonths: t.tickets.reminderMonths,
+                                reminderWeeks: t.tickets.reminderWeeks,
+                                reminderDays: t.tickets.reminderDays,
+                                reminderHours: t.tickets.reminderHours,
+                                reminderMinutes: t.tickets.reminderMinutes,
+                                reminderAtTime: t.tickets.reminderAtTime,
+                              }}
+                              reminderOptions={defaultTicketEventReminderOffsets.map((offset) => ({
+                                value: offset,
+                                label: formatReminderOffsetLabel(offset, data.locale),
+                              }))}
+                              initialValues={{
+                                title: event.title,
+                                notes: event.notes ?? "",
+                                scheduledFor: event.scheduledFor.toISOString(),
+                                selectedReminderOffsets: event.reminders.map((reminder) => reminder.offsetMinutes),
+                              }}
+                            />
+                          </div>
+                        </details>
+                        <form action={deleteTicketEventAction}>
+                          <input type="hidden" name="ticketId" value={data.ticket.id} />
+                          <input type="hidden" name="eventId" value={event.id} />
+                          <button type="submit" className="ghost-button event-delete-button">
+                            {t.tickets.deleteEvent}
+                          </button>
+                        </form>
+                      </div>
                     </div>
                     <div className="muted event-card-time">
                       {formatDateTime(event.scheduledFor, data.localeCode, data.timeZone)}
@@ -619,8 +652,14 @@ export default async function TicketDetailPage({
                       notes: t.tickets.eventNotes,
                       scheduledFor: t.tickets.eventScheduledFor,
                       reminders: t.tickets.eventReminders,
-                      create: t.tickets.createEvent,
+                      submit: t.tickets.createEvent,
                       optional: t.common.optional,
+                      reminderMonths: t.tickets.reminderMonths,
+                      reminderWeeks: t.tickets.reminderWeeks,
+                      reminderDays: t.tickets.reminderDays,
+                      reminderHours: t.tickets.reminderHours,
+                      reminderMinutes: t.tickets.reminderMinutes,
+                      reminderAtTime: t.tickets.reminderAtTime,
                     }}
                     reminderOptions={defaultTicketEventReminderOffsets.map((offset) => ({
                       value: offset,
