@@ -213,9 +213,16 @@ export default async function TicketDetailPage({
           {savedMessage ? <Badge label={savedMessage.label} tone={savedMessage.tone} /> : null}
           {data.ticket.description && !isClosed ? (
             <details className="panel detail-disclosure">
-              <summary className="panel-title">
-                <span className="detail-summary-main">{t.common.description}</span>
-                <span className="detail-summary-preview">{descriptionPreview}</span>
+              <summary className="panel-title detail-summary">
+                <span className="detail-summary-copy">
+                  <span className="detail-summary-main">{t.common.description}</span>
+                  <span className="detail-summary-preview">{descriptionPreview}</span>
+                </span>
+                <span
+                  className="detail-summary-toggle"
+                  data-closed-label={t.common.expand}
+                  data-open-label={t.common.collapse}
+                />
               </summary>
               <form action={updateTicketAction} className="stack disclosure-body">
                 <input type="hidden" name="ticketId" value={data.ticket.id} />
@@ -455,7 +462,16 @@ export default async function TicketDetailPage({
         <div className="stack ticket-page-section-stack">
           {!isClosed ? (
             <details className="panel detail-disclosure" open={false}>
-            <summary className="panel-title">{t.common.edit}</summary>
+            <summary className="panel-title detail-summary">
+              <span className="detail-summary-copy">
+                <span className="detail-summary-main">{t.common.edit}</span>
+              </span>
+              <span
+                className="detail-summary-toggle"
+                data-closed-label={t.common.expand}
+                data-open-label={t.common.collapse}
+              />
+            </summary>
             <form action={updateTicketAction} className="stack disclosure-body" id="ticket-edit-form">
               <input type="hidden" name="ticketId" value={data.ticket.id} />
               {ticketContext}
@@ -564,19 +580,38 @@ export default async function TicketDetailPage({
             </details>
           ) : null}
           <details className="panel detail-disclosure" open={showEventsOpenByDefault}>
-            <summary className="panel-title">
-              <span className="detail-summary-main">{t.tickets.eventsTitle}</span>
-              <span className="detail-summary-preview">{eventsPreview}</span>
+            <summary className="panel-title detail-summary">
+              <span className="detail-summary-copy">
+                <span className="detail-summary-main">{t.tickets.eventsTitle}</span>
+                {eventsPreview ? <span className="detail-summary-preview">{eventsPreview}</span> : null}
+              </span>
+              <span
+                className="detail-summary-toggle"
+                data-closed-label={t.common.expand}
+                data-open-label={t.common.collapse}
+              />
             </summary>
             <div className="stack ticket-events-stack disclosure-body">
               {data.ticket.events.length ? (
                 data.ticket.events.map((event) => (
                   <div key={event.id} className="event-card">
                     <div className="event-card-header">
-                      <strong className="event-card-title">{event.title}</strong>
+                      <div className="event-card-heading">
+                        <strong className="event-card-title">{event.title}</strong>
+                        <div className="muted event-card-time">
+                          {formatDateTime(event.scheduledFor, data.localeCode, data.timeZone)}
+                        </div>
+                      </div>
                       <div className="event-card-actions">
                         <details className="event-edit-disclosure">
-                          <summary className="ghost-button event-edit-summary">{t.common.edit}</summary>
+                          <summary className="ghost-button event-edit-summary">
+                            <span>{t.common.edit}</span>
+                            <span
+                              className="event-edit-summary-toggle"
+                              data-closed-label={t.common.expand}
+                              data-open-label={t.common.collapse}
+                            />
+                          </summary>
                           <div className="event-edit-body">
                             <TicketEventForm
                               action={updateTicketEventAction}
@@ -617,9 +652,6 @@ export default async function TicketDetailPage({
                           </button>
                         </form>
                       </div>
-                    </div>
-                    <div className="muted event-card-time">
-                      {formatDateTime(event.scheduledFor, data.localeCode, data.timeZone)}
                     </div>
                     {event.notes ? <p>{event.notes}</p> : null}
                     <div className="event-reminder-badges">
@@ -672,9 +704,16 @@ export default async function TicketDetailPage({
           </details>
 
           <details className="panel detail-disclosure" open={showChildrenOpenByDefault}>
-            <summary className="panel-title">
-              <span className="detail-summary-main">{t.common.childTickets}</span>
-              <span className="detail-summary-preview">{childrenPreview}</span>
+            <summary className="panel-title detail-summary">
+              <span className="detail-summary-copy">
+                <span className="detail-summary-main">{t.common.childTickets}</span>
+                {childrenPreview ? <span className="detail-summary-preview">{childrenPreview}</span> : null}
+              </span>
+              <span
+                className="detail-summary-toggle"
+                data-closed-label={t.common.expand}
+                data-open-label={t.common.collapse}
+              />
             </summary>
             <div className="disclosure-body">
               {data.ticket.parentTicket ? (

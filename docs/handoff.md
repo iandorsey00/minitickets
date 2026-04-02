@@ -105,6 +105,7 @@ MiniTickets is live as a bilingual, workspace-based ticketing system for persona
 - Low-disk-space alerts should remain deduplicated and should reset only after free space recovers above the threshold
 - Event cards on narrow mobile Safari screens should keep long titles readable without stretching the page or collapsing Chinese text into a vertical strip
 - Ticket disclosure summaries and event action buttons should also stay aligned on narrow mobile Safari screens without forcing horizontal overflow
+- Ticket detail disclosure sections should use explicit title, preview, and toggle regions so expand/collapse behavior stays logical and readable on narrow mobile Safari screens
 
 ## Near-term follow-ups
 
