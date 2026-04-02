@@ -995,16 +995,18 @@ textarea {
 }
 
 .event-card-header {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: start;
-  justify-content: space-between;
   gap: 0.8rem;
-  min-width: 0;
 }
 
 .event-card-title {
+  margin: 0;
+  line-height: 1.35;
   min-width: 0;
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
+  word-break: normal;
 }
 
 .event-card-actions {
@@ -1023,7 +1025,7 @@ textarea {
 
 .event-card-time {
   white-space: normal;
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
 }
 
 .event-reminder-groups {
@@ -1631,7 +1633,12 @@ textarea {
   }
 
   .event-card-actions {
-    width: 100%;
+    width: auto;
+    justify-content: flex-start;
+  }
+
+  .event-card-header {
+    grid-template-columns: 1fr;
   }
 
   .event-edit-body {
