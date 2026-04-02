@@ -1015,7 +1015,11 @@ textarea {
   justify-content: flex-end;
   gap: 0.55rem;
   flex: 0 0 auto;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+}
+
+.event-card-actions > * {
+  flex: 0 0 auto;
 }
 
 .event-delete-button {
@@ -1633,16 +1637,49 @@ textarea {
   }
 
   .event-card-actions {
-    width: auto;
+    width: 100%;
     justify-content: flex-start;
+    align-items: stretch;
+    gap: 0.7rem;
+    flex-wrap: wrap;
   }
 
   .event-card-header {
     grid-template-columns: 1fr;
   }
 
+  .event-card-actions > * {
+    flex: 1 1 12rem;
+  }
+
+  .event-edit-summary,
+  .event-delete-button {
+    width: 100%;
+    justify-content: center;
+    text-align: center;
+  }
+
   .event-edit-body {
     min-width: 0;
+  }
+
+  .detail-disclosure summary {
+    align-items: start;
+    gap: 0.65rem;
+  }
+
+  .detail-summary-main {
+    flex: 0 1 auto;
+    min-width: 0;
+  }
+
+  .detail-summary-preview {
+    margin-left: 0;
+    flex: 1 1 auto;
+    min-width: 0;
+    white-space: normal;
+    overflow-wrap: break-word;
+    text-align: right;
   }
 
   .admin-user-actions {
