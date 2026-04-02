@@ -1061,6 +1061,7 @@ textarea {
 
 .event-edit-disclosure {
   margin: 0;
+  min-width: 0;
 }
 
 .event-edit-summary {
@@ -1084,9 +1085,18 @@ textarea {
   content: attr(data-open-label);
 }
 
+.event-edit-disclosure[open] {
+  width: 100%;
+}
+
+.event-edit-disclosure[open] .event-edit-summary {
+  width: 100%;
+}
+
 .event-edit-body {
   margin-top: 0.85rem;
-  min-width: min(100%, 26rem);
+  width: 100%;
+  min-width: 0;
 }
 
 .ticket-subsection {
