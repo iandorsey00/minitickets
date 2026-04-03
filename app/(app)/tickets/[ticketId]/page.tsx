@@ -602,57 +602,57 @@ export default async function TicketDetailPage({
                           {formatDateTime(event.scheduledFor, data.localeCode, data.timeZone)}
                         </div>
                       </div>
-                      <div className="event-card-actions">
-                        <details className="event-edit-disclosure">
-                          <summary className="ghost-button event-edit-summary">
-                            <span>{t.common.edit}</span>
-                            <span
-                              className="event-edit-summary-toggle"
-                              data-closed-label={t.common.expand}
-                              data-open-label={t.common.collapse}
-                            />
-                          </summary>
-                          <div className="event-edit-body">
-                            <TicketEventForm
-                              action={updateTicketEventAction}
-                              ticketId={data.ticket.id}
-                              eventId={event.id}
-                              labels={{
-                                title: t.common.title,
-                                notes: t.tickets.eventNotes,
-                                scheduledFor: t.tickets.eventScheduledFor,
-                                reminders: t.tickets.eventReminders,
-                                submit: t.common.update,
-                                optional: t.common.optional,
-                                reminderMonths: t.tickets.reminderMonths,
-                                reminderWeeks: t.tickets.reminderWeeks,
-                                reminderDays: t.tickets.reminderDays,
-                                reminderHours: t.tickets.reminderHours,
-                                reminderMinutes: t.tickets.reminderMinutes,
-                                reminderAtTime: t.tickets.reminderAtTime,
-                              }}
-                              reminderOptions={defaultTicketEventReminderOffsets.map((offset) => ({
-                                value: offset,
-                                label: formatReminderOffsetLabel(offset, data.locale),
-                              }))}
-                              initialValues={{
-                                title: event.title,
-                                notes: event.notes ?? "",
-                                scheduledFor: event.scheduledFor.toISOString(),
-                                selectedReminderOffsets: event.reminders.map((reminder) => reminder.offsetMinutes),
-                              }}
-                            />
-                          </div>
-                        </details>
-                        <form action={deleteTicketEventAction}>
-                          <input type="hidden" name="ticketId" value={data.ticket.id} />
-                          <input type="hidden" name="eventId" value={event.id} />
-                          <button type="submit" className="ghost-button event-delete-button">
-                            {t.tickets.deleteEvent}
-                          </button>
-                        </form>
-                      </div>
                     </div>
+                    <div className="event-card-actions">
+                      <form action={deleteTicketEventAction} className="event-delete-form">
+                        <input type="hidden" name="ticketId" value={data.ticket.id} />
+                        <input type="hidden" name="eventId" value={event.id} />
+                        <button type="submit" className="ghost-button event-delete-button">
+                          {t.tickets.deleteEvent}
+                        </button>
+                      </form>
+                    </div>
+                    <details className="event-edit-disclosure">
+                      <summary className="ghost-button event-edit-summary">
+                        <span>{t.common.edit}</span>
+                        <span
+                          className="event-edit-summary-toggle"
+                          data-closed-label={t.common.expand}
+                          data-open-label={t.common.collapse}
+                        />
+                      </summary>
+                      <div className="event-edit-body">
+                        <TicketEventForm
+                          action={updateTicketEventAction}
+                          ticketId={data.ticket.id}
+                          eventId={event.id}
+                          labels={{
+                            title: t.common.title,
+                            notes: t.tickets.eventNotes,
+                            scheduledFor: t.tickets.eventScheduledFor,
+                            reminders: t.tickets.eventReminders,
+                            submit: t.common.update,
+                            optional: t.common.optional,
+                            reminderMonths: t.tickets.reminderMonths,
+                            reminderWeeks: t.tickets.reminderWeeks,
+                            reminderDays: t.tickets.reminderDays,
+                            reminderHours: t.tickets.reminderHours,
+                            reminderMinutes: t.tickets.reminderMinutes,
+                            reminderAtTime: t.tickets.reminderAtTime,
+                          }}
+                          reminderOptions={defaultTicketEventReminderOffsets.map((offset) => ({
+                            value: offset,
+                            label: formatReminderOffsetLabel(offset, data.locale),
+                          }))}
+                          initialValues={{
+                            title: event.title,
+                            notes: event.notes ?? "",
+                            scheduledFor: event.scheduledFor.toISOString(),
+                            selectedReminderOffsets: event.reminders.map((reminder) => reminder.offsetMinutes),
+                          }}
+                        />
+                      </div>
+                    </details>
                     {event.notes ? <p>{event.notes}</p> : null}
                     <div className="event-reminder-badges">
                       {event.reminders.length ? (

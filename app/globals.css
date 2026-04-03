@@ -1014,14 +1014,10 @@ textarea {
 
 .event-card-actions {
   display: flex;
-  align-items: stretch;
-  justify-content: flex-start;
-  gap: 0.55rem;
-  flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
-.event-card-actions > * {
-  flex: 0 0 auto;
+.event-delete-form {
   min-width: 0;
 }
 
@@ -1062,11 +1058,13 @@ textarea {
 .event-edit-disclosure {
   margin: 0;
   min-width: 0;
+  width: 100%;
 }
 
 .event-edit-summary {
+  width: 100%;
   list-style: none;
-  display: inline-flex;
+  display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 0.65rem;
@@ -1083,14 +1081,6 @@ textarea {
 
 .event-edit-disclosure[open] .event-edit-summary-toggle::before {
   content: attr(data-open-label);
-}
-
-.event-edit-disclosure[open] {
-  width: 100%;
-}
-
-.event-edit-disclosure[open] .event-edit-summary {
-  width: 100%;
 }
 
 .event-edit-body {
@@ -1676,16 +1666,8 @@ textarea {
   .event-card-actions {
     width: 100%;
     justify-content: flex-start;
-    align-items: stretch;
-    gap: 0.7rem;
-    flex-wrap: wrap;
   }
 
-  .event-card-actions > * {
-    flex: 1 1 calc(50% - 0.35rem);
-  }
-
-  .event-edit-summary,
   .event-delete-button {
     width: 100%;
     justify-content: center;

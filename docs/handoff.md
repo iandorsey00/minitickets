@@ -107,6 +107,7 @@ MiniTickets is live as a bilingual, workspace-based ticketing system for persona
 - Ticket disclosure summaries and event action buttons should also stay aligned on narrow mobile Safari screens without forcing horizontal overflow
 - Ticket detail disclosure sections should use explicit title, preview, and toggle regions so expand/collapse behavior stays logical and readable on narrow mobile Safari screens
 - When an inline event edit disclosure is opened on mobile Safari, the editor should expand to the full event card width instead of staying trapped in the action-button column
+- Event cards on narrow mobile Safari screens should place the destructive delete action in its own top row and let the edit disclosure sit underneath at full width for a calmer, less cramped layout
 
 ## Near-term follow-ups
 
