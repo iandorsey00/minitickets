@@ -41,7 +41,6 @@ type TicketCreateFormProps = {
     common: {
       workspace: string;
       parentTicket: string;
-      category: string;
       priority: string;
       status: string;
       assignee: string;
@@ -66,7 +65,6 @@ type TicketCreateFormProps = {
   };
   workspaces: WorkspaceOption[];
   people: PersonOption[];
-  categories: DefinitionOption[];
   priorities: DefinitionOption[];
   statuses: DefinitionOption[];
   paymentMethods: PaymentMethodOption[];
@@ -74,7 +72,6 @@ type TicketCreateFormProps = {
   defaults: {
     workspaceId: string;
     parentTicketId?: string | null;
-    categoryId?: string | null;
     priorityId?: string | null;
     statusId?: string | null;
     inProgressStatusId?: string | null;
@@ -86,7 +83,6 @@ export function TicketCreateForm({
   dictionary,
   workspaces,
   people,
-  categories,
   priorities,
   statuses,
   paymentMethods,
@@ -162,16 +158,6 @@ export function TicketCreateForm({
             {workspaceParentTickets.map((ticket) => (
               <option key={ticket.id} value={ticket.id}>
                 {ticket.ticketNumber} · {ticket.title}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div className="field">
-          <label htmlFor="categoryId">{dictionary.common.category}</label>
-          <select id="categoryId" name="categoryId" defaultValue={defaults.categoryId ?? categories[0]?.id ?? ""}>
-            {categories.map((item) => (
-              <option key={item.id} value={item.id}>
-                {item.label}
               </option>
             ))}
           </select>

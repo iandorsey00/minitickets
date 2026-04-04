@@ -75,10 +75,9 @@ export default async function AdminCatalogPage() {
         <form action={createDefinitionAction} className="filters">
           <div className="field">
             <label htmlFor="kind">{t.common.kind}</label>
-            <select id="kind" name="kind" defaultValue="category">
+            <select id="kind" name="kind" defaultValue="priority">
               <option value="status">{t.common.status}</option>
               <option value="priority">{t.common.priority}</option>
-              <option value="category">{t.common.category}</option>
             </select>
           </div>
           <div className="field">
@@ -104,7 +103,7 @@ export default async function AdminCatalogPage() {
         </form>
       </Panel>
 
-      <div className="grid-3">
+      <div className="grid-2">
         <DefinitionTable
           kind="status"
           title={t.common.status}
@@ -116,13 +115,6 @@ export default async function AdminCatalogPage() {
           kind="priority"
           title={t.common.priority}
           items={data.definitions.priorities}
-          locale={data.locale}
-          dictionary={t}
-        />
-        <DefinitionTable
-          kind="category"
-          title={t.common.category}
-          items={data.definitions.categories}
           locale={data.locale}
           dictionary={t}
         />

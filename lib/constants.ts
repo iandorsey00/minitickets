@@ -36,7 +36,6 @@ export const timeZoneValues = [
 
 export const defaultStatusKey = "NEW";
 export const defaultPriorityKey = "MEDIUM";
-export const defaultCategoryKey = "GENERAL_REQUEST";
 
 export const accentTokenMap: Record<(typeof accentValues)[number], string> = {
   BLUE: "blue",

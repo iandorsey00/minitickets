@@ -30,7 +30,6 @@ function hasActiveFilters(params: {
   workspaceId?: string;
   statusId?: string;
   priorityId?: string;
-  categoryId?: string;
   assigneeId?: string;
   requesterId?: string;
   q?: string;
@@ -40,7 +39,6 @@ function hasActiveFilters(params: {
     params.q ||
       params.statusId ||
       params.priorityId ||
-      params.categoryId ||
       params.assigneeId ||
       params.requesterId ||
       params.openOnly === "0",
@@ -54,7 +52,6 @@ export default async function TicketsPage({
     workspaceId?: string;
     statusId?: string;
     priorityId?: string;
-    categoryId?: string;
     assigneeId?: string;
     requesterId?: string;
     q?: string;
@@ -111,17 +108,6 @@ export default async function TicketsPage({
               <select id="priorityId" name="priorityId" defaultValue={params.priorityId ?? ""}>
                 <option value="">{t.common.all}</option>
                 {data.definitions.priorities.map((item) => (
-                  <option key={item.id} value={item.id}>
-                    {localizeDefinition(item, data.locale)}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="field">
-              <label htmlFor="categoryId">{t.common.category}</label>
-              <select id="categoryId" name="categoryId" defaultValue={params.categoryId ?? ""}>
-                <option value="">{t.common.all}</option>
-                {data.definitions.categories.map((item) => (
                   <option key={item.id} value={item.id}>
                     {localizeDefinition(item, data.locale)}
                   </option>
@@ -203,6 +189,10 @@ export default async function TicketsPage({
                     <strong className={`due-date-value due-date-${getDueDateTone(ticket.dueDate, ticket.status.key)}`}>
                       {ticket.dueDate ? formatDate(ticket.dueDate, data.localeCode, data.timeZone) : t.common.none}
                     </strong>
+                  </div>
+                  <div className="meta-pair">
+                    <span>{t.common.createdAt}</span>
+                    <strong>{formatDateTime(ticket.createdAt, data.localeCode, data.timeZone)}</strong>
                   </div>
                   <div className="meta-pair">
                     <span>{t.common.updatedAt}</span>

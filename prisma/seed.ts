@@ -28,15 +28,6 @@ const priorities = [
   ["URGENT", "紧急", "Urgent"],
 ] as const;
 
-const categories = [
-  ["GENERAL_REQUEST", "一般请求", "General Request"],
-  ["ISSUE", "问题", "Issue"],
-  ["TASK", "任务", "Task"],
-  ["ACCESS", "权限", "Access"],
-  ["PURCHASE", "采购", "Purchase"],
-  ["ADMIN", "行政", "Admin"],
-] as const;
-
 async function upsertDefinitions() {
   for (const [index, [key, labelZh, labelEn]] of statuses.entries()) {
     await prisma.statusDefinition.upsert({
@@ -54,13 +45,6 @@ async function upsertDefinitions() {
     });
   }
 
-  for (const [index, [key, labelZh, labelEn]] of categories.entries()) {
-    await prisma.categoryDefinition.upsert({
-      where: { key },
-      update: { labelZh, labelEn, sortOrder: index, isActive: true },
-      create: { key, labelZh, labelEn, sortOrder: index, isActive: true },
-    });
-  }
 }
 
 async function main() {
@@ -196,12 +180,6 @@ async function main() {
     prisma.priorityDefinition.findUniqueOrThrow({ where: { key: "HIGH" } }),
     prisma.priorityDefinition.findUniqueOrThrow({ where: { key: "URGENT" } }),
   ]);
-  const [categoryTask, categoryPurchase, categoryAccess] = await Promise.all([
-    prisma.categoryDefinition.findUniqueOrThrow({ where: { key: "TASK" } }),
-    prisma.categoryDefinition.findUniqueOrThrow({ where: { key: "PURCHASE" } }),
-    prisma.categoryDefinition.findUniqueOrThrow({ where: { key: "ACCESS" } }),
-  ]);
-
   const tickets = [
     {
       ticketNumber: formatTicketNumber("PO", 1),
@@ -213,7 +191,6 @@ async function main() {
       assigneeId: meilin.id,
       statusId: statusNew.id,
       priorityId: priorityMedium.id,
-      categoryId: categoryTask.id,
     },
     {
       ticketNumber: formatTicketNumber("SR", 1),
@@ -225,7 +202,6 @@ async function main() {
       assigneeId: admin.id,
       statusId: statusWaiting.id,
       priorityId: priorityHigh.id,
-      categoryId: categoryPurchase.id,
     },
     {
       ticketNumber: formatTicketNumber("SR", 2),
@@ -237,7 +213,6 @@ async function main() {
       assigneeId: admin.id,
       statusId: statusProgress.id,
       priorityId: priorityUrgent.id,
-      categoryId: categoryAccess.id,
     },
   ] as const;
 

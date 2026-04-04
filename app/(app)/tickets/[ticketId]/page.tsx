@@ -378,16 +378,20 @@ export default async function TicketDetailPage({
                 <span>{localizeDefinition(data.ticket.priority, data.locale)}</span>
               </div>
               <div className="meta-item">
-                <span>{t.common.category}</span>
-                <span>{localizeDefinition(data.ticket.category, data.locale)}</span>
-              </div>
-              <div className="meta-item">
                 <span>{t.common.assignee}</span>
                 <span>{data.ticket.assignee?.displayName ?? t.common.none}</span>
               </div>
               <div className="meta-item">
                 <span>{t.common.requester}</span>
                 <span>{data.ticket.requester.displayName}</span>
+              </div>
+              <div className="meta-item">
+                <span>{t.common.createdAt}</span>
+                <span>{formatDateTime(data.ticket.createdAt, data.localeCode, data.timeZone)}</span>
+              </div>
+              <div className="meta-item">
+                <span>{t.common.updatedAt}</span>
+                <span>{formatDateTime(data.ticket.updatedAt, data.localeCode, data.timeZone)}</span>
               </div>
               <div className="meta-item">
                 <span>{t.common.dueDate}</span>
@@ -493,16 +497,6 @@ export default async function TicketDetailPage({
                 <label htmlFor="priorityId">{t.common.priority}</label>
                 <select id="priorityId" name="priorityId" defaultValue={data.ticket.priorityId}>
                   {data.definitions.priorities.map((item) => (
-                    <option key={item.id} value={item.id}>
-                      {localizeDefinition(item, data.locale)}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="field">
-                <label htmlFor="categoryId">{t.common.category}</label>
-                <select id="categoryId" name="categoryId" defaultValue={data.ticket.categoryId}>
-                  {data.definitions.categories.map((item) => (
                     <option key={item.id} value={item.id}>
                       {localizeDefinition(item, data.locale)}
                     </option>

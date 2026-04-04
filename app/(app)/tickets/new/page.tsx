@@ -97,10 +97,6 @@ export default async function NewTicketPage({ searchParams }: NewTicketPageProps
             displayName: person.displayName,
             workspaceIds: person.memberships.map((membership) => membership.workspaceId),
           }))}
-          categories={definitions.categories.filter((item) => item.isActive).map((item) => ({
-            id: item.id,
-            label: localizeDefinition(item, context.locale),
-          }))}
           priorities={definitions.priorities.filter((item) => item.isActive).map((item) => ({
             id: item.id,
             label: localizeDefinition(item, context.locale),
@@ -119,7 +115,6 @@ export default async function NewTicketPage({ searchParams }: NewTicketPageProps
           defaults={{
             workspaceId: defaultWorkspaceId,
             parentTicketId: requestedParentTicket?.id ?? null,
-            categoryId: defaults.categoryId,
             priorityId: defaults.priorityId,
             statusId: defaults.statusId,
             inProgressStatusId: inProgressStatus?.id,

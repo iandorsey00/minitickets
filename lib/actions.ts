@@ -60,7 +60,6 @@ const ticketSchema = z.object({
   assigneeId: z.string().optional(),
   statusId: z.string().optional(),
   priorityId: z.string().optional(),
-  categoryId: z.string().optional(),
   dueDate: z.string().optional(),
   paymentLabel: z.string().max(60).optional(),
   paymentLast4: z
@@ -468,7 +467,6 @@ export async function createTicketAction(formData: FormData) {
     assigneeId: formData.get("assigneeId") || undefined,
     statusId: formData.get("statusId") || undefined,
     priorityId: formData.get("priorityId") || undefined,
-    categoryId: formData.get("categoryId") || undefined,
     dueDate: formData.get("dueDate") || undefined,
     paymentLabel: formData.get("paymentLabel") || undefined,
     paymentLast4: formData.get("paymentLast4") || undefined,
@@ -524,8 +522,7 @@ export async function createTicketAction(formData: FormData) {
   await ensureCoreDefinitions();
   if (
     (!parsed.data.statusId && !defaults.statusId) ||
-    (!parsed.data.priorityId && !defaults.priorityId) ||
-    (!parsed.data.categoryId && !defaults.categoryId)
+    (!parsed.data.priorityId && !defaults.priorityId)
   ) {
     redirect("/tickets/new?error=definitions");
   }
@@ -562,7 +559,6 @@ export async function createTicketAction(formData: FormData) {
       assigneeId: parsed.data.assigneeId || null,
       statusId: finalStatusId,
       priorityId: parsed.data.priorityId || defaults.priorityId!,
-      categoryId: parsed.data.categoryId || defaults.categoryId!,
       dueDate: parsed.data.dueDate ? new Date(parsed.data.dueDate) : null,
       paymentLabel: workspace.paymentInfoEnabled ? parsed.data.paymentLabel || null : null,
       paymentLast4: workspace.paymentInfoEnabled ? parsed.data.paymentLast4 || null : null,
@@ -713,7 +709,6 @@ export async function updateTicketAction(formData: FormData) {
   const nextValues = {
     statusId: String(formData.get("statusId") ?? ticket.statusId),
     priorityId: String(formData.get("priorityId") ?? ticket.priorityId),
-    categoryId: String(formData.get("categoryId") ?? ticket.categoryId),
     parentTicketId: String(formData.get("parentTicketId") ?? "") || null,
     assigneeId: String(formData.get("assigneeId") ?? "") || null,
     dueDate: String(formData.get("dueDate") ?? "") || null,
@@ -729,11 +724,11 @@ export async function updateTicketAction(formData: FormData) {
 
   const nextStatus = await prisma.statusDefinition.findUnique({
     where: { id: nextValues.statusId },
-    select: { key: true },
+    select: { key: true, labelZh: true, labelEn: true },
   });
   const inProgressStatus = await prisma.statusDefinition.findUnique({
     where: { key: "IN_PROGRESS" },
-    select: { id: true, key: true },
+    select: { id: true, key: true, labelZh: true, labelEn: true },
   });
 
   if (!nextStatus) {
@@ -771,14 +766,6 @@ export async function updateTicketAction(formData: FormData) {
   }
 
   const activities = [];
-  if (nextValues.statusId !== ticket.statusId) {
-    activities.push({
-      actorUserId: user.id,
-      eventType: "ticket.status_changed",
-      messageZh: "已更新状态。",
-      messageEn: "Status updated.",
-    });
-  }
   if (nextValues.priorityId !== ticket.priorityId) {
     activities.push({
       actorUserId: user.id,
@@ -827,13 +814,26 @@ export async function updateTicketAction(formData: FormData) {
     (nextStatus.key === "NEW" || nextStatus.key === "OPEN")
       ? inProgressStatus.key
       : nextStatus.key;
+  const finalStatusLabelZh =
+    nextValues.assigneeId &&
+    inProgressStatus &&
+    (nextStatus.key === "NEW" || nextStatus.key === "OPEN")
+      ? inProgressStatus.labelZh
+      : nextStatus.labelZh;
+  const finalStatusLabelEn =
+    nextValues.assigneeId &&
+    inProgressStatus &&
+    (nextStatus.key === "NEW" || nextStatus.key === "OPEN")
+      ? inProgressStatus.labelEn
+      : nextStatus.labelEn;
+  const statusChanged = finalStatusId !== ticket.statusId;
 
-  if (finalStatusId !== ticket.statusId && nextValues.statusId === ticket.statusId && finalStatusId !== nextValues.statusId) {
+  if (statusChanged) {
     activities.push({
       actorUserId: user.id,
       eventType: "ticket.status_changed",
-      messageZh: "已更新状态。",
-      messageEn: "Status updated.",
+      messageZh: `状态已从「${ticket.status.labelZh}」改为「${finalStatusLabelZh}」。`,
+      messageEn: `Status changed from "${ticket.status.labelEn}" to "${finalStatusLabelEn}".`,
     });
   }
 
@@ -842,7 +842,6 @@ export async function updateTicketAction(formData: FormData) {
     data: {
       statusId: finalStatusId,
       priorityId: nextValues.priorityId,
-      categoryId: nextValues.categoryId,
       assigneeId: nextValues.assigneeId,
       title: nextValues.title,
       description: nextValues.description,
@@ -924,7 +923,7 @@ export async function updateTicketAction(formData: FormData) {
     }
   }
 
-  if (nextValues.statusId !== ticket.statusId && ["RESOLVED", "CLOSED"].includes(updatedTicket.status.key)) {
+  if (statusChanged && ["RESOLVED", "CLOSED"].includes(updatedTicket.status.key)) {
     const recipients = uniqueRecipients(
       [updatedTicket.requester, updatedTicket.assignee].filter(
         (recipient): recipient is typeof updatedTicket.requester => Boolean(recipient),
@@ -2138,8 +2137,6 @@ export async function createDefinitionAction(formData: FormData) {
     await prisma.statusDefinition.create({ data });
   } else if (kind === "priority") {
     await prisma.priorityDefinition.create({ data });
-  } else if (kind === "category") {
-    await prisma.categoryDefinition.create({ data });
   }
 
   revalidatePath("/admin");
@@ -2161,9 +2158,6 @@ export async function toggleDefinitionActiveAction(formData: FormData) {
   } else if (kind === "priority") {
     const item = await prisma.priorityDefinition.findUniqueOrThrow({ where: { id } });
     await prisma.priorityDefinition.update({ where: { id }, data: { isActive: !item.isActive } });
-  } else if (kind === "category") {
-    const item = await prisma.categoryDefinition.findUniqueOrThrow({ where: { id } });
-    await prisma.categoryDefinition.update({ where: { id }, data: { isActive: !item.isActive } });
   }
 
   revalidatePath("/admin");

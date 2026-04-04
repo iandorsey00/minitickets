@@ -101,6 +101,7 @@ MiniTickets is live as a bilingual, workspace-based ticketing system for persona
 - Reminder processing should run from the dedicated scheduled service rather than relying on user traffic
 - The standard droplet deploy path should be `bash scripts/deploy.sh` rather than a long manual command sequence
 - The deploy script now reads `.env.deploy`, restores server-local `package-lock.json` drift, and restarts both the app and reminders services
+- The release that removes ticket category/type from the schema requires a one-time `prisma db push --accept-data-loss` during deploy because the database shape shrinks
 - Attachment responses, including unauthorized and missing-file cases, should stay non-cacheable and non-indexable
 - Low-disk-space alerts should remain deduplicated and should reset only after free space recovers above the threshold
 - Event cards on narrow mobile Safari screens should keep long titles readable without stretching the page or collapsing Chinese text into a vertical strip
@@ -108,6 +109,9 @@ MiniTickets is live as a bilingual, workspace-based ticketing system for persona
 - Ticket detail disclosure sections should use explicit title, preview, and toggle regions so expand/collapse behavior stays logical and readable on narrow mobile Safari screens
 - When an inline event edit disclosure is opened on mobile Safari, the editor should expand to the full event card width instead of staying trapped in the action-button column
 - Event cards on narrow mobile Safari screens should place the destructive delete action in its own top row and let the edit disclosure sit underneath at full width for a calmer, less cramped layout
+- Ticket category/type has been removed entirely; the app now treats tickets as one consistent kind of record rather than carrying a category field through the model and UI
+- Ticket list should show created time in addition to updated time, and ticket detail should show both created and updated times under the status section
+- Status-change activity messages should name both the previous and new status instead of only saying that the status was updated
 
 ## Near-term follow-ups
 

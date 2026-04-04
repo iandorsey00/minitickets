@@ -6,7 +6,6 @@ import {
   LOCALE_COOKIE,
   THEME_COOKIE,
   WORKSPACE_COOKIE,
-  defaultCategoryKey,
   defaultPriorityKey,
   defaultStatusKey,
   localeTokenMap,
@@ -83,18 +82,17 @@ export async function getViewerContext(requestedWorkspaceId?: string) {
 
 export async function getDefinitions() {
   await ensureCoreDefinitions();
-  const [statuses, priorities, categories] = await Promise.all([
+  const [statuses, priorities] = await Promise.all([
     prisma.statusDefinition.findMany({ orderBy: [{ sortOrder: "asc" }, { labelZh: "asc" }] }),
     prisma.priorityDefinition.findMany({ orderBy: [{ sortOrder: "asc" }, { labelZh: "asc" }] }),
-    prisma.categoryDefinition.findMany({ orderBy: [{ sortOrder: "asc" }, { labelZh: "asc" }] }),
   ]);
 
-  return { statuses, priorities, categories };
+  return { statuses, priorities };
 }
 
 export async function getDefaultDefinitionIds() {
   await ensureCoreDefinitions();
-  const [statuses, priorities, categories] = await Promise.all([
+  const [statuses, priorities] = await Promise.all([
     prisma.statusDefinition.findMany({
       where: { isActive: true },
       orderBy: [{ sortOrder: "asc" }, { labelZh: "asc" }],
@@ -103,20 +101,14 @@ export async function getDefaultDefinitionIds() {
       where: { isActive: true },
       orderBy: [{ sortOrder: "asc" }, { labelZh: "asc" }],
     }),
-    prisma.categoryDefinition.findMany({
-      where: { isActive: true },
-      orderBy: [{ sortOrder: "asc" }, { labelZh: "asc" }],
-    }),
   ]);
 
   const status = statuses.find((item) => item.key === defaultStatusKey) ?? statuses[0] ?? null;
   const priority = priorities.find((item) => item.key === defaultPriorityKey) ?? priorities[0] ?? null;
-  const category = categories.find((item) => item.key === defaultCategoryKey) ?? categories[0] ?? null;
 
   return {
     statusId: status?.id,
     priorityId: priority?.id,
-    categoryId: category?.id,
   };
 }
 
@@ -178,7 +170,6 @@ export type TicketFilters = {
   workspaceId?: string;
   statusId?: string;
   priorityId?: string;
-  categoryId?: string;
   assigneeId?: string;
   requesterId?: string;
   q?: string;
@@ -205,7 +196,6 @@ export async function getTicketsData(filters: TicketFilters) {
             },
           },
     priorityId: filters.priorityId || undefined,
-    categoryId: filters.categoryId || undefined,
     assigneeId: filters.assigneeId || undefined,
     requesterId: filters.requesterId || undefined,
     OR: filters.q
@@ -455,5 +445,4 @@ export const ticketIncludes = {
   assignee: true,
   status: true,
   priority: true,
-  category: true,
 } satisfies Prisma.TicketInclude;
