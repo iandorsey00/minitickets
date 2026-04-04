@@ -10,6 +10,7 @@ dist
 .env.deploy
 generated
 dev.db
+data/
 public/uploads
 prisma/dev.db
 prisma/dev.db-journal

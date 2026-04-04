@@ -96,6 +96,7 @@ MiniTickets is live as a bilingual, workspace-based ticketing system for persona
 - Workspaces should be created to match real contexts such as personal, household, studio, or small-business operations
 - Workspaces that do not need payment references should keep the payment-information setting disabled
 - Local file uploads are acceptable for a single-server deployment, but longer-term durability may call for external object storage
+- SQLite should not quietly default to a repo-root `dev.db` in deployed environments; use an explicit app-data path instead
 - Daily local backups should be paired with an independent off-host copy when practical
 - Reminder processing should run from the dedicated scheduled service rather than relying on user traffic
 - The standard droplet deploy path should be `bash scripts/deploy.sh` rather than a long manual command sequence

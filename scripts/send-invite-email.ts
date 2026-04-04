@@ -5,6 +5,7 @@ import process from "node:process";
 import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
 import { PrismaClient } from "@prisma/client";
 
+import { getDatabaseUrl } from "../lib/database-url.ts";
 import { sendPasswordSetupEmail } from "../lib/email.ts";
 import { createPasswordSetupToken } from "../lib/password-setup.ts";
 
@@ -26,7 +27,7 @@ async function main() {
   }
 
   const adapter = new PrismaBetterSqlite3({
-    url: process.env.DATABASE_URL || "file:./dev.db",
+    url: getDatabaseUrl(),
   });
   const prisma = new PrismaClient({ adapter });
 

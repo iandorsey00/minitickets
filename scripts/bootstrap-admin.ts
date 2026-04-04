@@ -6,6 +6,7 @@ import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
 import { Locale, PrismaClient, ThemePreference, UserRole } from "@prisma/client";
 import bcrypt from "bcryptjs";
 
+import { getDatabaseUrl } from "../lib/database-url.ts";
 import { sendWelcomeEmail } from "../lib/email.ts";
 
 function readArg(flag: string) {
@@ -36,7 +37,7 @@ async function main() {
   }
 
   const adapter = new PrismaBetterSqlite3({
-    url: process.env.DATABASE_URL || "file:./dev.db",
+    url: getDatabaseUrl(),
   });
   const prisma = new PrismaClient({ adapter });
 
