@@ -113,7 +113,7 @@ MiniTickets is live as a bilingual, workspace-based ticketing system for persona
 - Ticket category/type has been removed entirely; the app now treats tickets as one consistent kind of record rather than carrying a category field through the model and UI
 - Ticket list should show created time in addition to updated time, and ticket detail should show both created and updated times under the status section
 - Status-change activity messages should name both the previous and new status instead of only saying that the status was updated
-- After the safe dependency upgrade pass, the only remaining production audit item is the Nodemailer major-version upgrade, which should be handled separately because it is a breaking change
+- Nodemailer has been removed entirely because the app sends email through Resend via `fetch`, and the dependency/audit tree is now clean at `0 vulnerabilities`
 
 ## Near-term follow-ups
 
