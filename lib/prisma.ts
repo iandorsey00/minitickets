@@ -2,7 +2,7 @@ import "dotenv/config";
 import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
 import { PrismaClient } from "@prisma/client";
 
-import { getDatabaseUrl } from "@/lib/database-url";
+import { getDatabaseUrl } from "./database-url.ts";
 
 const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient };
 const adapter = new PrismaBetterSqlite3({

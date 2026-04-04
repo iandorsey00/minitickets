@@ -1,6 +1,6 @@
 import path from "node:path";
 
-import { getDatabaseUrl } from "@/lib/database-url";
+import { getDatabaseUrl } from "./database-url.ts";
 
 export const MAX_ATTACHMENT_SIZE_BYTES = 30 * 1024 * 1024;
 
