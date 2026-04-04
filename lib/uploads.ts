@@ -1,6 +1,6 @@
 import path from "node:path";
 
-import { getDatabaseUrl } from "./database-url.ts";
+import { getDatabaseUrl, resolveSqliteFilePath } from "./database-url.ts";
 
 export const MAX_ATTACHMENT_SIZE_BYTES = 30 * 1024 * 1024;
 
@@ -13,12 +13,7 @@ const safeInlineMimeTypes = new Set([
 ]);
 
 function getDatabaseDirectory() {
-  const rawUrl = getDatabaseUrl();
-  const fileUrl = rawUrl.startsWith("file:") ? rawUrl.slice(5) : rawUrl;
-  const resolvedFile = path.isAbsolute(fileUrl)
-    ? fileUrl
-    : path.join(/* turbopackIgnore: true */ process.cwd(), fileUrl);
-  return path.dirname(resolvedFile);
+  return path.dirname(resolveSqliteFilePath(getDatabaseUrl()));
 }
 
 export function getUploadsRoot() {

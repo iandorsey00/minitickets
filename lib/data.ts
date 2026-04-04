@@ -10,6 +10,7 @@ import {
   defaultStatusKey,
   localeTokenMap,
 } from "@/lib/constants";
+import { SHARED_PREFERENCE_COOKIE_NAMES } from "@/lib/auth-config";
 import { getCurrentUser, requireUser } from "@/lib/auth";
 import { ensureCoreDefinitions } from "@/lib/catalog";
 import { getDictionary } from "@/lib/i18n";
@@ -19,15 +20,23 @@ import { autoCloseResolvedTickets } from "@/lib/ticket-status";
 export async function getPreferencesForLayout() {
   const user = await getCurrentUser();
   const cookieStore = await cookies();
+  const sharedLocale = cookieStore.get(SHARED_PREFERENCE_COOKIE_NAMES.locale)?.value;
+  const sharedTheme = cookieStore.get(SHARED_PREFERENCE_COOKIE_NAMES.theme)?.value;
+  const sharedAccent = cookieStore.get(SHARED_PREFERENCE_COOKIE_NAMES.accent)?.value;
   return {
-    locale: user?.locale ?? (cookieStore.get(LOCALE_COOKIE)?.value as "ZH_CN" | "EN" | undefined) ?? "ZH_CN",
+    locale:
+      user?.locale ??
+      ((sharedLocale?.toUpperCase() as "ZH_CN" | "EN" | undefined) ??
+        (cookieStore.get(LOCALE_COOKIE)?.value as "ZH_CN" | "EN" | undefined) ??
+        "ZH_CN"),
     themePreference:
       user?.themePreference ??
-      (cookieStore.get(THEME_COOKIE)?.value as "SYSTEM" | "LIGHT" | "DARK" | undefined) ??
-      "SYSTEM",
+      ((sharedTheme?.toUpperCase() as "SYSTEM" | "LIGHT" | "DARK" | undefined) ??
+        (cookieStore.get(THEME_COOKIE)?.value as "SYSTEM" | "LIGHT" | "DARK" | undefined) ??
+        "SYSTEM"),
     accentColor:
       user?.accentColor ??
-      (cookieStore.get(ACCENT_COOKIE)?.value as
+      ((sharedAccent?.toUpperCase() as
         | "BLUE"
         | "CYAN"
         | "TEAL"
@@ -39,7 +48,19 @@ export async function getPreferencesForLayout() {
         | "PINK"
         | "PURPLE"
         | undefined) ??
-      "BLUE",
+        (cookieStore.get(ACCENT_COOKIE)?.value as
+          | "BLUE"
+          | "CYAN"
+          | "TEAL"
+          | "GREEN"
+          | "LIME"
+          | "YELLOW"
+          | "ORANGE"
+          | "RED"
+          | "PINK"
+          | "PURPLE"
+          | undefined) ??
+        "BLUE"),
   };
 }
 

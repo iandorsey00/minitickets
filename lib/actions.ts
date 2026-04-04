@@ -18,6 +18,7 @@ import {
   getCurrentUser,
   getPendingLoginChallenge,
   requireUser,
+  revokeMiniAuthSession,
 } from "@/lib/auth";
 import { AUTH_ROUTES } from "@/lib/auth-config";
 import {
@@ -413,6 +414,7 @@ export async function resendLoginCodeAction() {
 
 export async function logoutAction() {
   await destroySession();
+  await revokeMiniAuthSession();
   redirect(AUTH_ROUTES.login);
 }
 

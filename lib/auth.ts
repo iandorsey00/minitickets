@@ -7,7 +7,9 @@ import {
   createLocalLoginEmailChallenge,
   destroyLocalAppSession,
   getAuthenticatedUserId,
+  getMiniAuthLoginUrl,
   getPendingLocalLoginChallenge,
+  revokeMiniAuthSession,
   startLocalAppSession,
 } from "@/lib/auth-service";
 import { prisma } from "@/lib/prisma";
@@ -39,7 +41,7 @@ export const getCurrentUser = cache(async () => {
 export async function requireUser() {
   const user = await getCurrentUser();
   if (!user) {
-    redirect(AUTH_ROUTES.login);
+    redirect(getMiniAuthLoginUrl());
   }
   return user;
 }
@@ -49,5 +51,6 @@ export {
   createLocalLoginEmailChallenge as createLoginEmailChallenge,
   destroyLocalAppSession as destroySession,
   getPendingLocalLoginChallenge as getPendingLoginChallenge,
+  revokeMiniAuthSession,
   startLocalAppSession as createSession,
 };
