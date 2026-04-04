@@ -46,7 +46,6 @@ MiniTickets is a bilingual, multi-workspace ticketing product for personal and s
   - optional assignee
   - status
   - priority
-  - category
   - optional due date
   - optional saved payment-method references when the workspace enables payment information
 - A ticket may have:
@@ -219,7 +218,6 @@ MiniTickets is a bilingual, multi-workspace ticketing product for personal and s
 - New tickets default to:
   - status: `New`
   - priority: `Medium`
-  - category: `General Request`
 - When a ticket is assigned and would otherwise still be `New`, it should move to `In Progress`
 - Ticket description is optional
 - Event reminders should be intentional rather than preselected by default

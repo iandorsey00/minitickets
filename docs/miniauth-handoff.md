@@ -2,7 +2,7 @@
 
 ## Purpose
 
-MiniAuth should be a small central login service for Ian Dorsey apps such as MiniTickets and a future MiniAssets.
+MiniAuth should be a small central login service for MiniTickets and future related small apps.
 
 The goal is one calm, reusable account system across small self-hosted apps without taking on full enterprise SSO complexity.
 
@@ -92,9 +92,9 @@ MiniAuth should stay:
 
 MiniTickets now has a cleaner seam for a future central login service:
 
-- auth routes are centralized in [`/Users/iandorsey/dev/minitickets/lib/auth-config.ts`](/Users/iandorsey/dev/minitickets/lib/auth-config.ts)
-- local session/challenge mechanics are isolated in [`/Users/iandorsey/dev/minitickets/lib/auth-service.ts`](/Users/iandorsey/dev/minitickets/lib/auth-service.ts)
-- app-facing current-user loading stays in [`/Users/iandorsey/dev/minitickets/lib/auth.ts`](/Users/iandorsey/dev/minitickets/lib/auth.ts)
+- auth routes are centralized in the app auth config
+- local session/challenge mechanics are isolated in a dedicated auth service layer
+- app-facing current-user loading stays behind a thin app auth wrapper
 
 This means a future MiniAuth integration should mainly replace:
 

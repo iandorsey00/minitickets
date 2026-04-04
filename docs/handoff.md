@@ -53,7 +53,7 @@ MiniTickets is live as a bilingual, workspace-based ticketing system for persona
 - Shared screens should prefer soft card surfaces, restrained shadows, and clearer visual grouping over bare divider-only layouts
 - Form controls should default to low-noise boxed fields unless a lighter treatment is clearly better for that workflow
 - Lucide is now the preferred icon system for consistency and MIT-friendly interoperability
-- The login page should stay visually close to the GeoCompare homepage, especially in scale, spacing, and calmness
+- The login page should stay visually close to the established shared homepage pattern, especially in scale, spacing, and calmness
 - On mobile Safari, the login card should preserve comfortable bottom padding beneath the primary `登入 / Sign in` button, including around browser bottom chrome and safe-area insets
 - Mobile usage is a primary scenario, not an afterthought
 - Mobile Safari should not force dash-typing workarounds for due dates, and long event titles should wrap without stretching the layout horizontally
@@ -96,10 +96,10 @@ MiniTickets is live as a bilingual, workspace-based ticketing system for persona
 - Workspaces should be created to match real contexts such as personal, household, studio, or small-business operations
 - Workspaces that do not need payment references should keep the payment-information setting disabled
 - Local file uploads are acceptable for a single-server deployment, but longer-term durability may call for external object storage
-- Daily local backups are installed and should be paired with an off-droplet copy when practical
+- Daily local backups should be paired with an independent off-host copy when practical
 - Reminder processing should run from the dedicated scheduled service rather than relying on user traffic
 - The standard droplet deploy path should be `bash scripts/deploy.sh` rather than a long manual command sequence
-- The deploy script now reads `.env.deploy`, restores server-local `package-lock.json` drift, and restarts both the app and reminders services
+- The deploy script reads a deploy-specific environment file, restores server-local `package-lock.json` drift, and restarts both the app and reminders services
 - The release that removes ticket category/type from the schema requires a one-time `prisma db push --accept-data-loss` during deploy because the database shape shrinks
 - Prisma, Prisma Client, and the SQLite adapter are now on the 7.6 line; Next and a few low-risk support packages were also patch-updated in the same release
 - Attachment responses, including unauthorized and missing-file cases, should stay non-cacheable and non-indexable
@@ -113,7 +113,7 @@ MiniTickets is live as a bilingual, workspace-based ticketing system for persona
 - Ticket list should show created time in addition to updated time, and ticket detail should show both created and updated times under the status section
 - Status-change activity messages should name both the previous and new status instead of only saying that the status was updated
 - Nodemailer has been removed entirely because the app sends email through Resend via `fetch`, and the dependency/audit tree is now clean at `0 vulnerabilities`
-- MiniTickets auth is still local today, but its auth routes and local session/challenge mechanics now live behind a clearer seam in `lib/auth-config.ts`, `lib/auth-service.ts`, and `lib/auth.ts` to make a future MiniAuth extraction calmer
+- MiniTickets auth is still local today, but its auth routes and local session/challenge mechanics now live behind a clearer seam to make a future MiniAuth extraction calmer
 - A future shared-login project should treat MiniTickets workspace authorization as app-local and extract identity/session flows first; see `docs/miniauth-handoff.md`
 
 ## Near-term follow-ups
