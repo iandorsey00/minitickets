@@ -16,7 +16,6 @@ MiniTickets is live as a bilingual, workspace-based ticketing system for persona
 - New tickets default to:
   - status: `New`
   - priority: `Medium`
-  - category: `General Request`
 - Ticket description is optional at creation time
 - Ticket numbers use a global MiniTickets prefix plus a workspace prefix, for example `MTSR00001`
 - The create-ticket action label in Chinese is `提交工单`
@@ -114,6 +113,8 @@ MiniTickets is live as a bilingual, workspace-based ticketing system for persona
 - Ticket list should show created time in addition to updated time, and ticket detail should show both created and updated times under the status section
 - Status-change activity messages should name both the previous and new status instead of only saying that the status was updated
 - Nodemailer has been removed entirely because the app sends email through Resend via `fetch`, and the dependency/audit tree is now clean at `0 vulnerabilities`
+- MiniTickets auth is still local today, but its auth routes and local session/challenge mechanics now live behind a clearer seam in `lib/auth-config.ts`, `lib/auth-service.ts`, and `lib/auth.ts` to make a future MiniAuth extraction calmer
+- A future shared-login project should treat MiniTickets workspace authorization as app-local and extract identity/session flows first; see `docs/miniauth-handoff.md`
 
 ## Near-term follow-ups
 

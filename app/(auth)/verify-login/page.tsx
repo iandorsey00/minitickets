@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 
+import { AUTH_ROUTES } from "@/lib/auth-config";
 import { resendLoginCodeAction, verifyLoginCodeAction } from "@/lib/actions";
 import { getCurrentUser, getPendingLoginChallenge } from "@/lib/auth";
 import { getDictionary } from "@/lib/i18n";
@@ -24,12 +25,12 @@ export default async function VerifyLoginPage({
 }) {
   const currentUser = await getCurrentUser();
   if (currentUser) {
-    redirect("/tickets");
+    redirect(AUTH_ROUTES.postLogin);
   }
 
   const challenge = await getPendingLoginChallenge();
   if (!challenge) {
-    redirect("/login");
+    redirect(AUTH_ROUTES.login);
   }
 
   const dictionary = getDictionary(challenge.user.locale);

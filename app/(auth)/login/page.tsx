@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 
+import { AUTH_ROUTES } from "@/lib/auth-config";
 import { loginAction } from "@/lib/actions";
 import { getCurrentUser } from "@/lib/auth";
 import { getPreferencesForLayout } from "@/lib/data";
@@ -12,7 +13,7 @@ export default async function LoginPage({
 }) {
   const user = await getCurrentUser();
   if (user) {
-    redirect("/tickets");
+    redirect(AUTH_ROUTES.postLogin);
   }
 
   const preferences = await getPreferencesForLayout();

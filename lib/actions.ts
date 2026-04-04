@@ -19,6 +19,7 @@ import {
   getPendingLoginChallenge,
   requireUser,
 } from "@/lib/auth";
+import { AUTH_ROUTES } from "@/lib/auth-config";
 import {
   ACCENT_COOKIE,
   LOCALE_COOKIE,
@@ -296,13 +297,13 @@ export async function loginAction(formData: FormData) {
   });
 
   if (!parsed.success) {
-    redirect("/login?error=invalid");
+    redirect(`${AUTH_ROUTES.login}?error=invalid`);
   }
 
   try {
     await assertRateLimit("login", `${parsed.data.email.toLowerCase()}|${await getClientIp()}`, 5);
   } catch {
-    redirect("/login?error=invalid");
+    redirect(`${AUTH_ROUTES.login}?error=invalid`);
   }
 
   const user = await prisma.user.findUnique({
@@ -310,11 +311,11 @@ export async function loginAction(formData: FormData) {
   });
 
   if (!user || !(await verifyPassword(parsed.data.password, user.passwordHash))) {
-    redirect("/login?error=invalid");
+    redirect(`${AUTH_ROUTES.login}?error=invalid`);
   }
 
   if (!user.isActive) {
-    redirect("/login?error=inactive");
+    redirect(`${AUTH_ROUTES.login}?error=inactive`);
   }
 
   if (user.emailMfaEnabled) {
@@ -331,22 +332,16 @@ export async function loginAction(formData: FormData) {
     } catch (error) {
       console.error("Failed to send login verification code", error);
       await clearLoginEmailChallenge();
-      redirect("/login?error=mfa_send");
+      redirect(`${AUTH_ROUTES.login}?error=mfa_send`);
     }
 
     await clearRateLimit("login", `${parsed.data.email.toLowerCase()}|${await getClientIp()}`);
-    redirect("/verify-login");
+    redirect(AUTH_ROUTES.verifyLogin);
   }
 
-  await createSession(user.id);
+  await createSession(user);
   await clearRateLimit("login", `${parsed.data.email.toLowerCase()}|${await getClientIp()}`);
-
-  const cookieStore = await cookies();
-  cookieStore.set(LOCALE_COOKIE, user.locale, { path: "/" });
-  cookieStore.set(THEME_COOKIE, user.themePreference, { path: "/" });
-  cookieStore.set(ACCENT_COOKIE, user.accentColor, { path: "/" });
-
-  redirect("/tickets");
+  redirect(AUTH_ROUTES.postLogin);
 }
 
 export async function verifyLoginCodeAction(formData: FormData) {
@@ -356,22 +351,22 @@ export async function verifyLoginCodeAction(formData: FormData) {
 
   const pendingChallenge = await getPendingLoginChallenge();
   if (!pendingChallenge) {
-    redirect("/login");
+    redirect(AUTH_ROUTES.login);
   }
 
   if (!parsed.success) {
-    redirect("/verify-login?error=invalid");
+    redirect(`${AUTH_ROUTES.verifyLogin}?error=invalid`);
   }
 
   try {
     await assertRateLimit("login_mfa_verify", `${pendingChallenge.tokenHash}|${await getClientIp()}`, 5);
   } catch {
-    redirect("/verify-login?error=expired");
+    redirect(`${AUTH_ROUTES.verifyLogin}?error=expired`);
   }
 
   const codeHash = crypto.createHash("sha256").update(parsed.data.code).digest("hex");
   if (codeHash !== pendingChallenge.codeHash) {
-    redirect("/verify-login?error=invalid");
+    redirect(`${AUTH_ROUTES.verifyLogin}?error=invalid`);
   }
 
   await prisma.loginEmailChallenge.update({
@@ -381,26 +376,20 @@ export async function verifyLoginCodeAction(formData: FormData) {
 
   await clearRateLimit("login_mfa_verify", `${pendingChallenge.tokenHash}|${await getClientIp()}`);
   await clearLoginEmailChallenge();
-  await createSession(pendingChallenge.userId);
-
-  const cookieStore = await cookies();
-  cookieStore.set(LOCALE_COOKIE, pendingChallenge.user.locale, { path: "/" });
-  cookieStore.set(THEME_COOKIE, pendingChallenge.user.themePreference, { path: "/" });
-  cookieStore.set(ACCENT_COOKIE, pendingChallenge.user.accentColor, { path: "/" });
-
-  redirect("/tickets");
+  await createSession(pendingChallenge.user);
+  redirect(AUTH_ROUTES.postLogin);
 }
 
 export async function resendLoginCodeAction() {
   const pendingChallenge = await getPendingLoginChallenge();
   if (!pendingChallenge) {
-    redirect("/login");
+    redirect(AUTH_ROUTES.login);
   }
 
   try {
     await assertRateLimit("login_mfa_send", `${pendingChallenge.userId}|${await getClientIp()}`, 3);
   } catch {
-    redirect("/verify-login?error=expired");
+    redirect(`${AUTH_ROUTES.verifyLogin}?error=expired`);
   }
 
   try {
@@ -416,15 +405,15 @@ export async function resendLoginCodeAction() {
   } catch (error) {
     console.error("Failed to resend login verification code", error);
     await clearLoginEmailChallenge();
-    redirect("/verify-login?error=invalid");
+    redirect(`${AUTH_ROUTES.verifyLogin}?error=invalid`);
   }
 
-  redirect("/verify-login?sent=1");
+  redirect(`${AUTH_ROUTES.verifyLogin}?sent=1`);
 }
 
 export async function logoutAction() {
   await destroySession();
-  redirect("/login");
+  redirect(AUTH_ROUTES.login);
 }
 
 export async function switchWorkspaceAction(formData: FormData) {
@@ -453,7 +442,7 @@ export async function switchWorkspaceAction(formData: FormData) {
     cookieStore.set(WORKSPACE_COOKIE, workspaceId, { path: "/" });
   }
 
-  redirect("/tickets");
+  redirect(AUTH_ROUTES.postLogin);
 }
 
 export async function createTicketAction(formData: FormData) {
@@ -1897,13 +1886,13 @@ export async function completePasswordSetupAction(formData: FormData) {
   });
 
   if (!parsed.success || parsed.data.password !== parsed.data.passwordConfirm) {
-    redirect(`/setup-password?token=${encodeURIComponent(String(formData.get("token") ?? ""))}&error=invalid`);
+    redirect(`${AUTH_ROUTES.setupPassword}?token=${encodeURIComponent(String(formData.get("token") ?? ""))}&error=invalid`);
   }
 
   try {
     await assertRateLimit("password_setup", `${hashPasswordSetupToken(parsed.data.token)}|${await getClientIp()}`, 5);
   } catch {
-    redirect("/setup-password?error=expired");
+    redirect(`${AUTH_ROUTES.setupPassword}?error=expired`);
   }
 
   const tokenHash = hashPasswordSetupToken(parsed.data.token);
@@ -1913,7 +1902,7 @@ export async function completePasswordSetupAction(formData: FormData) {
   });
 
   if (!setupToken || setupToken.usedAt || setupToken.expiresAt < new Date() || !setupToken.user.isActive) {
-    redirect("/setup-password?error=expired");
+    redirect(`${AUTH_ROUTES.setupPassword}?error=expired`);
   }
 
   const passwordHash = await hashPassword(parsed.data.password);
@@ -1932,15 +1921,10 @@ export async function completePasswordSetupAction(formData: FormData) {
   await clearRateLimit("password_setup", `${tokenHash}|${await getClientIp()}`);
 
   if (!currentUser) {
-    await createSession(setupToken.userId);
-
-    const cookieStore = await cookies();
-    cookieStore.set(LOCALE_COOKIE, setupToken.user.locale, { path: "/" });
-    cookieStore.set(THEME_COOKIE, setupToken.user.themePreference, { path: "/" });
-    cookieStore.set(ACCENT_COOKIE, setupToken.user.accentColor, { path: "/" });
+    await createSession(setupToken.user);
   }
 
-  redirect("/tickets");
+  redirect(AUTH_ROUTES.postLogin);
 }
 
 export async function toggleUserActiveAction(formData: FormData) {
