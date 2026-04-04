@@ -102,6 +102,7 @@ MiniTickets is live as a bilingual, workspace-based ticketing system for persona
 - The standard droplet deploy path should be `bash scripts/deploy.sh` rather than a long manual command sequence
 - The deploy script now reads `.env.deploy`, restores server-local `package-lock.json` drift, and restarts both the app and reminders services
 - The release that removes ticket category/type from the schema requires a one-time `prisma db push --accept-data-loss` during deploy because the database shape shrinks
+- Prisma, Prisma Client, and the SQLite adapter are now on the 7.6 line; Next and a few low-risk support packages were also patch-updated in the same release
 - Attachment responses, including unauthorized and missing-file cases, should stay non-cacheable and non-indexable
 - Low-disk-space alerts should remain deduplicated and should reset only after free space recovers above the threshold
 - Event cards on narrow mobile Safari screens should keep long titles readable without stretching the page or collapsing Chinese text into a vertical strip
@@ -112,6 +113,7 @@ MiniTickets is live as a bilingual, workspace-based ticketing system for persona
 - Ticket category/type has been removed entirely; the app now treats tickets as one consistent kind of record rather than carrying a category field through the model and UI
 - Ticket list should show created time in addition to updated time, and ticket detail should show both created and updated times under the status section
 - Status-change activity messages should name both the previous and new status instead of only saying that the status was updated
+- After the safe dependency upgrade pass, the only remaining production audit item is the Nodemailer major-version upgrade, which should be handled separately because it is a breaking change
 
 ## Near-term follow-ups
 
