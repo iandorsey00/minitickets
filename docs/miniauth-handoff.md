@@ -23,11 +23,12 @@ MiniAuth should own:
 - shared sessions
 - shared preference values for locale, theme, and accent, if enabled
 - app access grants such as `minitickets`
+- shared workspace identity
+- shared workspace memberships
 
 MiniTickets should keep owning:
 
-- workspaces
-- workspace memberships and roles
+- app-specific workspace fields and behavior
 - ticket permissions
 - ticket assignments
 - app-specific notification settings
@@ -40,6 +41,8 @@ MiniAuth answers:
 - is this account active?
 - does this user have access to MiniTickets?
 - what shared preferences should be applied?
+- what shared workspaces exist?
+- which shared workspaces does this user belong to?
 
 MiniTickets answers:
 
@@ -104,12 +107,17 @@ Recommended `AppAccess` minimum:
 
 Keep these in MiniTickets during the first migration phase:
 
-- `Workspace`
-- `WorkspaceMembership`
+- app-specific fields on `Workspace`
 - ticket roles and permissions
 - any ticket-scoped or workspace-scoped authorization logic
 - app-specific notification preferences
 - app-specific settings that do not clearly belong across apps
+
+Recommended workspace split:
+
+- MiniAuth owns shared workspace identity and shared membership truth
+- MiniTickets keeps a local workspace shell for app-specific fields such as `ticketPrefix`, `paymentInfoEnabled`, and any product-local behavior
+- MiniTickets syncs shared workspace identity and memberships from MiniAuth rather than treating its local table as the long-term source of truth
 
 ## Shared Preference Model
 

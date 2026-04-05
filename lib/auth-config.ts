@@ -22,6 +22,9 @@ export const SHARED_PREFERENCE_COOKIE_NAMES = {
 export const MINI_AUTH_LOGIN_REDIRECT_ENABLED =
   process.env.MINIAUTH_LOGIN_REDIRECT_ENABLED === "true";
 
+export const MINI_AUTH_WORKSPACE_SYNC_ENABLED =
+  process.env.MINIAUTH_WORKSPACE_SYNC_ENABLED === "true";
+
 const sharedCookieDomain = process.env.MINITICKETS_AUTH_COOKIE_DOMAIN?.trim();
 export const AUTH_SHARED_COOKIE_DOMAIN =
   sharedCookieDomain && sharedCookieDomain.length > 0 ? sharedCookieDomain : undefined;

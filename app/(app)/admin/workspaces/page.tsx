@@ -1,4 +1,5 @@
 import { deletePaymentMethodAction, toggleWorkspaceArchiveAction, updateWorkspaceAction } from "@/lib/actions";
+import { MINI_AUTH_WORKSPACE_SYNC_ENABLED } from "@/lib/auth-config";
 import { ArchiveIcon, SaveIcon, TrashIcon } from "@/components/icons";
 import { WorkspaceCreateForm } from "@/components/workspace-create-form";
 import { getAdminData } from "@/lib/data";
@@ -16,6 +17,9 @@ export default async function AdminWorkspacesPage({
   }
   const t = data.dictionary;
   const savedMessage = query.saved === "1" ? { tone: "success" as const, label: t.common.savedChanges } : null;
+  const miniAuthAdminUrl = process.env.MINIAUTH_BASE_URL?.trim()
+    ? `${process.env.MINIAUTH_BASE_URL!.replace(/\/$/, "")}/`
+    : null;
 
   return (
     <>
@@ -23,16 +27,27 @@ export default async function AdminWorkspacesPage({
       {savedMessage ? <Badge label={savedMessage.label} tone={savedMessage.tone} /> : null}
       <div className="grid-2">
         <Panel title={t.admin.createWorkspace}>
-          <WorkspaceCreateForm
-            titleLabel={t.common.title}
-            slugLabel={t.common.slug}
-            prefixLabel={t.common.ticketPrefix}
-            descriptionLabel={t.common.description}
-            paymentInfoEnabledLabel={t.common.paymentInfoEnabled}
-            paymentInfoHelp={t.common.paymentInfoHelp}
-            createLabel={t.common.create}
-            slugHelp={t.common.slugHelp}
-          />
+          {MINI_AUTH_WORKSPACE_SYNC_ENABLED ? (
+            <div className="stack">
+              <p className="muted">{t.common.membershipManagedInMiniAuth}</p>
+              {miniAuthAdminUrl ? (
+                <a className="ghost-button" href={miniAuthAdminUrl}>
+                  Open MiniAuth
+                </a>
+              ) : null}
+            </div>
+          ) : (
+            <WorkspaceCreateForm
+              titleLabel={t.common.title}
+              slugLabel={t.common.slug}
+              prefixLabel={t.common.ticketPrefix}
+              descriptionLabel={t.common.description}
+              paymentInfoEnabledLabel={t.common.paymentInfoEnabled}
+              paymentInfoHelp={t.common.paymentInfoHelp}
+              createLabel={t.common.create}
+              slugHelp={t.common.slugHelp}
+            />
+          )}
         </Panel>
 
         <Panel title={t.admin.workspaces}>
@@ -54,15 +69,19 @@ export default async function AdminWorkspacesPage({
                   <td>{workspace.memberships.length}</td>
                   <td>{workspace.tickets.length}</td>
                   <td>
-                    <form action={toggleWorkspaceArchiveAction}>
-                      <input type="hidden" name="workspaceId" value={workspace.id} />
-                      <button type="submit" className="ghost-button">
-                        <span className="button-content">
-                          <ArchiveIcon className="button-icon" />
-                          <span>{workspace.isArchived ? t.common.active : t.common.archived}</span>
-                        </span>
-                      </button>
-                    </form>
+                    {MINI_AUTH_WORKSPACE_SYNC_ENABLED ? (
+                      <span className="muted">{workspace.isArchived ? t.common.archived : t.common.active}</span>
+                    ) : (
+                      <form action={toggleWorkspaceArchiveAction}>
+                        <input type="hidden" name="workspaceId" value={workspace.id} />
+                        <button type="submit" className="ghost-button">
+                          <span className="button-content">
+                            <ArchiveIcon className="button-icon" />
+                            <span>{workspace.isArchived ? t.common.active : t.common.archived}</span>
+                          </span>
+                        </button>
+                      </form>
+                    )}
                   </td>
                 </tr>
               ))}
@@ -85,6 +104,7 @@ export default async function AdminWorkspacesPage({
                     name="name"
                     defaultValue={workspace.name}
                     required
+                    readOnly={MINI_AUTH_WORKSPACE_SYNC_ENABLED}
                   />
                 </div>
                 <div className="field">
@@ -94,6 +114,7 @@ export default async function AdminWorkspacesPage({
                     name="slug"
                     defaultValue={workspace.slug}
                     required
+                    readOnly={MINI_AUTH_WORKSPACE_SYNC_ENABLED}
                   />
                 </div>
                 <div className="field">
@@ -112,6 +133,7 @@ export default async function AdminWorkspacesPage({
                     id={`workspace-description-${workspace.id}`}
                     name="description"
                     defaultValue={workspace.description ?? ""}
+                    readOnly={MINI_AUTH_WORKSPACE_SYNC_ENABLED}
                   />
                 </div>
                 <label className="checkbox-row" htmlFor={`workspace-payment-info-${workspace.id}`}>
@@ -125,6 +147,9 @@ export default async function AdminWorkspacesPage({
                   <span>{t.common.paymentInfoEnabled}</span>
                 </label>
                 <p className="muted">{t.common.paymentInfoHelp}</p>
+                {MINI_AUTH_WORKSPACE_SYNC_ENABLED ? (
+                  <p className="muted">{t.common.membershipManagedInMiniAuth}</p>
+                ) : null}
                 <div>
                   <button type="submit">
                     <span className="button-content">
@@ -153,15 +178,17 @@ export default async function AdminWorkspacesPage({
                     ))}
                   </div>
                 ) : null}
-                <form action={toggleWorkspaceArchiveAction}>
-                  <input type="hidden" name="workspaceId" value={workspace.id} />
-                  <button type="submit" className="ghost-button">
-                    <span className="button-content">
-                      <ArchiveIcon className="button-icon" />
-                      <span>{workspace.isArchived ? t.common.active : t.common.archived}</span>
-                    </span>
-                  </button>
-                </form>
+                {!MINI_AUTH_WORKSPACE_SYNC_ENABLED ? (
+                  <form action={toggleWorkspaceArchiveAction}>
+                    <input type="hidden" name="workspaceId" value={workspace.id} />
+                    <button type="submit" className="ghost-button">
+                      <span className="button-content">
+                        <ArchiveIcon className="button-icon" />
+                        <span>{workspace.isArchived ? t.common.active : t.common.archived}</span>
+                      </span>
+                    </button>
+                  </form>
+                ) : null}
               </div>
             </div>
           ))}

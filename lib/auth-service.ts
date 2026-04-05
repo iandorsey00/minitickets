@@ -9,10 +9,12 @@ import {
   AUTH_ROUTES,
   AUTH_SHARED_COOKIE_DOMAIN,
   MINI_AUTH_LOGIN_REDIRECT_ENABLED,
+  MINI_AUTH_WORKSPACE_SYNC_ENABLED,
 } from "@/lib/auth-config";
 import { getDatabaseUrl, resolveSqliteFilePath } from "@/lib/database-url";
 import { ACCENT_COOKIE, LOCALE_COOKIE, THEME_COOKIE } from "@/lib/constants";
 import { prisma } from "@/lib/prisma";
+import { fallbackTicketPrefixFromSlug } from "@/lib/tickets";
 
 const SESSION_DAYS = 14;
 const LOGIN_CHALLENGE_MINUTES = 10;
@@ -31,6 +33,15 @@ type SessionUserSnapshot = UserPreferenceSnapshot & {
 type MiniAuthIdentity = UserPreferenceSnapshot & {
   authUserId: string;
   email: string;
+};
+
+type SharedWorkspaceSnapshot = {
+  authWorkspaceId: string;
+  slug: string;
+  name: string;
+  description: string | null;
+  isArchived: number;
+  membershipRole: "ADMIN" | "MEMBER" | null;
 };
 
 function sha256(input: string) {
@@ -84,6 +95,213 @@ function getMiniAuthSessionCookieName() {
 function getMiniAuthDb() {
   const filePath = resolveSqliteFilePath(getMiniAuthDatabaseUrl());
   return new Database(filePath, { readonly: true, fileMustExist: true });
+}
+
+function queryAll<Row>(db: InstanceType<typeof Database>, sql: string, ...params: unknown[]) {
+  return (db.prepare(sql) as unknown as { all: (...values: unknown[]) => Row[] }).all(...params);
+}
+
+function toWorkspaceRole(value: string | null | undefined) {
+  return value === "ADMIN" ? "ADMIN" : "MEMBER";
+}
+
+async function syncSharedWorkspaceAccess(localUser: {
+  id: string;
+  authUserId: string;
+  role: string;
+}) {
+  if (!MINI_AUTH_WORKSPACE_SYNC_ENABLED) {
+    return;
+  }
+
+  try {
+    const db = getMiniAuthDb();
+    try {
+      const sharedWorkspaces = (
+        localUser.role === "ADMIN"
+          ? queryAll<SharedWorkspaceSnapshot>(
+              db,
+              `
+                  SELECT
+                    w.id AS authWorkspaceId,
+                    w.slug AS slug,
+                    w.name AS name,
+                    w.description AS description,
+                    w.isArchived AS isArchived,
+                    NULL AS membershipRole
+                  FROM "Workspace" w
+                  ORDER BY w.name ASC
+                `,
+              )
+          : queryAll<SharedWorkspaceSnapshot>(
+              db,
+              `
+                  SELECT
+                    w.id AS authWorkspaceId,
+                    w.slug AS slug,
+                    w.name AS name,
+                    w.description AS description,
+                    w.isArchived AS isArchived,
+                    m.role AS membershipRole
+                  FROM "WorkspaceMembership" m
+                  JOIN "Workspace" w ON w.id = m.workspaceId
+                  WHERE m.userId = ?
+                  ORDER BY w.name ASC
+                `,
+              localUser.authUserId,
+            )
+      ) as SharedWorkspaceSnapshot[];
+
+      const membershipRows = queryAll<SharedWorkspaceSnapshot>(
+        db,
+          `
+            SELECT
+              w.id AS authWorkspaceId,
+              w.slug AS slug,
+              w.name AS name,
+              w.description AS description,
+              w.isArchived AS isArchived,
+              m.role AS membershipRole
+            FROM "WorkspaceMembership" m
+            JOIN "Workspace" w ON w.id = m.workspaceId
+            WHERE m.userId = ?
+            ORDER BY w.name ASC
+          `,
+        localUser.authUserId,
+      );
+
+      const workspaceRowsById = new Map<string, SharedWorkspaceSnapshot>();
+      for (const row of [...sharedWorkspaces, ...membershipRows]) {
+        workspaceRowsById.set(row.authWorkspaceId, row);
+      }
+
+      const workspaceRows = [...workspaceRowsById.values()];
+      if (!workspaceRows.length) {
+        await prisma.workspaceMembership.deleteMany({
+          where: {
+            userId: localUser.id,
+            workspace: {
+              is: {
+                authWorkspaceId: {
+                  not: null,
+                },
+              },
+            },
+          },
+        });
+        return;
+      }
+
+      const authWorkspaceIds = workspaceRows.map((row) => row.authWorkspaceId);
+      const slugs = workspaceRows.map((row) => row.slug);
+      const existingWorkspaces = await prisma.workspace.findMany({
+        where: {
+          OR: [{ authWorkspaceId: { in: authWorkspaceIds } }, { slug: { in: slugs } }],
+        },
+        select: {
+          id: true,
+          authWorkspaceId: true,
+          slug: true,
+        },
+      });
+
+      const localWorkspaceIdByAuthId = new Map<string, string>();
+
+      for (const row of workspaceRows) {
+        const existing =
+          existingWorkspaces.find((workspace) => workspace.authWorkspaceId === row.authWorkspaceId) ??
+          existingWorkspaces.find((workspace) => workspace.slug === row.slug) ??
+          null;
+
+        if (existing) {
+          const updated = await prisma.workspace.update({
+            where: { id: existing.id },
+            data: {
+              authWorkspaceId: row.authWorkspaceId,
+              slug: row.slug,
+              name: row.name,
+              description: row.description,
+              isArchived: Boolean(row.isArchived),
+            },
+            select: { id: true },
+          });
+          localWorkspaceIdByAuthId.set(row.authWorkspaceId, updated.id);
+          continue;
+        }
+
+        const created = await prisma.workspace.create({
+          data: {
+            authWorkspaceId: row.authWorkspaceId,
+            slug: row.slug,
+            name: row.name,
+            description: row.description,
+            isArchived: Boolean(row.isArchived),
+            ticketPrefix: fallbackTicketPrefixFromSlug(row.slug),
+            paymentInfoEnabled: false,
+          },
+          select: { id: true },
+        });
+        localWorkspaceIdByAuthId.set(row.authWorkspaceId, created.id);
+      }
+
+      const desiredAuthWorkspaceIds = membershipRows.map((row) => row.authWorkspaceId);
+      if (desiredAuthWorkspaceIds.length) {
+        await prisma.workspaceMembership.deleteMany({
+          where: {
+            userId: localUser.id,
+            workspace: {
+              is: {
+                authWorkspaceId: {
+                  notIn: desiredAuthWorkspaceIds,
+                },
+              },
+            },
+          },
+        });
+      } else {
+        await prisma.workspaceMembership.deleteMany({
+          where: {
+            userId: localUser.id,
+            workspace: {
+              is: {
+                authWorkspaceId: {
+                  not: null,
+                },
+              },
+            },
+          },
+        });
+      }
+
+      for (const membership of membershipRows) {
+        const workspaceId = localWorkspaceIdByAuthId.get(membership.authWorkspaceId);
+        if (!workspaceId) {
+          continue;
+        }
+
+        await prisma.workspaceMembership.upsert({
+          where: {
+            userId_workspaceId: {
+              userId: localUser.id,
+              workspaceId,
+            },
+          },
+          update: {
+            role: toWorkspaceRole(membership.membershipRole),
+          },
+          create: {
+            userId: localUser.id,
+            workspaceId,
+            role: toWorkspaceRole(membership.membershipRole),
+          },
+        });
+      }
+    } finally {
+      db.close();
+    }
+  } catch (error) {
+    console.error("Failed to sync MiniAuth workspaces into MiniTickets", error);
+  }
 }
 
 export async function applyUserPreferenceCookies(preferences: UserPreferenceSnapshot) {
@@ -282,6 +500,7 @@ export const getAuthenticatedUserId = cache(async () => {
           id: true,
           authUserId: true,
           email: true,
+          role: true,
           isActive: true,
           locale: true,
           themePreference: true,
@@ -311,6 +530,12 @@ export const getAuthenticatedUserId = cache(async () => {
         },
       });
     }
+
+    await syncSharedWorkspaceAccess({
+      id: existingUser.id,
+      authUserId: miniAuthIdentity.authUserId,
+      role: existingUser.role,
+    });
 
     return existingUser.id;
   }

@@ -76,6 +76,7 @@ model User {
 
 model Workspace {
   id            String                @id @default(cuid())
+  authWorkspaceId String?             @unique
   slug          String                @unique
   ticketPrefix  String?               @unique
   name          String

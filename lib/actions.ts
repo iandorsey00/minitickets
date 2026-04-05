@@ -22,7 +22,7 @@ import {
   requireUser,
   revokeMiniAuthSession,
 } from "@/lib/auth";
-import { AUTH_ROUTES } from "@/lib/auth-config";
+import { AUTH_ROUTES, MINI_AUTH_WORKSPACE_SYNC_ENABLED } from "@/lib/auth-config";
 import {
   ACCENT_COOKIE,
   LOCALE_COOKIE,
@@ -1812,6 +1812,10 @@ export async function createUserAction(formData: FormData) {
     redirect("/dashboard");
   }
 
+  if (MINI_AUTH_WORKSPACE_SYNC_ENABLED) {
+    redirect("/admin/users?shared=1");
+  }
+
   const workspaceId = String(formData.get("workspaceId") ?? "");
   const workspaceRole =
     String(formData.get("workspaceRole") ?? "MEMBER") === "ADMIN" ? WorkspaceRole.ADMIN : WorkspaceRole.MEMBER;
@@ -1974,6 +1978,10 @@ export async function createWorkspaceAction(formData: FormData) {
     redirect("/dashboard");
   }
 
+  if (MINI_AUTH_WORKSPACE_SYNC_ENABLED) {
+    redirect("/admin/workspaces?shared=1");
+  }
+
   const name = String(formData.get("name") ?? "").trim();
   const slug = String(formData.get("slug") ?? "")
     .trim()
@@ -2003,28 +2011,30 @@ export async function updateWorkspaceAction(formData: FormData) {
   }
 
   const workspaceId = String(formData.get("workspaceId") ?? "");
-  const name = String(formData.get("name") ?? "").trim();
-  const slug = String(formData.get("slug") ?? "")
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9-]+/g, "-");
   const ticketPrefix = normalizeTicketPrefix(String(formData.get("ticketPrefix") ?? ""));
-  const description = String(formData.get("description") ?? "").trim() || null;
   const paymentInfoEnabled = formData.get("paymentInfoEnabled") === "yes";
 
-  if (!workspaceId || !name || !slug || !ticketPrefix) {
+  if (!workspaceId || !ticketPrefix) {
     redirect("/admin/workspaces");
   }
 
   await prisma.workspace.update({
     where: { id: workspaceId },
-    data: {
-      name,
-      slug,
-      ticketPrefix,
-      description,
-      paymentInfoEnabled,
-    },
+    data: MINI_AUTH_WORKSPACE_SYNC_ENABLED
+      ? {
+          ticketPrefix,
+          paymentInfoEnabled,
+        }
+      : {
+          name: String(formData.get("name") ?? "").trim(),
+          slug: String(formData.get("slug") ?? "")
+            .trim()
+            .toLowerCase()
+            .replace(/[^a-z0-9-]+/g, "-"),
+          ticketPrefix,
+          description: String(formData.get("description") ?? "").trim() || null,
+          paymentInfoEnabled,
+        },
   });
 
   revalidatePath("/admin");
@@ -2036,6 +2046,10 @@ export async function toggleWorkspaceArchiveAction(formData: FormData) {
   const user = await requireUser();
   if (user.role !== UserRole.ADMIN) {
     redirect("/dashboard");
+  }
+
+  if (MINI_AUTH_WORKSPACE_SYNC_ENABLED) {
+    redirect("/admin/workspaces?shared=1");
   }
 
   const workspaceId = String(formData.get("workspaceId") ?? "");
@@ -2082,6 +2096,10 @@ export async function assignMembershipAction(formData: FormData) {
     redirect("/dashboard");
   }
 
+  if (MINI_AUTH_WORKSPACE_SYNC_ENABLED) {
+    redirect("/admin/users?shared=1");
+  }
+
   const targetUserId = String(formData.get("userId") ?? "");
   const workspaceId = String(formData.get("workspaceId") ?? "");
   const role = String(formData.get("role") ?? "MEMBER") === "ADMIN" ? WorkspaceRole.ADMIN : WorkspaceRole.MEMBER;
@@ -2103,6 +2121,10 @@ export async function removeMembershipAction(formData: FormData) {
   const user = await requireUser();
   if (user.role !== UserRole.ADMIN) {
     redirect("/dashboard");
+  }
+
+  if (MINI_AUTH_WORKSPACE_SYNC_ENABLED) {
+    redirect("/admin/users?shared=1");
   }
 
   const targetUserId = String(formData.get("userId") ?? "");

@@ -105,6 +105,8 @@ MiniTickets is live as a bilingual, workspace-based ticketing system for persona
 - When MiniAuth login redirect mode is enabled, MiniTickets now redirects `/login` straight to MiniAuth instead of rendering an intermediary disabled login form
 - When MiniAuth login redirect mode is enabled, MiniTickets now sends users to MiniAuth with a `returnTo` target for its own post-login route so successful authentication lands them back on `/tickets` instead of leaving them on the MiniAuth dashboard
 - When shared-login mode is enabled, MiniTickets sign-out now clears its local session and then routes the browser through MiniAuth logout so the shared session is revoked before returning to the MiniTickets login screen
+- MiniTickets can now optionally sync shared workspace identity and membership truth from MiniAuth during MiniAuth-backed identity resolution; local workspace records remain in place for app-specific fields such as ticket prefix and payment-info behavior
+- When `MINIAUTH_WORKSPACE_SYNC_ENABLED=true`, shared workspace creation and membership changes should be done in MiniAuth, while MiniTickets keeps only app-specific workspace settings local
 - The release that removes ticket category/type from the schema requires a one-time `prisma db push --accept-data-loss` during deploy because the database shape shrinks
 - Prisma, Prisma Client, and the SQLite adapter are now on the 7.6 line; Next and a few low-risk support packages were also patch-updated in the same release
 - Attachment responses, including unauthorized and missing-file cases, should stay non-cacheable and non-indexable
