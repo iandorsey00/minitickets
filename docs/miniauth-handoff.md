@@ -49,6 +49,12 @@ MiniTickets answers:
 - what can this user do in this workspace?
 - what tickets, comments, and actions are allowed here?
 
+Disabled-user expectation:
+
+- MiniAuth should be the source of truth for whether the account is active
+- MiniTickets should block inactive users from current participation and active pickers
+- MiniTickets should preserve historical records authored by now-inactive users
+
 ## Migration Principle
 
 Migrate identity first.

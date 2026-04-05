@@ -5,7 +5,7 @@ import {
   resendUserInviteAction,
   toggleUserActiveAction,
 } from "@/lib/actions";
-import { MINI_AUTH_WORKSPACE_SYNC_ENABLED } from "@/lib/auth-config";
+import { MINI_AUTH_LOGIN_REDIRECT_ENABLED, MINI_AUTH_WORKSPACE_SYNC_ENABLED } from "@/lib/auth-config";
 import { MailIcon, PlusIcon, PowerIcon, SaveIcon, TrashIcon } from "@/components/icons";
 import { accentLabelMap, accentValues, localeValues } from "@/lib/constants";
 import { getAdminData } from "@/lib/data";
@@ -22,6 +22,7 @@ export default async function AdminUsersPage({
     return <div />;
   }
   const t = data.dictionary;
+  const manageUsersInMiniAuth = MINI_AUTH_LOGIN_REDIRECT_ENABLED;
   const miniAuthAdminUrl = process.env.MINIAUTH_BASE_URL?.trim()
     ? `${process.env.MINIAUTH_BASE_URL!.replace(/\/$/, "")}/`
     : null;
@@ -41,7 +42,7 @@ export default async function AdminUsersPage({
       ) : null}
       <div className="grid-2">
         <Panel title={t.admin.createUser}>
-          {MINI_AUTH_WORKSPACE_SYNC_ENABLED ? (
+          {manageUsersInMiniAuth ? (
             <div className="stack">
               <p className="muted">{t.common.membershipManagedInMiniAuth}</p>
               {miniAuthAdminUrl ? (
@@ -129,26 +130,36 @@ export default async function AdminUsersPage({
                     <Badge label={user.locale === "ZH_CN" ? "简体中文" : "English"} tone="neutral" />
                   </div>
                 </div>
-                <div className="helper-links admin-user-actions">
-                  <form action={resendUserInviteAction}>
-                    <input type="hidden" name="userId" value={user.id} />
-                    <button type="submit" className="ghost-button">
-                      <span className="button-content">
-                        <MailIcon className="button-icon" />
-                        <span>{t.admin.inviteUser}</span>
-                      </span>
-                    </button>
-                  </form>
-                  <form action={toggleUserActiveAction}>
-                    <input type="hidden" name="userId" value={user.id} />
-                    <button type="submit" className="ghost-button">
-                      <span className="button-content">
-                        <PowerIcon className="button-icon" />
-                        <span>{user.isActive ? t.common.inactive : t.common.active}</span>
-                      </span>
-                    </button>
-                  </form>
-                </div>
+                {manageUsersInMiniAuth ? (
+                  <div className="helper-links admin-user-actions">
+                    {miniAuthAdminUrl ? (
+                      <a className="ghost-button" href={miniAuthAdminUrl}>
+                        Open MiniAuth
+                      </a>
+                    ) : null}
+                  </div>
+                ) : (
+                  <div className="helper-links admin-user-actions">
+                    <form action={resendUserInviteAction}>
+                      <input type="hidden" name="userId" value={user.id} />
+                      <button type="submit" className="ghost-button">
+                        <span className="button-content">
+                          <MailIcon className="button-icon" />
+                          <span>{t.admin.inviteUser}</span>
+                        </span>
+                      </button>
+                    </form>
+                    <form action={toggleUserActiveAction}>
+                      <input type="hidden" name="userId" value={user.id} />
+                      <button type="submit" className="ghost-button">
+                        <span className="button-content">
+                          <PowerIcon className="button-icon" />
+                          <span>{user.isActive ? t.common.inactive : t.common.active}</span>
+                        </span>
+                      </button>
+                    </form>
+                  </div>
+                )}
               </div>
             ))}
           </div>

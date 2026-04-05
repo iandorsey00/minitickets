@@ -22,7 +22,7 @@ import {
   requireUser,
   revokeMiniAuthSession,
 } from "@/lib/auth";
-import { AUTH_ROUTES, MINI_AUTH_WORKSPACE_SYNC_ENABLED } from "@/lib/auth-config";
+import { AUTH_ROUTES, MINI_AUTH_LOGIN_REDIRECT_ENABLED, MINI_AUTH_WORKSPACE_SYNC_ENABLED } from "@/lib/auth-config";
 import {
   ACCENT_COOKIE,
   LOCALE_COOKIE,
@@ -507,6 +507,15 @@ export async function createTicketAction(formData: FormData) {
   }
 
   if (parsed.data.assigneeId) {
+    const assignee = await prisma.user.findUnique({
+      where: { id: parsed.data.assigneeId },
+      select: { role: true, isActive: true },
+    });
+
+    if (!assignee?.isActive) {
+      redirect("/tickets/new?error=invalid");
+    }
+
     const assigneeMembership = await prisma.workspaceMembership.findFirst({
       where: {
         userId: parsed.data.assigneeId,
@@ -515,14 +524,7 @@ export async function createTicketAction(formData: FormData) {
       select: { id: true },
     });
 
-    const assignee = assigneeMembership
-      ? null
-      : await prisma.user.findUnique({
-          where: { id: parsed.data.assigneeId },
-          select: { role: true },
-        });
-
-    if (!assigneeMembership && assignee?.role !== UserRole.ADMIN) {
+    if (!assigneeMembership && assignee.role !== UserRole.ADMIN) {
       redirect("/tickets/new?error=invalid");
     }
   }
@@ -750,6 +752,15 @@ export async function updateTicketAction(formData: FormData) {
   }
 
   if (nextValues.assigneeId) {
+    const assignee = await prisma.user.findUnique({
+      where: { id: nextValues.assigneeId },
+      select: { role: true, isActive: true },
+    });
+
+    if (!assignee?.isActive) {
+      redirect(`/tickets/${ticketId}`);
+    }
+
     const assigneeMembership = await prisma.workspaceMembership.findFirst({
       where: {
         userId: nextValues.assigneeId,
@@ -758,14 +769,7 @@ export async function updateTicketAction(formData: FormData) {
       select: { id: true },
     });
 
-    const assignee = assigneeMembership
-      ? null
-      : await prisma.user.findUnique({
-          where: { id: nextValues.assigneeId },
-          select: { role: true },
-        });
-
-    if (!assigneeMembership && assignee?.role !== UserRole.ADMIN) {
+    if (!assigneeMembership && assignee.role !== UserRole.ADMIN) {
       redirect(`/tickets/${ticketId}`);
     }
   }
@@ -1816,6 +1820,10 @@ export async function createUserAction(formData: FormData) {
     redirect("/admin/users?shared=1");
   }
 
+  if (MINI_AUTH_LOGIN_REDIRECT_ENABLED) {
+    redirect("/admin/users?shared=1");
+  }
+
   const workspaceId = String(formData.get("workspaceId") ?? "");
   const workspaceRole =
     String(formData.get("workspaceRole") ?? "MEMBER") === "ADMIN" ? WorkspaceRole.ADMIN : WorkspaceRole.MEMBER;
@@ -1870,6 +1878,10 @@ export async function resendUserInviteAction(formData: FormData) {
   const user = await requireUser();
   if (user.role !== UserRole.ADMIN) {
     redirect("/dashboard");
+  }
+
+  if (MINI_AUTH_LOGIN_REDIRECT_ENABLED) {
+    redirect("/admin/users?shared=1");
   }
 
   const userId = String(formData.get("userId") ?? "");
@@ -1960,6 +1972,10 @@ export async function toggleUserActiveAction(formData: FormData) {
   const user = await requireUser();
   if (user.role !== UserRole.ADMIN) {
     redirect("/dashboard");
+  }
+
+  if (MINI_AUTH_LOGIN_REDIRECT_ENABLED) {
+    redirect("/admin/users?shared=1");
   }
 
   const targetId = String(formData.get("userId") ?? "");

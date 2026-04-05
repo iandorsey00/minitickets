@@ -237,6 +237,7 @@ export async function getTicketsData(filters: TicketFilters) {
     getDefinitions(),
     prisma.user.findMany({
       where: {
+        isActive: true,
         memberships: {
           some: {
             workspaceId: { in: context.accessibleWorkspaceIds },
@@ -304,6 +305,7 @@ export async function getTicketDetail(ticketId: string) {
     getDefinitions(),
     prisma.user.findMany({
       where: {
+        isActive: true,
         OR: [
           {
             memberships: {

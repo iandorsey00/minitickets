@@ -33,6 +33,7 @@ type SessionUserSnapshot = UserPreferenceSnapshot & {
 type MiniAuthIdentity = UserPreferenceSnapshot & {
   authUserId: string;
   email: string;
+  displayName: string;
 };
 
 type SharedWorkspaceSnapshot = {
@@ -43,6 +44,15 @@ type SharedWorkspaceSnapshot = {
   isArchived: number;
   membershipRole: "ADMIN" | "MEMBER" | null;
 };
+
+type SharedWorkspaceUserSnapshot = UserPreferenceSnapshot & {
+  authUserId: string;
+  email: string;
+  displayName: string;
+  isActive: number;
+};
+
+const SHARED_AUTH_PASSWORD_PLACEHOLDER = "__MINIAUTH_MANAGED__";
 
 function sha256(input: string) {
   return crypto.createHash("sha256").update(input).digest("hex");
@@ -176,6 +186,95 @@ async function syncSharedWorkspaceAccess(localUser: {
       }
 
       const workspaceRows = [...workspaceRowsById.values()];
+      if (workspaceRows.length) {
+        const placeholders = workspaceRows.map(() => "?").join(", ");
+        const sharedUsers = queryAll<SharedWorkspaceUserSnapshot>(
+          db,
+          `
+            SELECT DISTINCT
+              u.id AS authUserId,
+              u.email AS email,
+              u.displayName AS displayName,
+              u.locale AS locale,
+              u.themePreference AS themePreference,
+              u.accentColor AS accentColor,
+              u.isActive AS isActive
+            FROM "WorkspaceMembership" m
+            JOIN "User" u ON u.id = m.userId
+            WHERE m.workspaceId IN (${placeholders})
+            ORDER BY u.email ASC
+          `,
+          ...workspaceRows.map((row) => row.authWorkspaceId),
+        );
+
+        if (sharedUsers.length) {
+          const authUserIds = sharedUsers.map((item) => item.authUserId);
+          const emails = sharedUsers.map((item) => item.email.trim().toLowerCase());
+          const existingLocalUsers = await prisma.user.findMany({
+            where: {
+              OR: [{ authUserId: { in: authUserIds } }, { email: { in: emails } }],
+            },
+            select: {
+              id: true,
+              authUserId: true,
+              email: true,
+              displayName: true,
+              locale: true,
+              themePreference: true,
+              accentColor: true,
+              isActive: true,
+            },
+          });
+
+          for (const sharedUser of sharedUsers) {
+            const normalizedEmail = sharedUser.email.trim().toLowerCase();
+            const existingLocalUser =
+              existingLocalUsers.find((item) => item.authUserId === sharedUser.authUserId) ??
+              existingLocalUsers.find((item) => item.email === normalizedEmail) ??
+              null;
+
+            if (!existingLocalUser) {
+              await prisma.user.create({
+                data: {
+                  authUserId: sharedUser.authUserId,
+                  email: normalizedEmail,
+                  displayName: sharedUser.displayName,
+                  passwordHash: SHARED_AUTH_PASSWORD_PLACEHOLDER,
+                  locale: sharedUser.locale,
+                  themePreference: sharedUser.themePreference,
+                  accentColor: sharedUser.accentColor,
+                  isActive: Boolean(sharedUser.isActive),
+                },
+              });
+              continue;
+            }
+
+            if (
+              existingLocalUser.authUserId !== sharedUser.authUserId ||
+              existingLocalUser.email !== normalizedEmail ||
+              existingLocalUser.displayName !== sharedUser.displayName ||
+              existingLocalUser.locale !== sharedUser.locale ||
+              existingLocalUser.themePreference !== sharedUser.themePreference ||
+              existingLocalUser.accentColor !== sharedUser.accentColor ||
+              existingLocalUser.isActive !== Boolean(sharedUser.isActive)
+            ) {
+              await prisma.user.update({
+                where: { id: existingLocalUser.id },
+                data: {
+                  authUserId: sharedUser.authUserId,
+                  email: normalizedEmail,
+                  displayName: sharedUser.displayName,
+                  locale: sharedUser.locale,
+                  themePreference: sharedUser.themePreference,
+                  accentColor: sharedUser.accentColor,
+                  isActive: Boolean(sharedUser.isActive),
+                },
+              });
+            }
+          }
+        }
+      }
+
       if (!workspaceRows.length) {
         await prisma.workspaceMembership.deleteMany({
           where: {
@@ -440,6 +539,7 @@ export const getMiniAuthIdentity = cache(async (): Promise<MiniAuthIdentity | nu
             SELECT
               u.id AS authUserId,
               u.email AS email,
+              u.displayName AS displayName,
               u.locale AS locale,
               u.themePreference AS themePreference,
               u.accentColor AS accentColor,
@@ -459,6 +559,7 @@ export const getMiniAuthIdentity = cache(async (): Promise<MiniAuthIdentity | nu
         | {
             authUserId: string;
             email: string;
+            displayName: string;
             locale: string;
             themePreference: string;
             accentColor: string;
@@ -475,6 +576,7 @@ export const getMiniAuthIdentity = cache(async (): Promise<MiniAuthIdentity | nu
       return {
         authUserId: row.authUserId,
         email: row.email.toLowerCase(),
+        displayName: row.displayName,
         locale: toLocale(row.locale),
         themePreference: toTheme(row.themePreference),
         accentColor: toAccent(row.accentColor),
@@ -500,6 +602,7 @@ export const getAuthenticatedUserId = cache(async () => {
           id: true,
           authUserId: true,
           email: true,
+          displayName: true,
           role: true,
           isActive: true,
           locale: true,
@@ -508,22 +611,48 @@ export const getAuthenticatedUserId = cache(async () => {
         },
       })) ?? null;
 
-    if (!existingUser || !existingUser.isActive) {
-      return null;
-    }
-
-    if (
-      existingUser.authUserId !== miniAuthIdentity.authUserId ||
-      existingUser.email !== miniAuthIdentity.email ||
-      existingUser.locale !== miniAuthIdentity.locale ||
-      existingUser.themePreference !== miniAuthIdentity.themePreference ||
-      existingUser.accentColor !== miniAuthIdentity.accentColor
-    ) {
-      await prisma.user.update({
-        where: { id: existingUser.id },
+    const localUser =
+      existingUser ??
+      (await prisma.user.create({
         data: {
           authUserId: miniAuthIdentity.authUserId,
           email: miniAuthIdentity.email,
+          displayName: miniAuthIdentity.displayName,
+          passwordHash: SHARED_AUTH_PASSWORD_PLACEHOLDER,
+          locale: miniAuthIdentity.locale,
+          themePreference: miniAuthIdentity.themePreference,
+          accentColor: miniAuthIdentity.accentColor,
+          isActive: true,
+        },
+        select: {
+          id: true,
+          authUserId: true,
+          email: true,
+          displayName: true,
+          role: true,
+          isActive: true,
+          locale: true,
+          themePreference: true,
+          accentColor: true,
+        },
+      }));
+
+    if (
+      localUser.authUserId !== miniAuthIdentity.authUserId ||
+      localUser.email !== miniAuthIdentity.email ||
+      localUser.displayName !== miniAuthIdentity.displayName ||
+      !localUser.isActive ||
+      localUser.locale !== miniAuthIdentity.locale ||
+      localUser.themePreference !== miniAuthIdentity.themePreference ||
+      localUser.accentColor !== miniAuthIdentity.accentColor
+    ) {
+      await prisma.user.update({
+        where: { id: localUser.id },
+        data: {
+          authUserId: miniAuthIdentity.authUserId,
+          email: miniAuthIdentity.email,
+          displayName: miniAuthIdentity.displayName,
+          isActive: true,
           locale: miniAuthIdentity.locale,
           themePreference: miniAuthIdentity.themePreference,
           accentColor: miniAuthIdentity.accentColor,
@@ -532,12 +661,12 @@ export const getAuthenticatedUserId = cache(async () => {
     }
 
     await syncSharedWorkspaceAccess({
-      id: existingUser.id,
+      id: localUser.id,
       authUserId: miniAuthIdentity.authUserId,
-      role: existingUser.role,
+      role: localUser.role,
     });
 
-    return existingUser.id;
+    return localUser.id;
   }
 
   const cookieStore = await cookies();
