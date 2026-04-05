@@ -50,6 +50,7 @@ export {
   clearLocalLoginEmailChallenge as clearLoginEmailChallenge,
   createLocalLoginEmailChallenge as createLoginEmailChallenge,
   destroyLocalAppSession as destroySession,
+  getMiniAuthLoginUrl,
   getPendingLocalLoginChallenge as getPendingLoginChallenge,
   revokeMiniAuthSession,
   startLocalAppSession as createSession,

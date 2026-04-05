@@ -16,6 +16,7 @@ import {
   createSession,
   destroySession,
   getCurrentUser,
+  getMiniAuthLoginUrl,
   getPendingLoginChallenge,
   requireUser,
   revokeMiniAuthSession,
@@ -292,6 +293,11 @@ async function validateParentTicketSelection(parentTicketId: string | undefined 
 }
 
 export async function loginAction(formData: FormData) {
+  const miniAuthLoginUrl = getMiniAuthLoginUrl();
+  if (miniAuthLoginUrl !== AUTH_ROUTES.login) {
+    redirect(miniAuthLoginUrl);
+  }
+
   const parsed = loginSchema.safeParse({
     email: formData.get("email"),
     password: formData.get("password"),
@@ -346,6 +352,11 @@ export async function loginAction(formData: FormData) {
 }
 
 export async function verifyLoginCodeAction(formData: FormData) {
+  const miniAuthLoginUrl = getMiniAuthLoginUrl();
+  if (miniAuthLoginUrl !== AUTH_ROUTES.login) {
+    redirect(miniAuthLoginUrl);
+  }
+
   const parsed = verifyLoginCodeSchema.safeParse({
     code: formData.get("code"),
   });
@@ -382,6 +393,11 @@ export async function verifyLoginCodeAction(formData: FormData) {
 }
 
 export async function resendLoginCodeAction() {
+  const miniAuthLoginUrl = getMiniAuthLoginUrl();
+  if (miniAuthLoginUrl !== AUTH_ROUTES.login) {
+    redirect(miniAuthLoginUrl);
+  }
+
   const pendingChallenge = await getPendingLoginChallenge();
   if (!pendingChallenge) {
     redirect(AUTH_ROUTES.login);
@@ -415,7 +431,7 @@ export async function resendLoginCodeAction() {
 export async function logoutAction() {
   await destroySession();
   await revokeMiniAuthSession();
-  redirect(AUTH_ROUTES.login);
+  redirect(getMiniAuthLoginUrl());
 }
 
 export async function switchWorkspaceAction(formData: FormData) {

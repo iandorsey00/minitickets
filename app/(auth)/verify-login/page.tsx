@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { AUTH_ROUTES } from "@/lib/auth-config";
 import { resendLoginCodeAction, verifyLoginCodeAction } from "@/lib/actions";
 import { getCurrentUser, getPendingLoginChallenge } from "@/lib/auth";
+import { getMiniAuthLoginUrl } from "@/lib/auth-service";
 import { getDictionary } from "@/lib/i18n";
 
 function maskEmail(email: string) {
@@ -26,6 +27,11 @@ export default async function VerifyLoginPage({
   const currentUser = await getCurrentUser();
   if (currentUser) {
     redirect(AUTH_ROUTES.postLogin);
+  }
+
+  const miniAuthLoginUrl = getMiniAuthLoginUrl();
+  if (miniAuthLoginUrl !== AUTH_ROUTES.login) {
+    redirect(miniAuthLoginUrl);
   }
 
   const challenge = await getPendingLoginChallenge();
