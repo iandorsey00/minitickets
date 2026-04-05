@@ -1,6 +1,6 @@
 {
   "name": "minitickets",
-  "version": "1.10.30",
+  "version": "1.10.31",
   "description": "MiniTickets - lightweight bilingual workspace ticketing",
   "scripts": {
     "dev": "prisma generate && next dev",

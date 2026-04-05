@@ -109,6 +109,7 @@ MiniTickets is live as a bilingual, workspace-based ticketing system for persona
 - When `MINIAUTH_WORKSPACE_SYNC_ENABLED=true`, shared workspace creation and membership changes should be done in MiniAuth, while MiniTickets keeps only app-specific workspace settings local
 - When MiniAuth-backed identity is in use, MiniTickets should treat MiniAuth as the source of truth for whether a user is active; inactive users should disappear from current operational UI such as assignee and people pickers while historical ticket/comment records remain intact
 - When shared-login mode is enabled, shared user preferences for language, theme, and accent now belong to MiniAuth; MiniTickets settings should keep only app-local preferences and link users to MiniAuth for shared account presentation values
+- The primary app icon/favicon now uses the newer ticket-mark artwork in `app/icon.png`; keep future icon updates flowing through that single Next app icon asset unless the app later needs distinct platform-specific variants
 - The release that removes ticket category/type from the schema requires a one-time `prisma db push --accept-data-loss` during deploy because the database shape shrinks
 - Prisma, Prisma Client, and the SQLite adapter are now on the 7.6 line; Next and a few low-risk support packages were also patch-updated in the same release
 - Attachment responses, including unauthorized and missing-file cases, should stay non-cacheable and non-indexable
