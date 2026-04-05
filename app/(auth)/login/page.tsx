@@ -18,10 +18,13 @@ export default async function LoginPage({
   }
 
   const miniAuthLoginUrl = getMiniAuthLoginUrl(AUTH_ROUTES.postLogin);
+  if (miniAuthLoginUrl !== AUTH_ROUTES.login) {
+    redirect(miniAuthLoginUrl);
+  }
+
   const preferences = await getPreferencesForLayout();
   const dictionary = getDictionary(preferences.locale);
   const params = await searchParams;
-  const miniAuthEnabled = miniAuthLoginUrl !== AUTH_ROUTES.login;
   const errorMessage =
     params.error === "inactive"
       ? dictionary.auth.inactive
@@ -48,22 +51,13 @@ export default async function LoginPage({
             <form action={loginAction}>
               <div className="field">
                 <label htmlFor="email">{dictionary.auth.email}</label>
-                <input id="email" name="email" type="email" required disabled={miniAuthEnabled} />
+                <input id="email" name="email" type="email" required />
               </div>
               <div className="field">
                 <label htmlFor="password">{dictionary.auth.password}</label>
-                <input id="password" name="password" type="password" required minLength={8} disabled={miniAuthEnabled} />
+                <input id="password" name="password" type="password" required minLength={8} />
               </div>
-              {miniAuthEnabled ? (
-                <>
-                  <p className="muted">{dictionary.auth.sharedLoginNotice}</p>
-                  <a className="button auth-secondary-button" href={miniAuthLoginUrl}>
-                    {dictionary.auth.sharedLoginAction}
-                  </a>
-                </>
-              ) : (
-                <button type="submit">{dictionary.auth.submit}</button>
-              )}
+              <button type="submit">{dictionary.auth.submit}</button>
             </form>
           </div>
         </section>

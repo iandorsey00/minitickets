@@ -184,6 +184,7 @@ Recommended result:
 - unauthenticated MiniTickets users are sent to MiniAuth
 - MiniAuth performs password or MFA checks
 - MiniAuth issues the shared session cookie
+- MiniTickets `/login` should hand off directly to MiniAuth rather than stopping on an app-local intermediary screen
 - MiniTickets sends a trusted `returnTo` target so MiniAuth redirects successful sign-in back to the MiniTickets post-login route
 - MiniTickets reads identity from the shared session
 - MiniTickets sign-out should also route through MiniAuth logout so shared-session sign-out and app-local sign-out stay consistent
