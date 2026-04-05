@@ -1781,10 +1781,10 @@ export async function updateSettingsAction(formData: FormData) {
     passwordHash?: string;
   } = {
     displayName: parsed.data.displayName,
-    locale: parsed.data.locale,
+    locale: MINI_AUTH_LOGIN_REDIRECT_ENABLED ? user.locale : parsed.data.locale,
     timeZone: parsed.data.timeZone,
-    themePreference: parsed.data.themePreference,
-    accentColor: parsed.data.accentColor,
+    themePreference: MINI_AUTH_LOGIN_REDIRECT_ENABLED ? user.themePreference : parsed.data.themePreference,
+    accentColor: MINI_AUTH_LOGIN_REDIRECT_ENABLED ? user.accentColor : parsed.data.accentColor,
     emailMfaEnabled: parsed.data.emailMfaEnabled,
     commentEmailsEnabled: parsed.data.commentEmailsEnabled,
     eventCalendarInvitesEnabled: parsed.data.eventCalendarInvitesEnabled,
@@ -1801,9 +1801,11 @@ export async function updateSettingsAction(formData: FormData) {
   });
 
   const cookieStore = await cookies();
-  cookieStore.set(LOCALE_COOKIE, parsed.data.locale, { path: "/" });
-  cookieStore.set(THEME_COOKIE, parsed.data.themePreference, { path: "/" });
-  cookieStore.set(ACCENT_COOKIE, parsed.data.accentColor, { path: "/" });
+  if (!MINI_AUTH_LOGIN_REDIRECT_ENABLED) {
+    cookieStore.set(LOCALE_COOKIE, parsed.data.locale, { path: "/" });
+    cookieStore.set(THEME_COOKIE, parsed.data.themePreference, { path: "/" });
+    cookieStore.set(ACCENT_COOKIE, parsed.data.accentColor, { path: "/" });
+  }
 
   revalidatePath("/settings");
   revalidatePath("/dashboard");

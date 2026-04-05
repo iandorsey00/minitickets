@@ -146,6 +146,11 @@ Recommended MiniTickets behavior:
 3. fall back to MiniTickets-local stored values only if still needed
 4. keep MiniTickets CSS variables and component styling app-local
 
+Current rollout behavior:
+
+- when MiniAuth-backed shared login is enabled, MiniTickets should treat locale, theme, and accent as MiniAuth-managed settings
+- MiniTickets settings should keep app-local preferences such as notification and time-zone choices, while linking signed-in users to MiniAuth for shared preference updates
+
 Recommended shared cookie names:
 
 - `mini_locale`

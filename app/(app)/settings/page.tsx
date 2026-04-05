@@ -1,4 +1,5 @@
 import { updateSettingsAction } from "@/lib/actions";
+import { MINI_AUTH_LOGIN_REDIRECT_ENABLED } from "@/lib/auth-config";
 import { accentHexMap, accentLabelMap, accentValues, localeValues, themeValues, timeZoneLabelMap, timeZoneValues } from "@/lib/constants";
 import { getViewerContext } from "@/lib/data";
 import { getDiskSpaceSummary } from "@/lib/disk-space";
@@ -15,6 +16,9 @@ export default async function SettingsPage({
   const t = data.dictionary;
   const diskSpace = data.user.role === "ADMIN" ? await getDiskSpaceSummary() : null;
   const params = await searchParams;
+  const miniAuthSettingsUrl = process.env.MINIAUTH_BASE_URL?.trim()
+    ? `${process.env.MINIAUTH_BASE_URL!.replace(/\/$/, "")}/`
+    : null;
   const errorMessage =
     params.error === "password_mismatch"
       ? t.settings.passwordMismatch
@@ -48,30 +52,51 @@ export default async function SettingsPage({
               </a>
             </span>
           </div>
-          <div className="field">
-            <label htmlFor="locale">{t.common.language}</label>
-            <select id="locale" name="locale" defaultValue={data.user.locale}>
-              {localeValues.map((locale) => (
-                <option key={locale} value={locale}>
-                  {locale === "ZH_CN" ? "简体中文" : "English"}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="field">
-            <label htmlFor="themePreference">{t.common.theme}</label>
-            <select id="themePreference" name="themePreference" defaultValue={data.user.themePreference}>
-              {themeValues.map((theme) => (
-                <option key={theme} value={theme}>
-                  {theme === "LIGHT"
-                    ? t.common.light
-                    : theme === "DARK"
-                      ? t.common.dark
-                      : t.common.system}
-                </option>
-              ))}
-            </select>
-          </div>
+          {MINI_AUTH_LOGIN_REDIRECT_ENABLED ? (
+            <>
+              <input type="hidden" name="locale" value={data.user.locale} />
+              <input type="hidden" name="themePreference" value={data.user.themePreference} />
+              <input type="hidden" name="accentColor" value={data.user.accentColor} />
+              <div className="field">
+                <label>{t.settings.sharedPreferences}</label>
+                <div className="stack">
+                  <p className="muted">{t.settings.sharedPreferencesHelp}</p>
+                  {miniAuthSettingsUrl ? (
+                    <a className="ghost-button" href={miniAuthSettingsUrl}>
+                      {t.settings.openMiniAuth}
+                    </a>
+                  ) : null}
+                </div>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="field">
+                <label htmlFor="locale">{t.common.language}</label>
+                <select id="locale" name="locale" defaultValue={data.user.locale}>
+                  {localeValues.map((locale) => (
+                    <option key={locale} value={locale}>
+                      {locale === "ZH_CN" ? "简体中文" : "English"}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="field">
+                <label htmlFor="themePreference">{t.common.theme}</label>
+                <select id="themePreference" name="themePreference" defaultValue={data.user.themePreference}>
+                  {themeValues.map((theme) => (
+                    <option key={theme} value={theme}>
+                      {theme === "LIGHT"
+                        ? t.common.light
+                        : theme === "DARK"
+                          ? t.common.dark
+                          : t.common.system}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </>
+          )}
           <div className="field">
             <label htmlFor="timeZone">{t.common.timeZone}</label>
             <select id="timeZone" name="timeZone" defaultValue={data.user.timeZone}>
@@ -82,27 +107,29 @@ export default async function SettingsPage({
               ))}
             </select>
           </div>
-          <div className="field">
-            <label htmlFor="accentColor">{t.common.accentColor}</label>
-            <select id="accentColor" name="accentColor" defaultValue={data.user.accentColor}>
-              {accentValues.map((accent) => (
-                <option key={accent} value={accent}>
-                  {data.locale === "ZH_CN" ? accentLabelMap[accent].zh : accentLabelMap[accent].en}
-                </option>
-              ))}
-            </select>
-            <div className="accent-swatch-list" aria-hidden="true">
-              {accentValues.map((accent) => (
-                <div
-                  key={accent}
-                  className={`accent-swatch ${accent === data.user.accentColor ? "is-active" : ""}`}
-                  title={data.locale === "ZH_CN" ? accentLabelMap[accent].zh : accentLabelMap[accent].en}
-                >
-                  <span className="accent-swatch-block" style={{ backgroundColor: accentHexMap[accent] }} />
-                </div>
-              ))}
+          {MINI_AUTH_LOGIN_REDIRECT_ENABLED ? null : (
+            <div className="field">
+              <label htmlFor="accentColor">{t.common.accentColor}</label>
+              <select id="accentColor" name="accentColor" defaultValue={data.user.accentColor}>
+                {accentValues.map((accent) => (
+                  <option key={accent} value={accent}>
+                    {data.locale === "ZH_CN" ? accentLabelMap[accent].zh : accentLabelMap[accent].en}
+                  </option>
+                ))}
+              </select>
+              <div className="accent-swatch-list" aria-hidden="true">
+                {accentValues.map((accent) => (
+                  <div
+                    key={accent}
+                    className={`accent-swatch ${accent === data.user.accentColor ? "is-active" : ""}`}
+                    title={data.locale === "ZH_CN" ? accentLabelMap[accent].zh : accentLabelMap[accent].en}
+                  >
+                    <span className="accent-swatch-block" style={{ backgroundColor: accentHexMap[accent] }} />
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
           <div className="field">
             <label htmlFor="emailMfaEnabled">{t.settings.emailMfa}</label>
             <label className="checkbox-row" htmlFor="emailMfaEnabled">
