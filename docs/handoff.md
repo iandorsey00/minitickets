@@ -125,6 +125,7 @@ MiniTickets is live as a bilingual, workspace-based ticketing system for persona
 - Nodemailer has been removed entirely because the app sends email through Resend via `fetch`, and the dependency/audit tree is now clean at `0 vulnerabilities`
 - MiniTickets auth is still local today, but its auth routes and local session/challenge mechanics now live behind a clearer seam to make a future MiniAuth extraction calmer
 - A future shared-login project should treat MiniTickets workspace authorization as app-local and extract identity/session flows first; see `docs/miniauth-handoff.md`
+- A future MiniAssets convergence pass should treat MiniTickets `app/globals.css` as the visual base and use `docs/miniassets-shared-stylesheet-handoff.md` as the shared stylesheet migration note
 
 ## Near-term follow-ups
 
