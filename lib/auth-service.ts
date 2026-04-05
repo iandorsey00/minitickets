@@ -355,3 +355,17 @@ export function getMiniAuthLoginUrl(currentPath?: string) {
 
   return `${baseUrl.replace(/\/$/, "")}/login?returnTo=${encodeURIComponent(redirectTarget)}`;
 }
+
+export function getMiniAuthLogoutUrl(currentPath?: string) {
+  const baseUrl = process.env.MINIAUTH_BASE_URL?.trim();
+  if (!baseUrl || !MINI_AUTH_LOGIN_REDIRECT_ENABLED) {
+    return null;
+  }
+
+  const redirectTarget = currentPath ? `${process.env.APP_URL || ""}${currentPath}` : process.env.APP_URL || "";
+  if (!redirectTarget) {
+    return `${baseUrl.replace(/\/$/, "")}/logout`;
+  }
+
+  return `${baseUrl.replace(/\/$/, "")}/logout?returnTo=${encodeURIComponent(redirectTarget)}`;
+}

@@ -17,6 +17,7 @@ import {
   destroySession,
   getCurrentUser,
   getMiniAuthLoginUrl,
+  getMiniAuthLogoutUrl,
   getPendingLoginChallenge,
   requireUser,
   revokeMiniAuthSession,
@@ -430,8 +431,14 @@ export async function resendLoginCodeAction() {
 
 export async function logoutAction() {
   await destroySession();
+  const miniAuthLogoutUrl = getMiniAuthLogoutUrl(AUTH_ROUTES.login);
+
+  if (miniAuthLogoutUrl) {
+    redirect(miniAuthLogoutUrl);
+  }
+
   await revokeMiniAuthSession();
-  redirect(getMiniAuthLoginUrl());
+  redirect(AUTH_ROUTES.login);
 }
 
 export async function switchWorkspaceAction(formData: FormData) {
