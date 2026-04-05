@@ -17,7 +17,7 @@ export default async function LoginPage({
     redirect(AUTH_ROUTES.postLogin);
   }
 
-  const miniAuthLoginUrl = getMiniAuthLoginUrl();
+  const miniAuthLoginUrl = getMiniAuthLoginUrl(AUTH_ROUTES.postLogin);
   const preferences = await getPreferencesForLayout();
   const dictionary = getDictionary(preferences.locale);
   const params = await searchParams;

@@ -353,5 +353,5 @@ export function getMiniAuthLoginUrl(currentPath?: string) {
     return `${baseUrl.replace(/\/$/, "")}/login`;
   }
 
-  return `${baseUrl.replace(/\/$/, "")}/login?next=${encodeURIComponent(redirectTarget)}`;
+  return `${baseUrl.replace(/\/$/, "")}/login?returnTo=${encodeURIComponent(redirectTarget)}`;
 }

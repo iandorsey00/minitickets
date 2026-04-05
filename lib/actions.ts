@@ -293,7 +293,7 @@ async function validateParentTicketSelection(parentTicketId: string | undefined 
 }
 
 export async function loginAction(formData: FormData) {
-  const miniAuthLoginUrl = getMiniAuthLoginUrl();
+  const miniAuthLoginUrl = getMiniAuthLoginUrl(AUTH_ROUTES.postLogin);
   if (miniAuthLoginUrl !== AUTH_ROUTES.login) {
     redirect(miniAuthLoginUrl);
   }
@@ -352,7 +352,7 @@ export async function loginAction(formData: FormData) {
 }
 
 export async function verifyLoginCodeAction(formData: FormData) {
-  const miniAuthLoginUrl = getMiniAuthLoginUrl();
+  const miniAuthLoginUrl = getMiniAuthLoginUrl(AUTH_ROUTES.postLogin);
   if (miniAuthLoginUrl !== AUTH_ROUTES.login) {
     redirect(miniAuthLoginUrl);
   }
@@ -393,7 +393,7 @@ export async function verifyLoginCodeAction(formData: FormData) {
 }
 
 export async function resendLoginCodeAction() {
-  const miniAuthLoginUrl = getMiniAuthLoginUrl();
+  const miniAuthLoginUrl = getMiniAuthLoginUrl(AUTH_ROUTES.postLogin);
   if (miniAuthLoginUrl !== AUTH_ROUTES.login) {
     redirect(miniAuthLoginUrl);
   }
