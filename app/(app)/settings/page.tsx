@@ -4,7 +4,7 @@ import { accentHexMap, accentLabelMap, accentValues, localeValues, themeValues, 
 import { getViewerContext } from "@/lib/data";
 import { getDiskSpaceSummary } from "@/lib/disk-space";
 import { formatFileSize } from "@/lib/format";
-import { Badge, PageHeader, Panel } from "@/components/ui";
+import { Badge, PageHeader, Panel, StatusNotice } from "@/components/ui";
 import packageJson from "@/package.json";
 
 export default async function SettingsPage({
@@ -27,14 +27,14 @@ export default async function SettingsPage({
         : params.password === "required"
           ? t.settings.passwordRequired
           : null;
-  const successMessage = params.saved === "1" ? t.settings.saved : null;
+  const successMessage = params.saved === "1" ? t.common.savedChanges : null;
 
   return (
     <>
       <PageHeader title={t.settings.title} subtitle={t.settings.profile} />
+      {successMessage ? <StatusNotice label={successMessage} tone="success" /> : null}
       <Panel title={t.settings.appearance}>
         <form action={updateSettingsAction} className="stack" id="settings-form">
-          {successMessage ? <Badge label={successMessage} tone="success" /> : null}
           {errorMessage ? <Badge label={errorMessage} tone="danger" /> : null}
           <div className="field">
             <label htmlFor="displayName">{t.common.displayName}</label>

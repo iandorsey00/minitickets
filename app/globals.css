@@ -334,6 +334,11 @@ textarea {
   gap: 1rem;
 }
 
+.status-notice {
+  display: flex;
+  align-items: center;
+}
+
 .login-card {
   width: min(100%, 440px);
   margin: 0 auto;

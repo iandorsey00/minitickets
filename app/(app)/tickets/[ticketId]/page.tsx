@@ -12,7 +12,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { ChildTicketIcon, CommentIcon, DocumentIcon, UploadIcon } from "@/components/icons";
 import { FilePicker } from "@/components/file-picker";
-import { Badge, EmptyState, PageHeader, Panel } from "@/components/ui";
+import { Badge, EmptyState, PageHeader, Panel, StatusNotice } from "@/components/ui";
 import { TicketEventForm } from "@/components/ticket-event-form";
 import { TicketShareMenu } from "@/components/ticket-share-menu";
 
@@ -97,7 +97,7 @@ export default async function TicketDetailPage({
       : query.upload === "success"
         ? { tone: "success" as const, label: t.common.uploadSuccess }
         : null;
-  const savedMessage = query.saved === "1" ? { tone: "success" as const, label: t.common.savedChanges } : null;
+  const savedMessage = query.saved === "1" ? t.common.savedChanges : null;
   const closedMessage = query.closed === "1" ? { tone: "warning" as const, label: t.tickets.closedReadOnly } : null;
   const commentMessage =
     query.comment === "too_long"
@@ -207,10 +207,10 @@ export default async function TicketDetailPage({
           />
         }
       />
+      {savedMessage ? <StatusNotice label={savedMessage} tone="success" /> : null}
 
       <div className="detail-layout">
         <div className="stack ticket-page-section-stack">
-          {savedMessage ? <Badge label={savedMessage.label} tone={savedMessage.tone} /> : null}
           {data.ticket.description && !isClosed ? (
             <details className="panel detail-disclosure">
               <summary className="panel-title detail-summary">

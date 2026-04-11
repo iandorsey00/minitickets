@@ -3,7 +3,7 @@ import { MINI_AUTH_WORKSPACE_SYNC_ENABLED } from "@/lib/auth-config";
 import { ArchiveIcon, SaveIcon, TrashIcon } from "@/components/icons";
 import { WorkspaceCreateForm } from "@/components/workspace-create-form";
 import { getAdminData } from "@/lib/data";
-import { Badge, PageHeader, Panel } from "@/components/ui";
+import { PageHeader, Panel, StatusNotice } from "@/components/ui";
 
 export default async function AdminWorkspacesPage({
   searchParams,
@@ -16,7 +16,7 @@ export default async function AdminWorkspacesPage({
     return <div />;
   }
   const t = data.dictionary;
-  const savedMessage = query.saved === "1" ? { tone: "success" as const, label: t.common.savedChanges } : null;
+  const savedMessage = query.saved === "1" ? t.common.savedChanges : null;
   const miniAuthAdminUrl = process.env.MINIAUTH_BASE_URL?.trim()
     ? `${process.env.MINIAUTH_BASE_URL!.replace(/\/$/, "")}/`
     : null;
@@ -24,7 +24,7 @@ export default async function AdminWorkspacesPage({
   return (
     <>
       <PageHeader title={t.admin.workspaces} subtitle={t.common.workspace} />
-      {savedMessage ? <Badge label={savedMessage.label} tone={savedMessage.tone} /> : null}
+      {savedMessage ? <StatusNotice label={savedMessage} tone="success" /> : null}
       <div className="grid-2">
         <Panel title={t.admin.createWorkspace}>
           {MINI_AUTH_WORKSPACE_SYNC_ENABLED ? (

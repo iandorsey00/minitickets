@@ -81,6 +81,20 @@ export function Badge({
   return <span className={`badge badge-${tone}`}>{label}</span>;
 }
 
+export function StatusNotice({
+  label,
+  tone = "neutral",
+}: {
+  label: string;
+  tone?: "neutral" | "accent" | "success" | "warning" | "danger";
+}) {
+  return (
+    <div className="status-notice">
+      <Badge label={label} tone={tone} />
+    </div>
+  );
+}
+
 export function TicketLink({
   href,
   number,
