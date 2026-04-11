@@ -11,7 +11,7 @@ const weekMinutes = 7 * 24 * 60;
 
 export const defaultTicketEventReminderOffsets = [monthMinutes * 2, monthMinutes, weekMinutes * 2, weekMinutes, 24 * 60, 120, 60, 30, 0] as const;
 
-export function sanitizeTicketEventReminderOffsets(values: string[]) {
+export function sanitizeTicketEventReminderOffsets(values: string[], options?: { allDay?: boolean }) {
   const parsed = Array.from(
     new Set(
       values
@@ -20,7 +20,9 @@ export function sanitizeTicketEventReminderOffsets(values: string[]) {
     ),
   );
 
-  return parsed.sort((a, b) => b - a);
+  const filtered = options?.allDay ? parsed.filter((value) => value === 0 || value >= 24 * 60) : parsed;
+
+  return filtered.sort((a, b) => b - a);
 }
 
 export async function getWorkspaceEventRecipients(prismaClient: PrismaClient, workspaceId: string) {
@@ -44,11 +46,10 @@ export async function getWorkspaceEventRecipients(prismaClient: PrismaClient, wo
   return Array.from(new Map(memberships.map((membership) => [membership.user.id, membership.user])).values());
 }
 
-function formatScheduledFor(date: Date, locale: Locale, timeZone?: string) {
+function formatScheduledFor(date: Date, locale: Locale, allDay: boolean, timeZone?: string) {
   return new Intl.DateTimeFormat(localeTokenMap[locale], {
     dateStyle: "medium",
-    timeStyle: "short",
-    timeZone,
+    ...(allDay ? { timeZone: "UTC" } : { timeStyle: "short", timeZone }),
   }).format(date);
 }
 
@@ -139,8 +140,8 @@ export async function processDueTicketEventReminders(options: EventReminderProce
       eventType: "ticket.event.reminder",
       titleZh: `提醒：${reminder.event.title}`,
       titleEn: `Reminder: ${reminder.event.title}`,
-      bodyZh: `${reminder.event.ticket.ticketNumber} · ${formatReminderOffsetLabel(reminder.offsetMinutes, "ZH_CN")} · ${formatScheduledFor(reminder.event.scheduledFor, "ZH_CN", recipient.timeZone)}`,
-      bodyEn: `${reminder.event.ticket.ticketNumber} · ${formatReminderOffsetLabel(reminder.offsetMinutes, "EN")} · ${formatScheduledFor(reminder.event.scheduledFor, "EN", recipient.timeZone)}`,
+      bodyZh: `${reminder.event.ticket.ticketNumber} · ${formatReminderOffsetLabel(reminder.offsetMinutes, "ZH_CN")} · ${formatScheduledFor(reminder.event.scheduledFor, "ZH_CN", reminder.event.allDay, recipient.timeZone)}`,
+      bodyEn: `${reminder.event.ticket.ticketNumber} · ${formatReminderOffsetLabel(reminder.offsetMinutes, "EN")} · ${formatScheduledFor(reminder.event.scheduledFor, "EN", reminder.event.allDay, recipient.timeZone)}`,
     }));
 
     if (notificationData.length) {
@@ -168,6 +169,7 @@ export async function processDueTicketEventReminders(options: EventReminderProce
           event: {
             title: reminder.event.title,
             notes: reminder.event.notes ?? undefined,
+            allDay: reminder.event.allDay,
             scheduledFor: reminder.event.scheduledFor,
           },
           offsetMinutes: reminder.offsetMinutes,

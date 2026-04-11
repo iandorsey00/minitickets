@@ -119,6 +119,7 @@ MiniTickets is live as a bilingual, workspace-based ticketing system for persona
 - Ticket detail disclosure sections should use explicit title, preview, and toggle regions so expand/collapse behavior stays logical and readable on narrow mobile Safari screens
 - When an inline event edit disclosure is opened on mobile Safari, the editor should expand to the full event card width instead of staying trapped in the action-button column
 - Event cards on narrow mobile Safari screens should place the destructive delete action in its own top row and let the edit disclosure sit underneath at full width for a calmer, less cramped layout
+- Ticket events now support an explicit all-day mode; timed events should default to the next full hour, all-day events should display as date-only, and all-day `At time` reminders should be treated as a 9:00 AM reminder on that date
 - Ticket category/type has been removed entirely; the app now treats tickets as one consistent kind of record rather than carrying a category field through the model and UI
 - Ticket list should show created time in addition to updated time, and ticket detail should show both created and updated times under the status section
 - Status-change activity messages should name both the previous and new status instead of only saying that the status was updated

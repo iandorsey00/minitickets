@@ -15,6 +15,7 @@ type TicketEventFormProps = {
     title: string;
     notes: string;
     scheduledFor: string;
+    allDay: string;
     reminders: string;
     submit: string;
     optional: string;
@@ -30,14 +31,23 @@ type TicketEventFormProps = {
     title?: string;
     notes?: string;
     scheduledFor?: string;
+    allDay?: boolean;
     selectedReminderOffsets?: number[];
   };
 };
 
-function getDefaultEventSchedule(initialScheduledFor?: string) {
+function getDefaultEventSchedule(initialScheduledFor?: string, initialAllDay?: boolean) {
   if (initialScheduledFor) {
     const initialDate = new Date(initialScheduledFor);
     if (!Number.isNaN(initialDate.getTime())) {
+      if (initialAllDay) {
+        return {
+          date: initialDate.toISOString().slice(0, 10),
+          hour: "09",
+          minute: "00",
+        };
+      }
+
       return {
         date: `${String(initialDate.getFullYear()).padStart(4, "0")}-${String(initialDate.getMonth() + 1).padStart(2, "0")}-${String(initialDate.getDate()).padStart(2, "0")}`,
         hour: String(initialDate.getHours()).padStart(2, "0"),
@@ -48,16 +58,12 @@ function getDefaultEventSchedule(initialScheduledFor?: string) {
 
   const now = new Date();
   const rounded = new Date(now);
-  rounded.setSeconds(0, 0);
-  rounded.setMinutes(Math.ceil(now.getMinutes() / 15) * 15);
-  if (rounded.getMinutes() === 60) {
-    rounded.setHours(rounded.getHours() + 1, 0, 0, 0);
-  }
+  rounded.setHours(rounded.getHours() + 1, 0, 0, 0);
 
   return {
-    date: rounded.toISOString().slice(0, 10),
+    date: `${String(rounded.getFullYear()).padStart(4, "0")}-${String(rounded.getMonth() + 1).padStart(2, "0")}-${String(rounded.getDate()).padStart(2, "0")}`,
     hour: String(rounded.getHours()).padStart(2, "0"),
-    minute: String(rounded.getMinutes()).padStart(2, "0"),
+    minute: "00",
   };
 }
 
@@ -89,7 +95,8 @@ function getReminderGroup(offsetMinutes: number) {
 }
 
 export function TicketEventForm({ action, ticketId, eventId, labels, reminderOptions, initialValues }: TicketEventFormProps) {
-  const [defaultSchedule] = useState(() => getDefaultEventSchedule(initialValues?.scheduledFor));
+  const [defaultSchedule] = useState(() => getDefaultEventSchedule(initialValues?.scheduledFor, initialValues?.allDay));
+  const [allDay, setAllDay] = useState(initialValues?.allDay ?? false);
   const [scheduledYear, setScheduledYear] = useState(Number(defaultSchedule.date.slice(0, 4)));
   const [scheduledMonth, setScheduledMonth] = useState(Number(defaultSchedule.date.slice(5, 7)));
   const [scheduledDay, setScheduledDay] = useState(Number(defaultSchedule.date.slice(8, 10)));
@@ -123,11 +130,15 @@ export function TicketEventForm({ action, ticketId, eventId, labels, reminderOpt
         return "";
       }
 
+      if (allDay) {
+        return `${scheduledDate}T12:00:00.000Z`;
+      }
+
       const localValue = `${scheduledDate}T${scheduledHour}:${scheduledMinute}`;
       const parsed = new Date(localValue);
       return Number.isNaN(parsed.getTime()) ? "" : parsed.toISOString();
     },
-    [scheduledDate, scheduledHour, scheduledMinute],
+    [allDay, scheduledDate, scheduledHour, scheduledMinute],
   );
 
   const reminderGroups = useMemo(
@@ -141,8 +152,18 @@ export function TicketEventForm({ action, ticketId, eventId, labels, reminderOpt
     ].map((group) => ({
       ...group,
       options: reminderOptions.filter((option) => getReminderGroup(option.value) === group.key),
-    })).filter((group) => group.options.length),
-    [labels.reminderAtTime, labels.reminderDays, labels.reminderHours, labels.reminderMinutes, labels.reminderMonths, labels.reminderWeeks, reminderOptions],
+    })).filter((group) => {
+      if (!group.options.length) {
+        return false;
+      }
+
+      if (!allDay) {
+        return true;
+      }
+
+      return !["hours", "minutes"].includes(group.key);
+    }),
+    [allDay, labels.reminderAtTime, labels.reminderDays, labels.reminderHours, labels.reminderMinutes, labels.reminderMonths, labels.reminderWeeks, reminderOptions],
   );
 
   return (
@@ -150,12 +171,23 @@ export function TicketEventForm({ action, ticketId, eventId, labels, reminderOpt
       <input type="hidden" name="ticketId" value={ticketId} />
       {eventId ? <input type="hidden" name="eventId" value={eventId} /> : null}
       <input type="hidden" name="scheduledFor" value={scheduledForValue} />
+      <input type="hidden" name="allDay" value={allDay ? "true" : "false"} />
       <div className="field">
         <label htmlFor="event-title">{labels.title}</label>
         <input id="event-title" name="title" required minLength={2} maxLength={120} defaultValue={initialValues?.title ?? ""} />
       </div>
       <div className="field">
         <label htmlFor="event-scheduled-local">{labels.scheduledFor}</label>
+        <label className="checkbox-row event-all-day-toggle">
+          <input
+            type="checkbox"
+            checked={allDay}
+            onChange={(event) => {
+              setAllDay(event.target.checked);
+            }}
+          />
+          <span>{labels.allDay}</span>
+        </label>
         <div className="split-inputs">
           <div className="split-date-inputs" id="event-scheduled-local">
             <select
@@ -198,43 +230,45 @@ export function TicketEventForm({ action, ticketId, eventId, labels, reminderOpt
               ))}
             </select>
           </div>
-          <div className="split-time-inputs">
-            <select
-              aria-label={`${labels.scheduledFor} hour`}
-              value={scheduledHour}
-              onChange={(event) => {
-                setScheduledHour(event.target.value);
-              }}
-            >
-              {Array.from({ length: 24 }, (_, index) => {
-                const value = String(index).padStart(2, "0");
-                return (
-                  <option key={value} value={value}>
-                    {value}
-                  </option>
-                );
-              })}
-            </select>
-            <span className="muted time-separator" aria-hidden="true">
-              :
-            </span>
-            <select
-              aria-label={`${labels.scheduledFor} minute`}
-              value={scheduledMinute}
-              onChange={(event) => {
-                setScheduledMinute(event.target.value);
-              }}
-            >
-              {Array.from({ length: 60 }, (_, index) => {
-                const value = String(index).padStart(2, "0");
-                return (
-                  <option key={value} value={value}>
-                    {value}
-                  </option>
-                );
-              })}
-            </select>
-          </div>
+          {allDay ? null : (
+            <div className="split-time-inputs">
+              <select
+                aria-label={`${labels.scheduledFor} hour`}
+                value={scheduledHour}
+                onChange={(event) => {
+                  setScheduledHour(event.target.value);
+                }}
+              >
+                {Array.from({ length: 24 }, (_, index) => {
+                  const value = String(index).padStart(2, "0");
+                  return (
+                    <option key={value} value={value}>
+                      {value}
+                    </option>
+                  );
+                })}
+              </select>
+              <span className="muted time-separator" aria-hidden="true">
+                :
+              </span>
+              <select
+                aria-label={`${labels.scheduledFor} minute`}
+                value={scheduledMinute}
+                onChange={(event) => {
+                  setScheduledMinute(event.target.value);
+                }}
+              >
+                {Array.from({ length: 60 }, (_, index) => {
+                  const value = String(index).padStart(2, "0");
+                  return (
+                    <option key={value} value={value}>
+                      {value}
+                    </option>
+                  );
+                })}
+              </select>
+            </div>
+          )}
         </div>
       </div>
       <div className="field">

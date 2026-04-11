@@ -85,6 +85,7 @@ const ticketEventSchema = z.object({
   ticketId: z.string().min(1),
   title: z.string().min(2).max(120),
   scheduledFor: z.string().datetime(),
+  allDay: z.enum(["true", "false"]).transform((value) => value === "true"),
   notes: z.string().max(2000).optional(),
 });
 
@@ -93,6 +94,7 @@ const updateTicketEventSchema = z.object({
   eventId: z.string().min(1),
   title: z.string().min(2).max(120),
   scheduledFor: z.string().datetime(),
+  allDay: z.enum(["true", "false"]).transform((value) => value === "true"),
   notes: z.string().max(2000).optional(),
 });
 
@@ -138,6 +140,55 @@ const deletePaymentMethodSchema = z.object({
   paymentMethodId: z.string().min(1),
   workspaceId: z.string().min(1),
 });
+
+function getDatePartsInTimeZone(date: Date, timeZone: string) {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(date);
+
+  const values = Object.fromEntries(
+    parts
+      .filter((part) => part.type !== "literal")
+      .map((part) => [part.type, part.value]),
+  );
+
+  return {
+    year: Number(values.year),
+    month: Number(values.month),
+    day: Number(values.day),
+    hour: Number(values.hour),
+    minute: Number(values.minute),
+    second: Number(values.second),
+  };
+}
+
+function getUtcDateForLocalTime(dateKey: string, hour: number, minute: number, timeZone: string) {
+  const [year, month, day] = dateKey.split("-").map((value) => Number.parseInt(value, 10));
+  const guess = Date.UTC(year, month - 1, day, hour, minute, 0);
+  const actual = getDatePartsInTimeZone(new Date(guess), timeZone);
+  const actualAsUtc = Date.UTC(actual.year, actual.month - 1, actual.day, actual.hour, actual.minute, actual.second);
+  const desiredAsUtc = Date.UTC(year, month - 1, day, hour, minute, 0);
+  return new Date(guess - (actualAsUtc - desiredAsUtc));
+}
+
+function normalizeTicketEventScheduledFor(rawScheduledFor: string, allDay: boolean) {
+  const scheduledFor = new Date(rawScheduledFor);
+
+  if (!allDay || Number.isNaN(scheduledFor.getTime())) {
+    return scheduledFor;
+  }
+
+  const dateKey = scheduledFor.toISOString().slice(0, 10);
+  const eventTimeZone = process.env.APP_TIMEZONE ?? "America/Los_Angeles";
+  return getUtcDateForLocalTime(dateKey, 9, 0, eventTimeZone);
+}
 
 function uniqueRecipients<T extends { id: string }>(items: T[]) {
   return Array.from(new Map(items.map((item) => [item.id, item])).values());
@@ -1090,6 +1141,7 @@ export async function createTicketEventAction(formData: FormData) {
     ticketId: formData.get("ticketId"),
     title: formData.get("title"),
     scheduledFor: formData.get("scheduledFor"),
+    allDay: formData.get("allDay"),
     notes: formData.get("notes") || undefined,
   });
 
@@ -1128,8 +1180,9 @@ export async function createTicketEventAction(formData: FormData) {
 
   const reminderOffsets = sanitizeTicketEventReminderOffsets(
     formData.getAll("reminderOffsets").map((value) => String(value)),
+    { allDay: parsed.data.allDay },
   );
-  const scheduledFor = new Date(parsed.data.scheduledFor);
+  const scheduledFor = normalizeTicketEventScheduledFor(parsed.data.scheduledFor, parsed.data.allDay);
 
   if (Number.isNaN(scheduledFor.getTime()) || scheduledFor.getTime() < Date.now() - 60_000) {
     redirect(`/tickets/${ticket.id}`);
@@ -1141,6 +1194,7 @@ export async function createTicketEventAction(formData: FormData) {
       createdByUserId: user.id,
       title: parsed.data.title,
       notes: parsed.data.notes?.trim() || null,
+      allDay: parsed.data.allDay,
       scheduledFor,
       reminders: reminderOffsets.length
         ? {
@@ -1204,6 +1258,7 @@ export async function createTicketEventAction(formData: FormData) {
           id: event.id,
           title: event.title,
           notes: event.notes ?? undefined,
+          allDay: event.allDay,
           scheduledFor: event.scheduledFor,
         },
       });
@@ -1301,6 +1356,7 @@ export async function updateTicketEventAction(formData: FormData) {
     eventId: formData.get("eventId"),
     title: formData.get("title"),
     scheduledFor: formData.get("scheduledFor"),
+    allDay: formData.get("allDay"),
     notes: formData.get("notes") || undefined,
   });
 
@@ -1352,8 +1408,9 @@ export async function updateTicketEventAction(formData: FormData) {
 
   const reminderOffsets = sanitizeTicketEventReminderOffsets(
     formData.getAll("reminderOffsets").map((value) => String(value)),
+    { allDay: parsed.data.allDay },
   );
-  const scheduledFor = new Date(parsed.data.scheduledFor);
+  const scheduledFor = normalizeTicketEventScheduledFor(parsed.data.scheduledFor, parsed.data.allDay);
 
   if (Number.isNaN(scheduledFor.getTime()) || scheduledFor.getTime() < Date.now() - 60_000) {
     redirect(`/tickets/${ticket.id}`);
@@ -1366,6 +1423,7 @@ export async function updateTicketEventAction(formData: FormData) {
     data: {
       title: parsed.data.title,
       notes: parsed.data.notes?.trim() || null,
+      allDay: parsed.data.allDay,
       scheduledFor,
       reminders: reminderOffsets.length
         ? {

@@ -11,6 +11,19 @@ export function formatDateTime(date: Date | string, localeCode: string, timeZone
   }).format(value);
 }
 
+export function formatEventDateTime(
+  date: Date | string,
+  allDay: boolean,
+  localeCode: string,
+  timeZone = defaultTimeZone,
+) {
+  if (allDay) {
+    return formatDate(date, localeCode, "UTC");
+  }
+
+  return formatDateTime(date, localeCode, timeZone);
+}
+
 export function formatDate(date: Date | string | null | undefined, localeCode: string, timeZone = defaultTimeZone) {
   if (!date) {
     return "—";

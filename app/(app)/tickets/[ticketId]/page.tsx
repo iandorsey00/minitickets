@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 
 import { addAttachmentAction, addCommentAction, createTicketEventAction, deleteTicketEventAction, reopenTicketAction, sendDueDateInviteAction, updateTicketAction, updateTicketEventAction } from "@/lib/actions";
 import { getTicketDetail } from "@/lib/data";
-import { formatDate, formatDateTime, formatFileSize, localizeDefinition } from "@/lib/format";
+import { formatDate, formatDateTime, formatEventDateTime, formatFileSize, localizeDefinition } from "@/lib/format";
 import { formatReminderOffsetLabel } from "@/lib/reminder-labels";
 import { defaultTicketEventReminderOffsets } from "@/lib/ticket-events";
 import { MAX_ATTACHMENT_SIZE_BYTES, canRenderInline, getTicketAttachmentUrl } from "@/lib/uploads";
@@ -124,7 +124,7 @@ export default async function TicketDetailPage({
   const showChildrenOpenByDefault = data.ticket.childTickets.length > 0 || Boolean(data.ticket.parentTicket);
   const descriptionPreview = data.ticket.description ? data.ticket.description.replace(/\s+/g, " ").slice(0, 80) : "";
   const eventsPreview = data.ticket.events.length
-    ? `${data.ticket.events.length} · ${data.ticket.events[0].title} · ${formatDateTime(data.ticket.events[0].scheduledFor, data.localeCode, data.timeZone)}`
+    ? `${data.ticket.events.length} · ${data.ticket.events[0].title} · ${formatEventDateTime(data.ticket.events[0].scheduledFor, data.ticket.events[0].allDay, data.localeCode, data.timeZone)}`
     : "";
   const childrenPreview = data.ticket.parentTicket
     ? `${t.common.parentTicket} · ${data.ticket.parentTicket.ticketNumber}`
@@ -593,7 +593,7 @@ export default async function TicketDetailPage({
                       <div className="event-card-heading">
                         <strong className="event-card-title">{event.title}</strong>
                         <div className="muted event-card-time">
-                          {formatDateTime(event.scheduledFor, data.localeCode, data.timeZone)}
+                          {formatEventDateTime(event.scheduledFor, event.allDay, data.localeCode, data.timeZone)}
                         </div>
                       </div>
                     </div>
@@ -624,6 +624,7 @@ export default async function TicketDetailPage({
                             title: t.common.title,
                             notes: t.tickets.eventNotes,
                             scheduledFor: t.tickets.eventScheduledFor,
+                            allDay: t.tickets.eventAllDay,
                             reminders: t.tickets.eventReminders,
                             submit: t.common.update,
                             optional: t.common.optional,
@@ -641,6 +642,7 @@ export default async function TicketDetailPage({
                           initialValues={{
                             title: event.title,
                             notes: event.notes ?? "",
+                            allDay: event.allDay,
                             scheduledFor: event.scheduledFor.toISOString(),
                             selectedReminderOffsets: event.reminders.map((reminder) => reminder.offsetMinutes),
                           }}
@@ -677,6 +679,7 @@ export default async function TicketDetailPage({
                       title: t.common.title,
                       notes: t.tickets.eventNotes,
                       scheduledFor: t.tickets.eventScheduledFor,
+                      allDay: t.tickets.eventAllDay,
                       reminders: t.tickets.eventReminders,
                       submit: t.tickets.createEvent,
                       optional: t.common.optional,

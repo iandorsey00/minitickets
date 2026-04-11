@@ -60,6 +60,7 @@ type TicketEventEmailInput = {
     id?: string;
     title: string;
     notes?: string;
+    allDay?: boolean;
     scheduledFor: Date;
   };
   offsetMinutes?: number;
@@ -121,11 +122,10 @@ function getResendApiKey() {
   return process.env.RESEND_API_KEY ?? process.env.SMTP_PASS ?? "";
 }
 
-function formatEventDate(date: Date, locale: Locale, timeZone?: string) {
+function formatEventDate(date: Date, locale: Locale, allDay?: boolean, timeZone?: string) {
   return new Intl.DateTimeFormat(localeTokenMap[locale], {
     dateStyle: "medium",
-    timeStyle: "short",
-    timeZone,
+    ...(allDay ? { timeZone: "UTC" } : { timeStyle: "short", timeZone }),
   }).format(date);
 }
 
@@ -276,8 +276,11 @@ function buildEventInviteAttachment({
   const url = `${getBaseUrl()}/tickets/${ticket.id}`;
   const uid = `${event.id ?? `event-${ticket.id}-${formatIcsDateTime(event.scheduledFor)}`}@minitickets`;
   const nowStamp = formatIcsDateTime(new Date());
-  const startStamp = formatIcsDateTime(event.scheduledFor);
-  const endStamp = formatIcsDateTime(new Date(event.scheduledFor.getTime() + 60 * 60 * 1000));
+  const isAllDay = event.allDay ?? false;
+  const startStamp = isAllDay ? formatIcsDateOnly(event.scheduledFor) : formatIcsDateTime(event.scheduledFor);
+  const endStamp = isAllDay
+    ? formatIcsDateOnly(new Date(event.scheduledFor.getTime() + 24 * 60 * 60 * 1000))
+    : formatIcsDateTime(new Date(event.scheduledFor.getTime() + 60 * 60 * 1000));
   const description =
     locale === "EN"
       ? [
@@ -314,8 +317,8 @@ function buildEventInviteAttachment({
     "BEGIN:VEVENT",
     `UID:${uid}`,
     `DTSTAMP:${nowStamp}`,
-    `DTSTART:${startStamp}`,
-    `DTEND:${endStamp}`,
+    isAllDay ? `DTSTART;VALUE=DATE:${startStamp}` : `DTSTART:${startStamp}`,
+    isAllDay ? `DTEND;VALUE=DATE:${endStamp}` : `DTEND:${endStamp}`,
     `SUMMARY:${escapeIcsText(summary)}`,
     `DESCRIPTION:${escapeIcsText(description)}`,
     `URL:${escapeIcsText(url)}`,
@@ -899,7 +902,7 @@ function buildDiskSpaceAlertEmail({
 
 function buildTicketEventEmail({ event, kind, offsetMinutes, recipient, ticket }: TicketEventEmailInput): BuiltEmail {
   const ticketUrl = `${getBaseUrl()}/tickets/${ticket.id}`;
-  const scheduledForText = formatEventDate(event.scheduledFor, recipient.locale, recipient.timeZone);
+  const scheduledForText = formatEventDate(event.scheduledFor, recipient.locale, event.allDay, recipient.timeZone);
   const reminderText =
     kind === "reminder" ? formatReminderOffsetLabel(offsetMinutes ?? 0, recipient.locale) : null;
 
