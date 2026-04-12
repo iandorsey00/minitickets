@@ -1511,23 +1511,28 @@ export async function addCommentAction(formData: FormData) {
     redirect(`/tickets/${ticket.id}?closed=1`);
   }
 
-  await prisma.ticketComment.create({
-    data: {
-      ticketId: ticket.id,
-      authorId: user.id,
-      body: parsed.data.body,
-    },
-  });
-
-  await prisma.ticketActivity.create({
-    data: {
-      ticketId: ticket.id,
-      actorUserId: user.id,
-      eventType: "ticket.comment_added",
-      messageZh: "添加了评论。",
-      messageEn: "Added a comment.",
-    },
-  });
+  await prisma.$transaction([
+    prisma.ticketComment.create({
+      data: {
+        ticketId: ticket.id,
+        authorId: user.id,
+        body: parsed.data.body,
+      },
+    }),
+    prisma.ticketActivity.create({
+      data: {
+        ticketId: ticket.id,
+        actorUserId: user.id,
+        eventType: "ticket.comment_added",
+        messageZh: "添加了评论。",
+        messageEn: "Added a comment.",
+      },
+    }),
+    prisma.ticket.update({
+      where: { id: ticket.id },
+      data: {},
+    }),
+  ]);
 
   const mentionedUsers = getMentionedUsersFromComment(
     parsed.data.body,
