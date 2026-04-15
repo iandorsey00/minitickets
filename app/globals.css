@@ -826,6 +826,20 @@ textarea {
   border-radius: var(--radius-lg);
 }
 
+.meta-item-wide {
+  grid-column: 1 / -1;
+}
+
+.meta-item-action {
+  padding: 0;
+  background: transparent;
+  border: 0;
+}
+
+.meta-item-action form {
+  margin: 0;
+}
+
 .meta-item span {
   display: block;
   color: var(--color-muted);

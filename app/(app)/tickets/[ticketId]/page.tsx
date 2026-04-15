@@ -362,13 +362,15 @@ export default async function TicketDetailPage({
 
         <div className="stack ticket-page-section-stack">
           <Panel title={t.common.status}>
-            {isClosed ? (
-              <form action={reopenTicketAction} className="stack">
-                <input type="hidden" name="ticketId" value={data.ticket.id} />
-                <button type="submit">{t.tickets.reopenTicket}</button>
-              </form>
-            ) : null}
             <div className="meta-grid">
+              {isClosed ? (
+                <div className="meta-item meta-item-wide meta-item-action">
+                  <form action={reopenTicketAction}>
+                    <input type="hidden" name="ticketId" value={data.ticket.id} />
+                    <button type="submit">{t.tickets.reopenTicket}</button>
+                  </form>
+                </div>
+              ) : null}
               <div className="meta-item">
                 <span>{t.common.status}</span>
                 <Badge label={localizeDefinition(data.ticket.status, data.locale)} tone="accent" />

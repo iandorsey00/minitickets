@@ -44,8 +44,8 @@ export async function autoCloseResolvedTickets() {
     data: ticketIds.map((ticketId) => ({
       ticketId,
       eventType: "ticket.auto_closed",
-      messageZh: "系统已自动关闭已解决 7 天的工单。",
-      messageEn: "The system auto-closed this resolved ticket after 7 days.",
+      messageZh: "系统已将状态从「已解决」改为「已关闭」（已解决满 7 天）。",
+      messageEn: "The system changed the status from \"Resolved\" to \"Closed\" after 7 days.",
     })),
   });
 }

@@ -123,6 +123,8 @@ MiniTickets is live as a bilingual, workspace-based ticketing system for persona
 - Ticket category/type has been removed entirely; the app now treats tickets as one consistent kind of record rather than carrying a category field through the model and UI
 - Ticket list should show created time in addition to updated time, and ticket detail should show both created and updated times under the status section
 - Ticket `更新时间 / Updated` should advance when a new comment is added, so ticket list and detail reflect fresh discussion activity without needing a separate last-comment timestamp
+- The closed-ticket reopen action in the status panel should align to the same card grid rhythm as the other status metadata instead of floating with mismatched side margins
+- System-driven auto-close activity should explicitly say the status changed from `Resolved` to `Closed`, not just that the system closed the ticket
 - Status-change activity messages should name both the previous and new status instead of only saying that the status was updated
 - Nodemailer has been removed entirely because the app sends email through Resend via `fetch`, and the dependency/audit tree is now clean at `0 vulnerabilities`
 - MiniTickets auth is still local today, but its auth routes and local session/challenge mechanics now live behind a clearer seam to make a future MiniAuth extraction calmer
