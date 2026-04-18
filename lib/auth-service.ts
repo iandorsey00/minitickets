@@ -669,6 +669,10 @@ export const getAuthenticatedUserId = cache(async () => {
     return localUser.id;
   }
 
+  if (MINI_AUTH_LOGIN_REDIRECT_ENABLED) {
+    return null;
+  }
+
   const cookieStore = await cookies();
   const rawToken = cookieStore.get(AUTH_COOKIE_NAMES.session)?.value;
 
