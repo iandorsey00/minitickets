@@ -813,6 +813,16 @@ textarea {
 .badge-warning { background: rgba(234, 88, 12, 0.15); color: #ea580c; }
 .badge-danger { background: rgba(220, 38, 38, 0.15); color: #dc2626; }
 
+.user-badge-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.user-badge-list .badge {
+  margin-bottom: 0;
+}
+
 .meta-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

@@ -54,3 +54,13 @@ export function formatFileSize(bytes: number) {
   }
   return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`;
 }
+
+export function formatNameList(names: string[], locale: AppLocale, emptyLabel: string) {
+  const filtered = names.map((name) => name.trim()).filter(Boolean);
+
+  if (!filtered.length) {
+    return emptyLabel;
+  }
+
+  return filtered.join(locale === "ZH_CN" ? "、" : ", ");
+}

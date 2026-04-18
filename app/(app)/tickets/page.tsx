@@ -1,9 +1,10 @@
 import Link from "next/link";
 
 import { PencilIcon } from "@/components/icons";
-import { EmptyState, PageHeader, Panel, Badge } from "@/components/ui";
+import { EmptyState, PageHeader, Panel, Badge, UserBadgeList } from "@/components/ui";
 import { formatDate, formatDateTime, localizeDefinition } from "@/lib/format";
 import { getTicketsData } from "@/lib/data";
+import { getTicketAssigneeUsers } from "@/lib/ticket-assignees";
 
 function getDueDateTone(dueDate: Date | null, statusKey: string) {
   if (!dueDate || ["RESOLVED", "CLOSED"].includes(statusKey)) {
@@ -181,8 +182,11 @@ export default async function TicketsPage({
                     <strong>{localizeDefinition(ticket.priority, data.locale)}</strong>
                   </div>
                   <div className="meta-pair">
-                    <span>{t.common.assignee}</span>
-                    <strong>{ticket.assignee?.displayName ?? t.common.none}</strong>
+                    <span>{t.common.assignees}</span>
+                    <UserBadgeList
+                      users={getTicketAssigneeUsers(ticket)}
+                      emptyLabel={t.common.none}
+                    />
                   </div>
                   <div className="meta-pair">
                     <span>{t.common.dueDate}</span>

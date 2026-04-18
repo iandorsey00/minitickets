@@ -61,6 +61,7 @@ model User {
   memberships         WorkspaceMembership[]
   requestedTickets    Ticket[]              @relation("RequesterTickets")
   assignedTickets     Ticket[]              @relation("AssigneeTickets")
+  ticketAssignments   TicketAssignment[]
   comments            TicketComment[]
   activities          TicketActivity[]      @relation("ActorActivities")
   uploadedAttachments TicketAttachment[]    @relation("UploadedAttachments")
@@ -149,6 +150,7 @@ model Ticket {
   childTickets Ticket[]           @relation("TicketChildren")
   requester   User                @relation("RequesterTickets", fields: [requesterId], references: [id], onDelete: Restrict)
   assignee    User?               @relation("AssigneeTickets", fields: [assigneeId], references: [id], onDelete: SetNull)
+  assignees   TicketAssignment[]
   status      StatusDefinition    @relation(fields: [statusId], references: [id], onDelete: Restrict)
   priority    PriorityDefinition  @relation(fields: [priorityId], references: [id], onDelete: Restrict)
   comments    TicketComment[]
@@ -164,6 +166,19 @@ model Ticket {
   @@index([requesterId, createdAt])
   @@index([assigneeId, createdAt])
   @@unique([workspaceId, serialNumber])
+}
+
+model TicketAssignment {
+  id        String   @id @default(cuid())
+  ticketId   String
+  userId     String
+  createdAt  DateTime @default(now())
+  ticket     Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([ticketId, userId])
+  @@index([ticketId, createdAt])
+  @@index([userId, createdAt])
 }
 
 model TicketComment {

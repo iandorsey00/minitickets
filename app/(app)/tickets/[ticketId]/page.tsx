@@ -4,15 +4,16 @@ import type { ReactNode } from "react";
 
 import { addAttachmentAction, addCommentAction, createTicketEventAction, deleteTicketEventAction, reopenTicketAction, sendDueDateInviteAction, updateTicketAction, updateTicketEventAction } from "@/lib/actions";
 import { getTicketDetail } from "@/lib/data";
-import { formatDate, formatDateTime, formatEventDateTime, formatFileSize, localizeDefinition } from "@/lib/format";
+import { formatDate, formatDateTime, formatEventDateTime, formatFileSize, formatNameList, localizeDefinition } from "@/lib/format";
 import { formatReminderOffsetLabel } from "@/lib/reminder-labels";
 import { defaultTicketEventReminderOffsets } from "@/lib/ticket-events";
 import { MAX_ATTACHMENT_SIZE_BYTES, canRenderInline, getTicketAttachmentUrl } from "@/lib/uploads";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { getTicketAssigneeIds, getTicketAssigneeUsers } from "@/lib/ticket-assignees";
 import { ChildTicketIcon, CommentIcon, DocumentIcon, UploadIcon } from "@/components/icons";
 import { FilePicker } from "@/components/file-picker";
-import { Badge, EmptyState, PageHeader, Panel, StatusNotice } from "@/components/ui";
+import { Badge, EmptyState, PageHeader, Panel, StatusNotice, UserBadgeList } from "@/components/ui";
 import { TicketEventForm } from "@/components/ticket-event-form";
 import { TicketShareMenu } from "@/components/ticket-share-menu";
 
@@ -116,9 +117,13 @@ export default async function TicketDetailPage({
       <Badge label={localizeDefinition(data.ticket.status, data.locale)} tone="accent" />
     </div>
   );
+  const ticketAssignees = getTicketAssigneeUsers(data.ticket);
   const selectedPaymentMethodIds = new Set(data.ticket.paymentMethods.map((item) => item.paymentMethodId));
   const defaultDueDateInviteRecipientIds = Array.from(
-    new Set([data.ticket.requester.id, data.ticket.assignee?.id].filter((value): value is string => Boolean(value))),
+    new Set([
+      data.ticket.requester.id,
+      ...ticketAssignees.map((assignee) => assignee.id),
+    ]),
   );
   const showEventsOpenByDefault = data.ticket.events.length > 0;
   const showChildrenOpenByDefault = data.ticket.childTickets.length > 0 || Boolean(data.ticket.parentTicket);
@@ -165,7 +170,11 @@ export default async function TicketDetailPage({
     `${data.ticket.ticketNumber} ${data.ticket.title}`,
     `${t.common.workspace}：${data.ticket.workspace.name}`,
     `${t.common.status}：${localizeDefinition(data.ticket.status, data.locale)}`,
-    `${t.common.assignee}：${data.ticket.assignee?.displayName ?? t.common.none}`,
+    `${t.common.assignees}：${formatNameList(
+      ticketAssignees.map((assignee) => assignee.displayName),
+      data.locale,
+      t.common.none,
+    )}`,
     `${t.common.updatedAt}：${formatDateTime(data.ticket.updatedAt, data.localeCode, data.timeZone)}`,
     ticketUrl,
   ];
@@ -380,8 +389,11 @@ export default async function TicketDetailPage({
                 <span>{localizeDefinition(data.ticket.priority, data.locale)}</span>
               </div>
               <div className="meta-item">
-                <span>{t.common.assignee}</span>
-                <span>{data.ticket.assignee?.displayName ?? t.common.none}</span>
+                <span>{t.common.assignees}</span>
+                <UserBadgeList
+                  users={ticketAssignees}
+                  emptyLabel={t.common.none}
+                />
               </div>
               <div className="meta-item">
                 <span>{t.common.requester}</span>
@@ -506,9 +518,14 @@ export default async function TicketDetailPage({
                 </select>
               </div>
               <div className="field">
-                <label htmlFor="assigneeId">{t.common.assignee}</label>
-                <select id="assigneeId" name="assigneeId" defaultValue={data.ticket.assigneeId ?? ""}>
-                  <option value="">{t.common.none}</option>
+                <label htmlFor="assigneeIds">{t.common.assignees}</label>
+                <select
+                  id="assigneeIds"
+                  name="assigneeIds"
+                  multiple
+                  size={Math.min(5, Math.max(2, data.workspacePeople.length || 2))}
+                  defaultValue={getTicketAssigneeIds(data.ticket)}
+                >
                   {data.workspacePeople.map((person) => (
                     <option key={person.id} value={person.id}>
                       {person.displayName}

@@ -145,7 +145,13 @@ export async function getDashboardData(workspaceId?: string) {
 
   const [assignedToMe, createdByMe, recentUpdates, statusCounts] = await Promise.all([
     prisma.ticket.findMany({
-      where: { ...baseWhere, assigneeId: context.user.id },
+      where: {
+        ...baseWhere,
+        OR: [
+          { assignees: { some: { userId: context.user.id } } },
+          { assigneeId: context.user.id },
+        ],
+      },
       include: ticketIncludes,
       orderBy: { updatedAt: "desc" },
       take: 5,
@@ -214,18 +220,33 @@ export async function getTicketsData(filters: TicketFilters) {
         : {
             key: {
               notIn: ["CLOSED", "CANCELLED"],
-            },
           },
+        },
     priorityId: filters.priorityId || undefined,
-    assigneeId: filters.assigneeId || undefined,
     requesterId: filters.requesterId || undefined,
-    OR: filters.q
-      ? [
-          { title: { contains: filters.q } },
-          { description: { contains: filters.q } },
-          { ticketNumber: { contains: filters.q } },
-        ]
-      : undefined,
+    AND: [
+      ...(filters.assigneeId
+        ? [
+            {
+              OR: [
+                { assignees: { some: { userId: filters.assigneeId } } },
+                { assigneeId: filters.assigneeId },
+              ],
+            },
+          ]
+        : []),
+      ...(filters.q
+        ? [
+            {
+              OR: [
+                { title: { contains: filters.q } },
+                { description: { contains: filters.q } },
+                { ticketNumber: { contains: filters.q } },
+              ],
+            },
+          ]
+        : []),
+    ],
   };
 
   const [tickets, definitions, people] = await Promise.all([
@@ -466,6 +487,14 @@ export const ticketIncludes = {
   },
   requester: true,
   assignee: true,
+  assignees: {
+    include: {
+      user: true,
+    },
+    orderBy: {
+      createdAt: "asc",
+    },
+  },
   status: true,
   priority: true,
 } satisfies Prisma.TicketInclude;

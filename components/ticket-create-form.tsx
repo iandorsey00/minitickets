@@ -44,6 +44,7 @@ type TicketCreateFormProps = {
       priority: string;
       status: string;
       assignee: string;
+      assignees: string;
       optional: string;
       none: string;
       dueDate: string;
@@ -90,7 +91,7 @@ export function TicketCreateForm({
   defaults,
 }: TicketCreateFormProps) {
   const [workspaceId, setWorkspaceId] = useState(defaults.workspaceId);
-  const [assigneeId, setAssigneeId] = useState("");
+  const [assigneeIds, setAssigneeIds] = useState<string[]>([]);
   const [parentTicketId, setParentTicketId] = useState(defaults.parentTicketId ?? "");
   const [statusId, setStatusId] = useState(defaults.statusId ?? statuses[0]?.id ?? "");
   const [statusTouched, setStatusTouched] = useState(false);
@@ -124,15 +125,21 @@ export function TicketCreateForm({
             onChange={(event) => {
               const nextWorkspaceId = event.target.value;
               const nextWorkspacePeople = people.filter((person) => person.workspaceIds.includes(nextWorkspaceId));
-              const assigneeStillAllowed = nextWorkspacePeople.some((person) => person.id === assigneeId);
+              const nextAllowedAssigneeIds = assigneeIds.filter((assigneeId) =>
+                nextWorkspacePeople.some((person) => person.id === assigneeId),
+              );
 
               setWorkspaceId(nextWorkspaceId);
               setParentTicketId("");
 
-              if (!assigneeStillAllowed) {
-                setAssigneeId("");
+              if (nextAllowedAssigneeIds.length !== assigneeIds.length) {
+                setAssigneeIds(nextAllowedAssigneeIds);
                 if (!statusTouched) {
-                  setStatusId(defaults.statusId ?? statuses[0]?.id ?? "");
+                  setStatusId(
+                    nextAllowedAssigneeIds.length && defaults.inProgressStatusId
+                      ? defaults.inProgressStatusId
+                      : defaults.statusId ?? statuses[0]?.id ?? "",
+                  );
                 }
               }
             }}
@@ -191,27 +198,28 @@ export function TicketCreateForm({
           </select>
         </div>
         <div className="field">
-          <label htmlFor="assigneeId">
-            {dictionary.common.assignee} <span className="muted">({dictionary.common.optional})</span>
+          <label htmlFor="assigneeIds">
+            {dictionary.common.assignees} <span className="muted">({dictionary.common.optional})</span>
           </label>
           <select
-            id="assigneeId"
-            name="assigneeId"
-            value={assigneeId}
+            id="assigneeIds"
+            name="assigneeIds"
+            value={assigneeIds}
+            multiple
+            size={Math.min(5, Math.max(2, workspacePeople.length || 2))}
             onChange={(event) => {
-              const nextAssigneeId = event.target.value;
-              setAssigneeId(nextAssigneeId);
+              const nextAssigneeIds = Array.from(event.target.selectedOptions, (option) => option.value);
+              setAssigneeIds(nextAssigneeIds);
 
               if (!statusTouched) {
                 setStatusId(
-                  nextAssigneeId && defaults.inProgressStatusId
+                  nextAssigneeIds.length && defaults.inProgressStatusId
                     ? defaults.inProgressStatusId
                     : defaults.statusId ?? statuses[0]?.id ?? "",
                 );
               }
             }}
           >
-            <option value="">{dictionary.common.none}</option>
             {workspacePeople.map((person) => (
               <option key={person.id} value={person.id}>
                 {person.displayName}

@@ -95,6 +95,26 @@ export function StatusNotice({
   );
 }
 
+export function UserBadgeList({
+  users,
+  emptyLabel,
+}: {
+  users: Array<{ id: string; displayName: string }>;
+  emptyLabel: string;
+}) {
+  if (!users.length) {
+    return <span>{emptyLabel}</span>;
+  }
+
+  return (
+    <div className="user-badge-list">
+      {users.map((user) => (
+        <Badge key={user.id} label={user.displayName} tone="neutral" />
+      ))}
+    </div>
+  );
+}
+
 export function TicketLink({
   href,
   number,

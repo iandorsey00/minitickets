@@ -231,6 +231,36 @@ async function main() {
     });
   }
 
+  for (const ticket of tickets) {
+    if (!ticket.assigneeId) {
+      continue;
+    }
+
+    const seededTicket = await prisma.ticket.findUniqueOrThrow({
+      where: {
+        workspaceId_serialNumber: {
+          workspaceId: ticket.workspaceId,
+          serialNumber: ticket.serialNumber,
+        },
+      },
+      select: { id: true },
+    });
+
+    await prisma.ticketAssignment.upsert({
+      where: {
+        ticketId_userId: {
+          ticketId: seededTicket.id,
+          userId: ticket.assigneeId,
+        },
+      },
+      update: {},
+      create: {
+        ticketId: seededTicket.id,
+        userId: ticket.assigneeId,
+      },
+    });
+  }
+
   const seededTickets = await prisma.ticket.findMany({
     where: {
       ticketNumber: {

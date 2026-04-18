@@ -2,7 +2,8 @@ import Link from "next/link";
 
 import { EmptyState, PageHeader, Panel, TicketLink } from "@/components/ui";
 import { getWorkspaceDetail } from "@/lib/data";
-import { formatDateTime } from "@/lib/format";
+import { formatDateTime, formatNameList } from "@/lib/format";
+import { getTicketAssigneeUsers } from "@/lib/ticket-assignees";
 
 export default async function WorkspaceDetailPage({
   params,
@@ -61,7 +62,7 @@ export default async function WorkspaceDetailPage({
                 href={`/tickets/${ticket.id}`}
                 number={ticket.ticketNumber}
                 title={ticket.title}
-                meta={`${ticket.assignee?.displayName ?? t.common.none} · ${formatDateTime(ticket.updatedAt, data.localeCode, data.timeZone)}`}
+                meta={`${formatNameList(getTicketAssigneeUsers(ticket).map((user) => user.displayName), data.locale, t.common.none)} · ${formatDateTime(ticket.updatedAt, data.localeCode, data.timeZone)}`}
               />
             ))
           ) : (

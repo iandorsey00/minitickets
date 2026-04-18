@@ -45,6 +45,7 @@ import { createPasswordSetupToken, hashPasswordSetupToken } from "@/lib/password
 import { prisma } from "@/lib/prisma";
 import { assertRateLimit, clearRateLimit } from "@/lib/rate-limit";
 import { sanitizeTicketEventReminderOffsets } from "@/lib/ticket-events";
+import { getTicketAssigneeUsers, getTicketRecipientUsers } from "@/lib/ticket-assignees";
 import { fallbackTicketPrefixFromSlug, formatTicketNumber, normalizeTicketPrefix } from "@/lib/tickets";
 import { autoCloseResolvedTickets } from "@/lib/ticket-status";
 import { MAX_ATTACHMENT_SIZE_BYTES, getTicketAttachmentDiskPath, getTicketAttachmentUrl, getUploadsRoot } from "@/lib/uploads";
@@ -61,7 +62,7 @@ const ticketSchema = z.object({
   parentTicketId: z.string().optional(),
   title: z.string().min(3).max(120),
   description: z.string().max(5000).optional(),
-  assigneeId: z.string().optional(),
+  assigneeIds: z.array(z.string()).optional(),
   statusId: z.string().optional(),
   priorityId: z.string().optional(),
   dueDate: z.string().optional(),
@@ -192,6 +193,54 @@ function normalizeTicketEventScheduledFor(rawScheduledFor: string, allDay: boole
 
 function uniqueRecipients<T extends { id: string }>(items: T[]) {
   return Array.from(new Map(items.map((item) => [item.id, item])).values());
+}
+
+function normalizeSelectedIds(values: FormDataEntryValue[]) {
+  return Array.from(
+    new Set(
+      values
+        .map((value) => String(value))
+        .map((value) => value.trim())
+        .filter(Boolean),
+    ),
+  );
+}
+
+function buildAssigneeActivityMessage({
+  addedUsers,
+  removedUsers,
+}: {
+  addedUsers: Array<{ displayName: string }>;
+  removedUsers: Array<{ displayName: string }>;
+}) {
+  const addedNames = addedUsers.map((user) => user.displayName);
+  const removedNames = removedUsers.map((user) => user.displayName);
+
+  if (addedNames.length && removedNames.length) {
+    return {
+      eventType: "ticket.assignees_updated",
+      messageZh: `已更新处理人。新增：${addedNames.join("、")}；移除：${removedNames.join("、")}。`,
+      messageEn: `Updated assignees. Added: ${addedNames.join(", ")}; removed: ${removedNames.join(", ")}.`,
+    };
+  }
+
+  if (addedNames.length) {
+    return {
+      eventType: "ticket.assignees_updated",
+      messageZh: `已添加处理人：${addedNames.join("、")}。`,
+      messageEn: `Added assignees: ${addedNames.join(", ")}.`,
+    };
+  }
+
+  if (removedNames.length) {
+    return {
+      eventType: "ticket.assignees_updated",
+      messageZh: `已移除处理人：${removedNames.join("、")}。`,
+      messageEn: `Removed assignees: ${removedNames.join(", ")}.`,
+    };
+  }
+
+  return null;
 }
 
 function escapeRegExp(value: string) {
@@ -342,6 +391,43 @@ async function validateParentTicketSelection(parentTicketId: string | undefined 
   }
 
   return parentTicket;
+}
+
+async function resolveTicketAssigneeUsers(workspaceId: string, assigneeIds: string[]) {
+  const normalizedAssigneeIds = Array.from(new Set(assigneeIds.filter(Boolean)));
+
+  if (!normalizedAssigneeIds.length) {
+    return [];
+  }
+
+  const assignees = await prisma.user.findMany({
+    where: {
+      id: { in: normalizedAssigneeIds },
+      isActive: true,
+    },
+    include: {
+      memberships: {
+        where: {
+          workspaceId,
+        },
+        select: {
+          id: true,
+        },
+      },
+    },
+    orderBy: { displayName: "asc" },
+  });
+
+  if (assignees.length !== normalizedAssigneeIds.length) {
+    return null;
+  }
+
+  const invalidAssignee = assignees.find((assignee) => !assignee.memberships.length && assignee.role !== UserRole.ADMIN);
+  if (invalidAssignee) {
+    return null;
+  }
+
+  return assignees.sort((left, right) => left.displayName.localeCompare(right.displayName, "en"));
 }
 
 export async function loginAction(formData: FormData) {
@@ -529,7 +615,7 @@ export async function createTicketAction(formData: FormData) {
     parentTicketId: formData.get("parentTicketId") || undefined,
     title: formData.get("title"),
     description: formData.get("description"),
-    assigneeId: formData.get("assigneeId") || undefined,
+    assigneeIds: normalizeSelectedIds(formData.getAll("assigneeIds")),
     statusId: formData.get("statusId") || undefined,
     priorityId: formData.get("priorityId") || undefined,
     dueDate: formData.get("dueDate") || undefined,
@@ -557,27 +643,9 @@ export async function createTicketAction(formData: FormData) {
     redirect("/tickets/new?error=forbidden");
   }
 
-  if (parsed.data.assigneeId) {
-    const assignee = await prisma.user.findUnique({
-      where: { id: parsed.data.assigneeId },
-      select: { role: true, isActive: true },
-    });
-
-    if (!assignee?.isActive) {
-      redirect("/tickets/new?error=invalid");
-    }
-
-    const assigneeMembership = await prisma.workspaceMembership.findFirst({
-      where: {
-        userId: parsed.data.assigneeId,
-        workspaceId: parsed.data.workspaceId,
-      },
-      select: { id: true },
-    });
-
-    if (!assigneeMembership && assignee.role !== UserRole.ADMIN) {
-      redirect("/tickets/new?error=invalid");
-    }
+  const assignees = await resolveTicketAssigneeUsers(parsed.data.workspaceId, parsed.data.assigneeIds ?? []);
+  if (!assignees) {
+    redirect("/tickets/new?error=invalid");
   }
 
   const parentTicket = await validateParentTicketSelection(parsed.data.parentTicketId, parsed.data.workspaceId);
@@ -610,9 +678,10 @@ export async function createTicketAction(formData: FormData) {
     select: { id: true },
   });
   const finalStatusId =
-    parsed.data.assigneeId && inProgressStatus && (!parsed.data.statusId || parsed.data.statusId === defaults.statusId)
+    assignees.length && inProgressStatus && (!parsed.data.statusId || parsed.data.statusId === defaults.statusId)
       ? inProgressStatus.id
       : parsed.data.statusId || defaults.statusId!;
+  const primaryAssigneeId = assignees[0]?.id ?? null;
 
   const ticket = await prisma.ticket.create({
     data: {
@@ -623,7 +692,14 @@ export async function createTicketAction(formData: FormData) {
       workspaceId: parsed.data.workspaceId,
       parentTicketId: parentTicket?.id ?? null,
       requesterId: user.id,
-      assigneeId: parsed.data.assigneeId || null,
+      assigneeId: primaryAssigneeId,
+      assignees: assignees.length
+        ? {
+            create: assignees.map((assignee) => ({
+              userId: assignee.id,
+            })),
+          }
+        : undefined,
       statusId: finalStatusId,
       priorityId: parsed.data.priorityId || defaults.priorityId!,
       dueDate: parsed.data.dueDate ? new Date(parsed.data.dueDate) : null,
@@ -659,21 +735,28 @@ export async function createTicketAction(formData: FormData) {
       workspace: true,
       requester: true,
       assignee: true,
+      assignees: {
+        include: {
+          user: true,
+        },
+      },
       status: true,
     },
   });
 
-  if (ticket.assigneeId && ticket.assigneeId !== user.id) {
-    await prisma.notification.create({
-      data: {
-        userId: ticket.assigneeId,
+  const newlyAssignedUsers = getTicketAssigneeUsers(ticket).filter((assignee) => assignee.id !== user.id);
+
+  if (newlyAssignedUsers.length) {
+    await prisma.notification.createMany({
+      data: newlyAssignedUsers.map((assignee) => ({
+        userId: assignee.id,
         ticketId: ticket.id,
         eventType: "ticket.assigned",
         titleZh: `你被分配到工单 ${ticket.ticketNumber}`,
         titleEn: `You were assigned ${ticket.ticketNumber}`,
         bodyZh: ticket.title,
         bodyEn: ticket.title,
-      },
+      })),
     });
   }
 
@@ -700,14 +783,14 @@ export async function createTicketAction(formData: FormData) {
     console.error("Failed to send created-ticket email", error);
   }
 
-  if (ticket.assignee) {
+  for (const assignee of newlyAssignedUsers) {
     try {
       await sendTicketEmail({
         kind: "assigned",
         recipient: {
-          email: ticket.assignee.email,
-          displayName: ticket.assignee.displayName,
-          locale: ticket.assignee.locale,
+          email: assignee.email,
+          displayName: assignee.displayName,
+          locale: assignee.locale,
         },
         actorName: user.displayName,
         ticket: {
@@ -754,6 +837,14 @@ export async function updateTicketAction(formData: FormData) {
         select: { id: true },
         take: 1,
       },
+      assignees: {
+        include: {
+          user: true,
+        },
+        orderBy: {
+          createdAt: "asc",
+        },
+      },
     },
   });
 
@@ -777,7 +868,7 @@ export async function updateTicketAction(formData: FormData) {
     statusId: String(formData.get("statusId") ?? ticket.statusId),
     priorityId: String(formData.get("priorityId") ?? ticket.priorityId),
     parentTicketId: String(formData.get("parentTicketId") ?? "") || null,
-    assigneeId: String(formData.get("assigneeId") ?? "") || null,
+    assigneeIds: normalizeSelectedIds(formData.getAll("assigneeIds")),
     dueDate: String(formData.get("dueDate") ?? "") || null,
     paymentLabel: String(formData.get("paymentLabel") ?? "") || null,
     paymentLast4: String(formData.get("paymentLast4") ?? "") || null,
@@ -802,27 +893,9 @@ export async function updateTicketAction(formData: FormData) {
     redirect(`/tickets/${ticketId}`);
   }
 
-  if (nextValues.assigneeId) {
-    const assignee = await prisma.user.findUnique({
-      where: { id: nextValues.assigneeId },
-      select: { role: true, isActive: true },
-    });
-
-    if (!assignee?.isActive) {
-      redirect(`/tickets/${ticketId}`);
-    }
-
-    const assigneeMembership = await prisma.workspaceMembership.findFirst({
-      where: {
-        userId: nextValues.assigneeId,
-        workspaceId: ticket.workspaceId,
-      },
-      select: { id: true },
-    });
-
-    if (!assigneeMembership && assignee.role !== UserRole.ADMIN) {
-      redirect(`/tickets/${ticketId}`);
-    }
+  const nextAssignees = await resolveTicketAssigneeUsers(ticket.workspaceId, nextValues.assigneeIds);
+  if (!nextAssignees) {
+    redirect(`/tickets/${ticketId}`);
   }
 
   if (ticket.childTickets.length && nextValues.parentTicketId && nextValues.parentTicketId !== ticket.parentTicketId) {
@@ -835,6 +908,12 @@ export async function updateTicketAction(formData: FormData) {
   }
 
   const activities = [];
+  const currentAssigneeUsers = getTicketAssigneeUsers(ticket);
+  const currentAssigneeIds = new Set(currentAssigneeUsers.map((assignee) => assignee.id));
+  const nextAssigneeIds = new Set(nextAssignees.map((assignee) => assignee.id));
+  const addedAssignees = nextAssignees.filter((assignee) => !currentAssigneeIds.has(assignee.id));
+  const removedAssignees = currentAssigneeUsers.filter((assignee) => !nextAssigneeIds.has(assignee.id));
+
   if (nextValues.priorityId !== ticket.priorityId) {
     activities.push({
       actorUserId: user.id,
@@ -843,12 +922,14 @@ export async function updateTicketAction(formData: FormData) {
       messageEn: "Priority updated.",
     });
   }
-  if (nextValues.assigneeId !== ticket.assigneeId) {
+  const assigneeActivity = buildAssigneeActivityMessage({
+    addedUsers: addedAssignees,
+    removedUsers: removedAssignees,
+  });
+  if (assigneeActivity) {
     activities.push({
       actorUserId: user.id,
-      eventType: "ticket.assigned",
-      messageZh: "已更新处理人。",
-      messageEn: "Assignee updated.",
+      ...assigneeActivity,
     });
   }
   if (nextValues.parentTicketId !== ticket.parentTicketId) {
@@ -872,25 +953,25 @@ export async function updateTicketAction(formData: FormData) {
   }
 
   const finalStatusId =
-    nextValues.assigneeId &&
+    nextAssignees.length &&
     inProgressStatus &&
     (nextStatus.key === "NEW" || nextStatus.key === "OPEN")
       ? inProgressStatus.id
       : nextValues.statusId;
   const finalStatusKey =
-    nextValues.assigneeId &&
+    nextAssignees.length &&
     inProgressStatus &&
     (nextStatus.key === "NEW" || nextStatus.key === "OPEN")
       ? inProgressStatus.key
       : nextStatus.key;
   const finalStatusLabelZh =
-    nextValues.assigneeId &&
+    nextAssignees.length &&
     inProgressStatus &&
     (nextStatus.key === "NEW" || nextStatus.key === "OPEN")
       ? inProgressStatus.labelZh
       : nextStatus.labelZh;
   const finalStatusLabelEn =
-    nextValues.assigneeId &&
+    nextAssignees.length &&
     inProgressStatus &&
     (nextStatus.key === "NEW" || nextStatus.key === "OPEN")
       ? inProgressStatus.labelEn
@@ -911,7 +992,13 @@ export async function updateTicketAction(formData: FormData) {
     data: {
       statusId: finalStatusId,
       priorityId: nextValues.priorityId,
-      assigneeId: nextValues.assigneeId,
+      assigneeId: nextAssignees[0]?.id ?? null,
+      assignees: {
+        deleteMany: {},
+        create: nextAssignees.map((assignee) => ({
+          userId: assignee.id,
+        })),
+      },
       title: nextValues.title,
       description: nextValues.description,
       parentTicketId: parentTicket?.id ?? null,
@@ -952,32 +1039,39 @@ export async function updateTicketAction(formData: FormData) {
       workspace: true,
       requester: true,
       assignee: true,
+      assignees: {
+        include: {
+          user: true,
+        },
+      },
       status: true,
     },
   });
 
-  if (nextValues.assigneeId && nextValues.assigneeId !== user.id) {
-    await prisma.notification.create({
-      data: {
-        userId: nextValues.assigneeId,
+  const addedAssignableRecipients = addedAssignees.filter((assignee) => assignee.id !== user.id);
+
+  if (addedAssignableRecipients.length) {
+    await prisma.notification.createMany({
+      data: addedAssignableRecipients.map((assignee) => ({
+        userId: assignee.id,
         ticketId,
         eventType: "ticket.assigned",
         titleZh: `工单 ${ticket.ticketNumber} 已分配给你`,
         titleEn: `${ticket.ticketNumber} was assigned to you`,
         bodyZh: updatedTicket.title,
         bodyEn: updatedTicket.title,
-      },
+      })),
     });
   }
 
-  if (updatedTicket.assignee && nextValues.assigneeId !== ticket.assigneeId) {
+  for (const assignee of addedAssignableRecipients) {
     try {
       await sendTicketEmail({
         kind: "assigned",
         recipient: {
-          email: updatedTicket.assignee.email,
-          displayName: updatedTicket.assignee.displayName,
-          locale: updatedTicket.assignee.locale,
+          email: assignee.email,
+          displayName: assignee.displayName,
+          locale: assignee.locale,
         },
         actorName: user.displayName,
         ticket: {
@@ -993,11 +1087,7 @@ export async function updateTicketAction(formData: FormData) {
   }
 
   if (statusChanged && ["RESOLVED", "CLOSED"].includes(updatedTicket.status.key)) {
-    const recipients = uniqueRecipients(
-      [updatedTicket.requester, updatedTicket.assignee].filter(
-        (recipient): recipient is typeof updatedTicket.requester => Boolean(recipient),
-      ),
-    );
+    const recipients = getTicketRecipientUsers(updatedTicket);
 
     if (recipients.length) {
       await prisma.notification.createMany({
@@ -1060,6 +1150,11 @@ export async function reopenTicketAction(formData: FormData) {
       workspace: true,
       requester: true,
       assignee: true,
+      assignees: {
+        include: {
+          user: true,
+        },
+      },
       status: true,
     },
   });
@@ -1106,14 +1201,15 @@ export async function reopenTicketAction(formData: FormData) {
     include: {
       requester: true,
       assignee: true,
+      assignees: {
+        include: {
+          user: true,
+        },
+      },
     },
   });
 
-  const recipients = uniqueRecipients(
-    [updatedTicket.requester, updatedTicket.assignee].filter(
-      (recipient): recipient is typeof updatedTicket.requester => Boolean(recipient),
-    ),
-  );
+  const recipients = getTicketRecipientUsers(updatedTicket);
 
   if (recipients.length) {
     await prisma.notification.createMany({
@@ -1156,6 +1252,11 @@ export async function createTicketEventAction(formData: FormData) {
       workspace: true,
       requester: true,
       assignee: true,
+      assignees: {
+        include: {
+          user: true,
+        },
+      },
     },
   });
 
@@ -1219,9 +1320,7 @@ export async function createTicketEventAction(formData: FormData) {
     },
   });
 
-  const recipients = uniqueRecipients(
-    [ticket.requester, ticket.assignee].filter((recipient): recipient is typeof ticket.requester => Boolean(recipient)),
-  );
+  const recipients = getTicketRecipientUsers(ticket);
 
   if (recipients.length) {
     await prisma.notification.createMany({
@@ -1478,6 +1577,11 @@ export async function addCommentAction(formData: FormData) {
       status: true,
       requester: true,
       assignee: true,
+      assignees: {
+        include: {
+          user: true,
+        },
+      },
       workspace: {
         include: {
           memberships: {
@@ -1540,9 +1644,9 @@ export async function addCommentAction(formData: FormData) {
     user.id,
   );
   const mentionedUserIds = new Set(mentionedUsers.map((recipient) => recipient.id));
-  const recipients = [ticket.requesterId, ticket.assigneeId].filter(
-    (recipientId): recipientId is string => Boolean(recipientId && recipientId !== user.id && !mentionedUserIds.has(recipientId)),
-  );
+  const recipients = getTicketRecipientUsers(ticket)
+    .map((recipient) => recipient.id)
+    .filter((recipientId) => recipientId !== user.id && !mentionedUserIds.has(recipientId));
 
   if (recipients.length) {
     await prisma.notification.createMany({
@@ -1573,13 +1677,8 @@ export async function addCommentAction(formData: FormData) {
   }
 
   const emailRecipients = uniqueRecipients(
-    [ticket.requester, ticket.assignee].filter(
-      (recipient): recipient is typeof ticket.requester =>
-        Boolean(
-          recipient &&
-            recipient.commentEmailsEnabled &&
-            !mentionedUserIds.has(recipient.id),
-        ),
+    getTicketRecipientUsers(ticket).filter(
+      (recipient) => recipient.commentEmailsEnabled && !mentionedUserIds.has(recipient.id),
     ),
   );
 
