@@ -328,7 +328,7 @@ async function getClientIp() {
   return headerStore.get("x-real-ip") || "unknown";
 }
 
-async function resolveSavedPaymentMethodIds(
+async function resolveSavedPaymentMethods(
   userId: string,
   workspaceId: string,
   selectedIds: string[],
@@ -343,11 +343,15 @@ async function resolveSavedPaymentMethodIds(
           id: { in: normalizedSelectedIds },
           workspaceId,
         },
-        select: { id: true },
+        select: {
+          id: true,
+          label: true,
+          last4: true,
+        },
       })
     : [];
 
-  const validIds = existingMethods.map((method) => method.id);
+  const validMethods = [...existingMethods];
 
   if (saveManualMethod && manualLabel && manualLast4) {
     const savedMethod = await prisma.paymentMethod.upsert({
@@ -359,18 +363,23 @@ async function resolveSavedPaymentMethodIds(
         },
       },
       update: {},
-      create: {
-        workspaceId,
-        createdByUserId: userId,
-        label: manualLabel,
-        last4: manualLast4,
+        create: {
+          workspaceId,
+          createdByUserId: userId,
+          label: manualLabel,
+          last4: manualLast4,
+        },
+      select: {
+        id: true,
+        label: true,
+        last4: true,
       },
-      select: { id: true },
     });
-    validIds.push(savedMethod.id);
+    validMethods.push(savedMethod);
   }
 
-  return Array.from(new Set(validIds));
+  const dedupedMethods = new Map(validMethods.map((method) => [method.id, method]));
+  return Array.from(dedupedMethods.values());
 }
 
 async function validateParentTicketSelection(parentTicketId: string | undefined | null, workspaceId: string, ticketId?: string) {
@@ -716,7 +725,7 @@ export async function createTicketAction(formData: FormData) {
         ? {
             create:
               (
-                await resolveSavedPaymentMethodIds(
+                await resolveSavedPaymentMethods(
                   user.id,
                   parsed.data.workspaceId,
                   selectedPaymentMethodIds,
@@ -724,8 +733,10 @@ export async function createTicketAction(formData: FormData) {
                   parsed.data.paymentLast4 || null,
                   formData.get("savePaymentMethod") === "yes",
                 )
-              ).map((paymentMethodId) => ({
-                paymentMethodId,
+              ).map((paymentMethod) => ({
+                paymentMethodId: paymentMethod.id,
+                labelSnapshot: paymentMethod.label,
+                last4Snapshot: paymentMethod.last4,
               })),
           }
         : undefined,
@@ -1026,7 +1037,7 @@ export async function updateTicketAction(formData: FormData) {
               deleteMany: {},
               create:
                 (
-                  await resolveSavedPaymentMethodIds(
+                  await resolveSavedPaymentMethods(
                     user.id,
                     ticket.workspaceId,
                     selectedPaymentMethodIds,
@@ -1034,8 +1045,10 @@ export async function updateTicketAction(formData: FormData) {
                     nextValues.paymentLast4,
                     formData.get("savePaymentMethod") === "yes",
                   )
-                ).map((paymentMethodId) => ({
-                  paymentMethodId,
+                ).map((paymentMethod) => ({
+                  paymentMethodId: paymentMethod.id,
+                  labelSnapshot: paymentMethod.label,
+                  last4Snapshot: paymentMethod.last4,
                 })),
             },
           }

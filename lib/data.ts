@@ -310,9 +310,7 @@ export async function getTicketDetail(ticketId: string) {
           paymentMethod: true,
         },
         orderBy: {
-          paymentMethod: {
-            label: "asc",
-          },
+          createdAt: "asc",
         },
       },
     },

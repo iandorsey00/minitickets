@@ -375,10 +375,12 @@ model PaymentMethod {
 model TicketPaymentMethod {
   id              String        @id @default(cuid())
   ticketId         String
-  paymentMethodId  String
+  paymentMethodId  String?
+  labelSnapshot    String?
+  last4Snapshot    String?
   createdAt        DateTime      @default(now())
   ticket           Ticket        @relation(fields: [ticketId], references: [id], onDelete: Cascade)
-  paymentMethod    PaymentMethod @relation(fields: [paymentMethodId], references: [id], onDelete: Cascade)
+  paymentMethod    PaymentMethod? @relation(fields: [paymentMethodId], references: [id], onDelete: SetNull)
 
   @@unique([ticketId, paymentMethodId])
   @@index([paymentMethodId])

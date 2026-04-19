@@ -1,6 +1,6 @@
 {
   "name": "minitickets",
-  "version": "1.10.40",
+  "version": "1.10.41",
   "description": "MiniTickets - lightweight bilingual workspace ticketing",
   "scripts": {
     "dev": "prisma generate && next dev",
@@ -10,6 +10,7 @@
     "db:push": "prisma db push && prisma generate",
     "db:seed": "prisma generate && node --experimental-strip-types prisma/seed.ts",
     "db:backfill-assignments": "node --experimental-strip-types scripts/backfill-ticket-assignments.ts",
+    "db:backfill-payment-method-snapshots": "node --experimental-strip-types scripts/backfill-ticket-payment-method-snapshots.ts",
     "db:studio": "prisma studio",
     "bootstrap:admin": "node --experimental-strip-types scripts/bootstrap-admin.ts",
     "email:welcome": "node --experimental-strip-types scripts/resend-welcome-email.ts",

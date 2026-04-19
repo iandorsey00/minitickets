@@ -118,7 +118,9 @@ export default async function TicketDetailPage({
     </div>
   );
   const ticketAssignees = getTicketAssigneeUsers(data.ticket);
-  const selectedPaymentMethodIds = new Set(data.ticket.paymentMethods.map((item) => item.paymentMethodId));
+  const selectedPaymentMethodIds = new Set(
+    data.ticket.paymentMethods.map((item) => item.paymentMethodId).filter((paymentMethodId): paymentMethodId is string => Boolean(paymentMethodId)),
+  );
   const defaultDueDateInviteRecipientIds = Array.from(
     new Set([
       data.ticket.requester.id,
@@ -459,7 +461,11 @@ export default async function TicketDetailPage({
                   {data.ticket.paymentMethods.length ? (
                     <div className="stack" style={{ gap: "0.4rem" }}>
                       {data.ticket.paymentMethods.map((item) => (
-                        <span key={item.id}>{item.paymentMethod.label} · {item.paymentMethod.last4}</span>
+                        <span key={item.id}>
+                          {[item.labelSnapshot ?? item.paymentMethod?.label, item.last4Snapshot ?? item.paymentMethod?.last4]
+                            .filter(Boolean)
+                            .join(" · ") || t.common.none}
+                        </span>
                       ))}
                     </div>
                   ) : data.ticket.paymentLabel || data.ticket.paymentLast4 ? (
