@@ -227,7 +227,7 @@ export function TicketCreateForm({
             ))}
           </select>
         </div>
-        <div className="field">
+        <div className="field due-date-field">
           <label htmlFor="dueDate">
             {dictionary.common.dueDate} <span className="muted">({dictionary.common.optional})</span>
           </label>

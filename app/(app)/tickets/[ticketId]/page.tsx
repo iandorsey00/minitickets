@@ -533,7 +533,7 @@ export default async function TicketDetailPage({
                   ))}
                 </select>
               </div>
-              <div className="field">
+              <div className="field due-date-field">
                 <label htmlFor="dueDate">{t.common.dueDate}</label>
                 <input
                   id="dueDate"
