@@ -133,6 +133,7 @@ MiniTickets is live as a bilingual, workspace-based ticketing system for persona
 - A future MiniAssets convergence pass should treat MiniTickets `app/globals.css` as the visual base and use `docs/miniassets-shared-stylesheet-handoff.md` as the shared stylesheet migration note
 - Saved-state success notices should use the shared `你的更改已保存。 / Your changes have been saved.` copy and appear once immediately below the page header; see `docs/saved-message-guidelines.md`
 - Ticket assignments now support multiple assignees through `TicketAssignment`; keep `Ticket.assigneeId` only as a temporary compatibility mirror for older records, and run `npm run db:backfill-assignments` after schema push so legacy single-assignee tickets appear correctly in the new UI
+- Saved payment methods are workspace-scoped records and should be managed in `工作区管理 / Workspaces`; ticket forms can still save reusable methods, but label/last-four corrections should happen from the workspace admin surface
 
 ## Near-term follow-ups
 

@@ -205,6 +205,9 @@ const dictionaries = {
       removeMembership: "移除",
       savedPaymentMethods: "已保存支付方式",
       deletePaymentMethod: "删除支付方式",
+      editPaymentMethod: "编辑支付方式",
+      paymentMethodInvalid: "支付方式信息无效。请检查名称和末四位。",
+      paymentMethodDuplicate: "这个支付方式已存在于当前工作区。",
     },
     settings: {
       title: "设置",
@@ -444,6 +447,9 @@ const dictionaries = {
       removeMembership: "Remove",
       savedPaymentMethods: "Saved payment methods",
       deletePaymentMethod: "Delete payment method",
+      editPaymentMethod: "Edit payment method",
+      paymentMethodInvalid: "That payment method is invalid. Check the label and last four digits.",
+      paymentMethodDuplicate: "That payment method already exists in this workspace.",
     },
     settings: {
       title: "Settings",

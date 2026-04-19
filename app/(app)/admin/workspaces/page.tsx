@@ -1,4 +1,4 @@
-import { deletePaymentMethodAction, toggleWorkspaceArchiveAction, updateWorkspaceAction } from "@/lib/actions";
+import { deletePaymentMethodAction, toggleWorkspaceArchiveAction, updatePaymentMethodAction, updateWorkspaceAction } from "@/lib/actions";
 import { MINI_AUTH_WORKSPACE_SYNC_ENABLED } from "@/lib/auth-config";
 import { ArchiveIcon, SaveIcon, TrashIcon } from "@/components/icons";
 import { WorkspaceCreateForm } from "@/components/workspace-create-form";
@@ -8,7 +8,7 @@ import { PageHeader, Panel, StatusNotice } from "@/components/ui";
 export default async function AdminWorkspacesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ saved?: string }>;
+  searchParams: Promise<{ saved?: string; payment?: string }>;
 }) {
   const data = await getAdminData();
   const query = await searchParams;
@@ -17,6 +17,12 @@ export default async function AdminWorkspacesPage({
   }
   const t = data.dictionary;
   const savedMessage = query.saved === "1" ? t.common.savedChanges : null;
+  const paymentMessage =
+    query.payment === "invalid"
+      ? { label: t.admin.paymentMethodInvalid, tone: "danger" as const }
+      : query.payment === "duplicate"
+        ? { label: t.admin.paymentMethodDuplicate, tone: "warning" as const }
+        : null;
   const miniAuthAdminUrl = process.env.MINIAUTH_BASE_URL?.trim()
     ? `${process.env.MINIAUTH_BASE_URL!.replace(/\/$/, "")}/`
     : null;
@@ -25,6 +31,7 @@ export default async function AdminWorkspacesPage({
     <>
       <PageHeader title={t.admin.workspaces} subtitle={t.common.workspace} />
       {savedMessage ? <StatusNotice label={savedMessage} tone="success" /> : null}
+      {paymentMessage ? <StatusNotice label={paymentMessage.label} tone={paymentMessage.tone} /> : null}
       <div className="grid-2">
         <Panel title={t.admin.createWorkspace}>
           {MINI_AUTH_WORKSPACE_SYNC_ENABLED ? (
@@ -161,20 +168,57 @@ export default async function AdminWorkspacesPage({
               </form>
               <div className="helper-links">
                 {workspace.paymentMethods.length ? (
-                  <div className="stack">
+                  <div className="stack admin-payment-methods">
                     <strong>{t.admin.savedPaymentMethods}</strong>
                     {workspace.paymentMethods.map((method) => (
-                      <form key={method.id} action={deletePaymentMethodAction} className="inline-form">
-                        <input type="hidden" name="workspaceId" value={workspace.id} />
-                        <input type="hidden" name="paymentMethodId" value={method.id} />
-                        <span>{method.label} · {method.last4}</span>
-                        <button type="submit" className="ghost-button">
-                          <span className="button-content">
-                            <TrashIcon className="button-icon" />
-                            <span>{t.admin.deletePaymentMethod}</span>
-                          </span>
-                        </button>
-                      </form>
+                      <div key={method.id} className="admin-payment-method-card">
+                        <form action={updatePaymentMethodAction} className="stack">
+                          <input type="hidden" name="workspaceId" value={workspace.id} />
+                          <input type="hidden" name="paymentMethodId" value={method.id} />
+                          <div className="admin-payment-method-fields">
+                            <div className="field">
+                              <label htmlFor={`payment-method-label-${method.id}`}>{t.common.paymentLabel}</label>
+                              <input
+                                id={`payment-method-label-${method.id}`}
+                                name="label"
+                                defaultValue={method.label}
+                                maxLength={60}
+                                required
+                              />
+                            </div>
+                            <div className="field">
+                              <label htmlFor={`payment-method-last4-${method.id}`}>{t.common.paymentLast4}</label>
+                              <input
+                                id={`payment-method-last4-${method.id}`}
+                                name="last4"
+                                defaultValue={method.last4}
+                                inputMode="numeric"
+                                pattern="\d{4}"
+                                maxLength={4}
+                                required
+                              />
+                            </div>
+                          </div>
+                          <div className="helper-links admin-payment-method-actions">
+                            <button type="submit">
+                              <span className="button-content">
+                                <SaveIcon className="button-icon" />
+                                <span>{t.common.save}</span>
+                              </span>
+                            </button>
+                          </div>
+                        </form>
+                        <form action={deletePaymentMethodAction} className="admin-payment-method-delete">
+                          <input type="hidden" name="workspaceId" value={workspace.id} />
+                          <input type="hidden" name="paymentMethodId" value={method.id} />
+                          <button type="submit" className="ghost-button">
+                            <span className="button-content">
+                              <TrashIcon className="button-icon" />
+                              <span>{t.admin.deletePaymentMethod}</span>
+                            </span>
+                          </button>
+                        </form>
+                      </div>
                     ))}
                   </div>
                 ) : null}

@@ -142,6 +142,13 @@ const deletePaymentMethodSchema = z.object({
   workspaceId: z.string().min(1),
 });
 
+const updatePaymentMethodSchema = z.object({
+  paymentMethodId: z.string().min(1),
+  workspaceId: z.string().min(1),
+  label: z.string().trim().min(1).max(60),
+  last4: z.string().regex(/^\d{4}$/),
+});
+
 function getDatePartsInTimeZone(date: Date, timeZone: string) {
   const parts = new Intl.DateTimeFormat("en-CA", {
     timeZone,
@@ -1289,36 +1296,41 @@ export async function createTicketEventAction(formData: FormData) {
     redirect(`/tickets/${ticket.id}`);
   }
 
-  const event = await prisma.ticketEvent.create({
-    data: {
-      ticketId: ticket.id,
-      createdByUserId: user.id,
-      title: parsed.data.title,
-      notes: parsed.data.notes?.trim() || null,
-      allDay: parsed.data.allDay,
-      scheduledFor,
-      reminders: reminderOffsets.length
-        ? {
-            create: reminderOffsets.map((offsetMinutes) => ({
-              offsetMinutes,
-            })),
-          }
-        : undefined,
-    },
-    include: {
-      reminders: true,
-    },
-  });
-
-  await prisma.ticketActivity.create({
-    data: {
-      ticketId: ticket.id,
-      actorUserId: user.id,
-      eventType: "ticket.event_created",
-      messageZh: `已安排事件：${parsed.data.title}`,
-      messageEn: `Scheduled event: ${parsed.data.title}`,
-    },
-  });
+  const [event] = await prisma.$transaction([
+    prisma.ticketEvent.create({
+      data: {
+        ticketId: ticket.id,
+        createdByUserId: user.id,
+        title: parsed.data.title,
+        notes: parsed.data.notes?.trim() || null,
+        allDay: parsed.data.allDay,
+        scheduledFor,
+        reminders: reminderOffsets.length
+          ? {
+              create: reminderOffsets.map((offsetMinutes) => ({
+                offsetMinutes,
+              })),
+            }
+          : undefined,
+      },
+      include: {
+        reminders: true,
+      },
+    }),
+    prisma.ticketActivity.create({
+      data: {
+        ticketId: ticket.id,
+        actorUserId: user.id,
+        eventType: "ticket.event_created",
+        messageZh: `已安排事件：${parsed.data.title}`,
+        messageEn: `Scheduled event: ${parsed.data.title}`,
+      },
+    }),
+    prisma.ticket.update({
+      where: { id: ticket.id },
+      data: {},
+    }),
+  ]);
 
   const recipients = getTicketRecipientUsers(ticket);
 
@@ -1426,21 +1438,26 @@ export async function deleteTicketEventAction(formData: FormData) {
     redirect(`/tickets/${ticket.id}`);
   }
 
-  await prisma.ticketEvent.delete({
-    where: {
-      id: event.id,
-    },
-  });
-
-  await prisma.ticketActivity.create({
-    data: {
-      ticketId: ticket.id,
-      actorUserId: user.id,
-      eventType: "ticket.event_deleted",
-      messageZh: `已删除事件：${event.title}`,
-      messageEn: `Deleted event: ${event.title}`,
-    },
-  });
+  await prisma.$transaction([
+    prisma.ticketEvent.delete({
+      where: {
+        id: event.id,
+      },
+    }),
+    prisma.ticketActivity.create({
+      data: {
+        ticketId: ticket.id,
+        actorUserId: user.id,
+        eventType: "ticket.event_deleted",
+        messageZh: `已删除事件：${event.title}`,
+        messageEn: `Deleted event: ${event.title}`,
+      },
+    }),
+    prisma.ticket.update({
+      where: { id: ticket.id },
+      data: {},
+    }),
+  ]);
 
   revalidatePath(`/tickets/${ticket.id}`);
   revalidatePath("/tickets");
@@ -1515,37 +1532,42 @@ export async function updateTicketEventAction(formData: FormData) {
     redirect(`/tickets/${ticket.id}`);
   }
 
-  await prisma.ticketEvent.update({
-    where: {
-      id: event.id,
-    },
-    data: {
-      title: parsed.data.title,
-      notes: parsed.data.notes?.trim() || null,
-      allDay: parsed.data.allDay,
-      scheduledFor,
-      reminders: reminderOffsets.length
-        ? {
-            deleteMany: {},
-            create: reminderOffsets.map((offsetMinutes) => ({
-              offsetMinutes,
-            })),
-          }
-        : {
-            deleteMany: {},
-          },
-    },
-  });
-
-  await prisma.ticketActivity.create({
-    data: {
-      ticketId: ticket.id,
-      actorUserId: user.id,
-      eventType: "ticket.event_updated",
-      messageZh: `已更新事件：${parsed.data.title}`,
-      messageEn: `Updated event: ${parsed.data.title}`,
-    },
-  });
+  await prisma.$transaction([
+    prisma.ticketEvent.update({
+      where: {
+        id: event.id,
+      },
+      data: {
+        title: parsed.data.title,
+        notes: parsed.data.notes?.trim() || null,
+        allDay: parsed.data.allDay,
+        scheduledFor,
+        reminders: reminderOffsets.length
+          ? {
+              deleteMany: {},
+              create: reminderOffsets.map((offsetMinutes) => ({
+                offsetMinutes,
+              })),
+            }
+          : {
+              deleteMany: {},
+            },
+      },
+    }),
+    prisma.ticketActivity.create({
+      data: {
+        ticketId: ticket.id,
+        actorUserId: user.id,
+        eventType: "ticket.event_updated",
+        messageZh: `已更新事件：${parsed.data.title}`,
+        messageEn: `Updated event: ${parsed.data.title}`,
+      },
+    }),
+    prisma.ticket.update({
+      where: { id: ticket.id },
+      data: {},
+    }),
+  ]);
 
   revalidatePath(`/tickets/${ticket.id}`);
   revalidatePath("/tickets");
@@ -2262,6 +2284,55 @@ export async function deletePaymentMethodAction(formData: FormData) {
     where: {
       id: parsed.data.paymentMethodId,
       workspaceId: parsed.data.workspaceId,
+    },
+  });
+
+  revalidatePath("/admin");
+  revalidatePath("/admin/workspaces");
+  redirect("/admin/workspaces?saved=1");
+}
+
+export async function updatePaymentMethodAction(formData: FormData) {
+  const user = await requireUser();
+  if (user.role !== UserRole.ADMIN) {
+    redirect("/dashboard");
+  }
+
+  const parsed = updatePaymentMethodSchema.safeParse({
+    paymentMethodId: formData.get("paymentMethodId"),
+    workspaceId: formData.get("workspaceId"),
+    label: formData.get("label"),
+    last4: formData.get("last4"),
+  });
+
+  if (!parsed.success) {
+    redirect("/admin/workspaces?payment=invalid");
+  }
+
+  const existing = await prisma.paymentMethod.findFirst({
+    where: {
+      workspaceId: parsed.data.workspaceId,
+      label: parsed.data.label,
+      last4: parsed.data.last4,
+      id: {
+        not: parsed.data.paymentMethodId,
+      },
+    },
+    select: { id: true },
+  });
+
+  if (existing) {
+    redirect("/admin/workspaces?payment=duplicate");
+  }
+
+  await prisma.paymentMethod.updateMany({
+    where: {
+      id: parsed.data.paymentMethodId,
+      workspaceId: parsed.data.workspaceId,
+    },
+    data: {
+      label: parsed.data.label,
+      last4: parsed.data.last4,
     },
   });
 
