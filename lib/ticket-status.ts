@@ -34,18 +34,31 @@ export async function autoCloseResolvedTickets() {
   }
 
   const ticketIds = tickets.map((ticket) => ticket.id);
+  await prisma.$transaction(async (tx) => {
+    for (const ticketId of ticketIds) {
+      const updated = await tx.ticket.updateMany({
+        where: {
+          id: ticketId,
+          statusId: resolvedStatus.id,
+          resolvedAt: {
+            lte: cutoff,
+          },
+        },
+        data: { statusId: closedStatus.id },
+      });
 
-  await prisma.ticket.updateMany({
-    where: { id: { in: ticketIds } },
-    data: { statusId: closedStatus.id },
-  });
+      if (!updated.count) {
+        continue;
+      }
 
-  await prisma.ticketActivity.createMany({
-    data: ticketIds.map((ticketId) => ({
-      ticketId,
-      eventType: "ticket.auto_closed",
-      messageZh: "系统已将状态从「已解决」改为「已关闭」（已解决满 7 天）。",
-      messageEn: "The system changed the status from \"Resolved\" to \"Closed\" after 7 days.",
-    })),
+      await tx.ticketActivity.create({
+        data: {
+          ticketId,
+          eventType: "ticket.auto_closed",
+          messageZh: "系统已将状态从「已解决」改为「已关闭」（已解决满 7 天）。",
+          messageEn: "The system changed the status from \"Resolved\" to \"Closed\" after 7 days.",
+        },
+      });
+    }
   });
 }
