@@ -136,6 +136,7 @@ MiniTickets is live as a bilingual, workspace-based ticketing system for persona
 - Saved payment methods are workspace-scoped records and should be managed in `工作区管理 / Workspaces`; ticket forms can still save reusable methods, but label/last-four corrections should happen from the workspace admin surface, while each ticket keeps its own label/last-four snapshot for historical accuracy
 - After adding payment-method snapshots to `TicketPaymentMethod`, run `npm run db:backfill-payment-method-snapshots` after schema push so older ticket links keep their historical payment-method display even if the workspace template is later edited or deleted
 - Ticket due-date inputs should stay width-constrained inside create/edit forms instead of allowing the browser-native date control to stretch past the panel edge on desktop layouts
+- If duplicate `ticket.auto_closed` system messages remain from the old race condition, run `npm run db:dedupe-auto-closed-activities`; it only removes near-identical auto-close entries for the same ticket within a short window, so legitimate later re-close history stays intact
 
 ## Near-term follow-ups
 
