@@ -51,6 +51,7 @@ import { autoCloseResolvedTickets } from "@/lib/ticket-status";
 import { MAX_ATTACHMENT_SIZE_BYTES, getTicketAttachmentDiskPath, getTicketAttachmentUrl, getUploadsRoot } from "@/lib/uploads";
 
 const MAX_COMMENT_LENGTH = 10000;
+const MAX_ATTACHMENT_ORIGINAL_NAME_LENGTH = 255;
 
 const loginSchema = z.object({
   email: z.email(),
@@ -211,6 +212,16 @@ function normalizeSelectedIds(values: FormDataEntryValue[]) {
         .filter(Boolean),
     ),
   );
+}
+
+function getSafeAttachmentOriginalName(fileName: string) {
+  const trimmed = fileName.trim().replace(/[\r\n]/g, " ");
+  return (trimmed || "attachment").slice(0, MAX_ATTACHMENT_ORIGINAL_NAME_LENGTH);
+}
+
+function getSafeAttachmentExtension(fileName: string) {
+  const extension = path.extname(fileName).toLowerCase();
+  return /^[.][a-z0-9]{1,15}$/.test(extension) ? extension : "";
 }
 
 function buildAssigneeActivityMessage({
@@ -1811,7 +1822,8 @@ export async function addAttachmentAction(formData: FormData) {
     redirect(`/tickets/${ticket.id}?closed=1`);
   }
 
-  const extension = path.extname(file.name).slice(0, 16);
+  const originalName = getSafeAttachmentOriginalName(file.name);
+  const extension = getSafeAttachmentExtension(originalName);
   const storedName = `${crypto.randomUUID()}${extension}`;
   const directory = path.join(getUploadsRoot(), "tickets", ticket.id);
   await mkdir(directory, { recursive: true });
@@ -1822,7 +1834,7 @@ export async function addAttachmentAction(formData: FormData) {
     data: {
       ticketId: ticket.id,
       uploadedByUserId: user.id,
-      originalName: file.name,
+      originalName,
       storedName,
       mimeType: file.type || null,
       fileSizeBytes: file.size,
