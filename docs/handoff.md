@@ -137,6 +137,8 @@ MiniTickets is live as a bilingual, workspace-based ticketing system for persona
 - After adding payment-method snapshots to `TicketPaymentMethod`, run `npm run db:backfill-payment-method-snapshots` after schema push so older ticket links keep their historical payment-method display even if the workspace template is later edited or deleted
 - Ticket due-date inputs should stay width-constrained inside create/edit forms instead of allowing the browser-native date control to stretch past the panel edge on desktop layouts
 - If duplicate `ticket.auto_closed` system messages remain from the old race condition, run `npm run db:dedupe-auto-closed-activities`; it only removes near-identical auto-close entries for the same ticket within a short window, so legitimate later re-close history stays intact
+- Weekly security review is now codified as `npm run security:review`; it writes a timestamped report, runs both production and full `npm audit`, plus `npm run lint` and `npm run build`, and lists any risky code-pattern matches for manual inspection
+- If you want that review to run automatically on the droplet, use `deploy/minitickets-security-review.service.example` and `deploy/minitickets-security-review.timer.example`, with `SECURITY_REVIEW_ROOT` pointed at a durable log directory such as `/var/log/minitickets-security-review`
 
 ## Near-term follow-ups
 

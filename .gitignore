@@ -9,6 +9,7 @@ dist
 .env.production
 .env.deploy
 generated
+.security-reviews/
 dev.db
 data/
 public/uploads

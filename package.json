@@ -1,12 +1,13 @@
 {
   "name": "minitickets",
-  "version": "1.10.44",
+  "version": "1.10.45",
   "description": "MiniTickets - lightweight bilingual workspace ticketing",
   "scripts": {
     "dev": "prisma generate && next dev",
     "build": "prisma generate && next build",
     "start": "next start",
     "lint": "prisma generate && eslint .",
+    "security:review": "bash scripts/security-review.sh",
     "db:push": "prisma db push && prisma generate",
     "db:seed": "prisma generate && node --experimental-strip-types prisma/seed.ts",
     "db:backfill-assignments": "node --experimental-strip-types scripts/backfill-ticket-assignments.ts",
@@ -42,7 +43,7 @@
     "better-sqlite3": "^12.8.0",
     "dotenv": "^17.4.0",
     "lucide-react": "^1.7.0",
-    "next": "^16.2.4",
+    "next": "^16.2.6",
     "prisma": "^7.8.0",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
@@ -50,6 +51,8 @@
   },
   "overrides": {
     "@hono/node-server": "1.19.13",
+    "fast-uri": "3.1.2",
+    "hono": "4.12.19",
     "postcss": "8.5.10"
   },
   "devDependencies": {

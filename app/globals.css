@@ -1569,6 +1569,11 @@ textarea {
 }
 
 @media (max-width: 640px) {
+  .due-date-field {
+    width: min(100%, 12.5rem);
+    max-width: 12.5rem;
+  }
+
   .auth-page {
     padding: 0;
     align-items: center;

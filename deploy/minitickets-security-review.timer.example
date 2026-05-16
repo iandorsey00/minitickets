@@ -1,0 +1,10 @@
+[Unit]
+Description=Run MiniTickets security review weekly
+
+[Timer]
+OnCalendar=Sun *-*-* 03:30:00
+Persistent=true
+Unit=minitickets-security-review.service
+
+[Install]
+WantedBy=timers.target

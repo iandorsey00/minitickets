@@ -1,0 +1,12 @@
+[Unit]
+Description=MiniTickets weekly security review
+After=network.target
+
+[Service]
+Type=oneshot
+User=${APP_USER}
+Group=${APP_GROUP}
+WorkingDirectory=${APP_DIR}
+Environment=ENV_FILE=${ENV_FILE}
+Environment=SECURITY_REVIEW_ROOT=${SECURITY_REVIEW_ROOT}
+ExecStart=/usr/bin/env bash ${APP_DIR}/scripts/security-review.sh
