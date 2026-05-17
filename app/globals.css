@@ -296,6 +296,20 @@ textarea {
   flex: 0 0 auto;
 }
 
+.selection-list {
+  display: grid;
+  gap: 0.7rem;
+  width: 100%;
+  margin-top: 0.15rem;
+}
+
+.selection-option {
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--color-panel-strong) 78%, transparent);
+}
+
 .auth-secondary-button {
   width: 100%;
   margin-top: 0;

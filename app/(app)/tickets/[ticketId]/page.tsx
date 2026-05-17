@@ -551,22 +551,26 @@ export default async function TicketDetailPage({
               {data.ticket.workspace.paymentInfoEnabled ? (
                 <>
                   <div className="field">
-                    <label htmlFor="savedPaymentMethodIds">
+                    <span>
                       {t.common.paymentMethods} <span className="muted">({t.common.optional})</span>
-                    </label>
-                    <select
-                      id="savedPaymentMethodIds"
-                      name="savedPaymentMethodIds"
-                      multiple
-                      size={Math.min(4, Math.max(2, data.savedPaymentMethods.length || 2))}
-                      defaultValue={Array.from(selectedPaymentMethodIds)}
-                    >
-                      {data.savedPaymentMethods.map((method) => (
-                        <option key={method.id} value={method.id}>
-                          {method.label} · {method.last4}
-                        </option>
-                      ))}
-                    </select>
+                    </span>
+                    {data.savedPaymentMethods.length ? (
+                      <div className="selection-list" role="group" aria-label={t.common.paymentMethods}>
+                        {data.savedPaymentMethods.map((method) => (
+                          <label key={method.id} className="selection-option checkbox-row">
+                            <input
+                              type="checkbox"
+                              name="savedPaymentMethodIds"
+                              value={method.id}
+                              defaultChecked={selectedPaymentMethodIds.has(method.id)}
+                            />
+                            <span>
+                              {method.label} · {method.last4}
+                            </span>
+                          </label>
+                        ))}
+                      </div>
+                    ) : null}
                     {!data.savedPaymentMethods.length ? <p className="muted">{t.common.noSavedPaymentMethods}</p> : null}
                   </div>
                   <div className="field">

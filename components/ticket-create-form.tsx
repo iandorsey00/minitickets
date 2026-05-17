@@ -260,16 +260,21 @@ export function TicketCreateForm({
         <>
           <div className="form-grid">
             <div className="field">
-              <label htmlFor="savedPaymentMethodIds">
+              <span>
                 {dictionary.common.paymentMethods} <span className="muted">({dictionary.common.optional})</span>
-              </label>
-              <select id="savedPaymentMethodIds" name="savedPaymentMethodIds" multiple size={Math.min(4, Math.max(2, workspacePaymentMethods.length || 2))}>
-                {workspacePaymentMethods.map((method) => (
-                  <option key={method.id} value={method.id}>
-                    {method.label} · {method.last4}
-                  </option>
-                ))}
-              </select>
+              </span>
+              {workspacePaymentMethods.length ? (
+                <div className="selection-list" role="group" aria-label={dictionary.common.paymentMethods}>
+                  {workspacePaymentMethods.map((method) => (
+                    <label key={method.id} className="selection-option checkbox-row">
+                      <input type="checkbox" name="savedPaymentMethodIds" value={method.id} />
+                      <span>
+                        {method.label} · {method.last4}
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              ) : null}
               {!workspacePaymentMethods.length ? <p className="muted">{dictionary.common.noSavedPaymentMethods}</p> : null}
             </div>
           </div>
