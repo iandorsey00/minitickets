@@ -595,12 +595,6 @@ export async function resendLoginCodeAction() {
 
 export async function logoutAction() {
   await destroySession();
-  const miniAuthLogoutUrl = getMiniAuthLogoutUrl(AUTH_ROUTES.login);
-
-  if (miniAuthLogoutUrl) {
-    redirect(miniAuthLogoutUrl);
-  }
-
   await revokeMiniAuthSession();
   redirect(AUTH_ROUTES.login);
 }

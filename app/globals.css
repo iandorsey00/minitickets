@@ -1538,32 +1538,8 @@ textarea {
 }
 
 @media (max-width: 1080px) {
-  .shell,
   .detail-layout {
     grid-template-columns: 1fr;
-  }
-
-  .sidebar {
-    position: static;
-    top: auto;
-    height: auto;
-    border-right: 0;
-    border-bottom: 1px solid var(--color-line);
-    padding-bottom: 1rem;
-  }
-
-  .shell {
-    grid-template-columns: 1fr;
-  }
-
-  .nav-list {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 0.75rem;
-  }
-
-  .nav-link {
-    min-height: 2.7rem;
-    padding: 0.5rem 0.7rem;
   }
 
   .grid-4,
@@ -1579,6 +1555,31 @@ textarea {
 
   .due-date-field {
     max-width: 100%;
+  }
+}
+
+@media (max-width: 920px) {
+  .shell {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebar {
+    position: static;
+    top: auto;
+    height: auto;
+    border-right: 0;
+    border-bottom: 1px solid var(--color-line);
+    padding-bottom: 1rem;
+  }
+
+  .nav-list {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.75rem;
+  }
+
+  .nav-link {
+    min-height: 2.7rem;
+    padding: 0.5rem 0.7rem;
   }
 }
 
