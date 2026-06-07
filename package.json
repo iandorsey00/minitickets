@@ -1,6 +1,6 @@
 {
   "name": "minitickets",
-  "version": "1.10.47",
+  "version": "1.10.48",
   "description": "MiniTickets - lightweight bilingual workspace ticketing",
   "scripts": {
     "dev": "prisma generate && next dev",
@@ -52,7 +52,7 @@
   "overrides": {
     "@hono/node-server": "1.19.13",
     "fast-uri": "3.1.2",
-    "hono": "4.12.19",
+    "hono": "4.12.23",
     "postcss": "8.5.10"
   },
   "devDependencies": {
